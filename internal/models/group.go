@@ -23,7 +23,7 @@ type GroupMember struct {
 type CreateGroupPayload struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
-	IsPublic    *int   `json:"is_public"` // Pointer to distinguish between missing vs explicitly sending 0
+	IsPublic    int    `json:"is_public"` // Pointer to distinguish between missing vs explicitly sending 0
 }
 
 // InviteMemberPayload represents an invitation structure

@@ -31,9 +31,16 @@ func Register(h *handler.Handler, m *middleware.Middleware) *http.ServeMux {
 		"/api/v1/auth/logout",
 		m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.Logout))),
 	)
-	// mux.Handle("/api/v1/auth/logout",
-	// 	m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.Logout))),
-	// )
+
+	mux.Handle(
+		"/api/v1/groups",
+		m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.CreateGroup))),
+	)
+
+	mux.Handle(
+		"/api/v1/groups/public",
+		m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.GetPublicGroups))),
+	)
 
 	return mux
 }

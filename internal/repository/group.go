@@ -22,13 +22,12 @@ func (r *Repository) CreateGroupWithCreator(ctx context.Context, creatorID int64
         RETURNING id, title, description, creator_id, is_public, created_at
     `
 
-	var isPublicInt int
 	err = tx.QueryRowContext(ctx, groupQuery, payload.Title, payload.Description, creatorID, payload.IsPublic).Scan(
 		&group.ID,
 		&group.Title,
 		&group.Description,
 		&group.CreatorID,
-		&isPublicInt,
+		&group.IsPublic,
 		&group.CreatedAt,
 	)
 	if err != nil {
