@@ -31,7 +31,8 @@ func Server() {
 
 	// 4. Handlers and Middlewares consume the Service Layer
 	h := handler.New(svc, hub)
-	m := middleware.New(repo) // Middleware can directly access repo to read contexts cleanly
+
+	m := middleware.New(svc) // ◄--- CHANGE 'repo' TO 'svc' HERE
 
 	router := routes.Register(h, m)
 

@@ -1,13 +1,13 @@
 package middleware
 
-import "kuu/internal/repository"
+import "kuu/internal/service"
 
 type Middleware struct {
-	Repo *repository.Repository
+	Service *service.Service
 }
 
-func New(repo *repository.Repository) *Middleware {
+func New(svc *service.Service) *Middleware {
 	return &Middleware{
-		Repo: repo,
+		Service: svc,
 	}
 }

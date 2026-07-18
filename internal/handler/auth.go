@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"kuu/internal/helper"
+	"kuu/internal/middleware"
 	"kuu/internal/models"
 	"kuu/internal/requests"
 )
@@ -64,4 +65,34 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	// 3. Respond with OK status and the user profile schema payload
 	helper.Success(w, http.StatusOK, "Login successful", user)
+}
+
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_token")
+	if err == nil {
+		// Delete session from the database asynchronously or synchronously
+		_ = h.Service.DeleteSession(r.Context(), cookie.Value)
+	}
+
+	// Explicitly instruct the browser to wipe the cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1, // Tells browser to delete immediately
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	helper.Success(w, http.StatusOK, "Logged out successfully", nil)
+}
+
+func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusInternalServerError, "Failed to retrieve profile context")
+		return
+	}
+	helper.Success(w, http.StatusOK, "Profile retrieved successfully", user)
 }

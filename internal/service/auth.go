@@ -51,3 +51,16 @@ func (s *Service) LoginUser(ctx context.Context, payload models.InputLoginPayloa
 
 	return sessionInfo, user, nil
 }
+
+func (s *Service) ValidateSession(ctx context.Context, token string) (*models.User, error) {
+	user, err := s.Repo.GetUserBySessionToken(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+// DeleteSession requests the repository layer to drop the session mapping
+func (s *Service) DeleteSession(ctx context.Context, token string) error {
+	return s.Repo.DeleteSession(ctx, token)
+}
