@@ -32,7 +32,6 @@ func (h *Handler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 3. Fallback default to public (1) if field wasn't explicitly provided
-
 	// 4. Fire service processing
 	group, err := h.Service.CreateGroup(r.Context(), user.ID, payload)
 	if err != nil {

@@ -2,28 +2,23 @@ package repository
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"strings"
 
 	"kuu/internal/models"
 )
 
 // GetUserByID fetches a complete user profile by its primary key integer
-func (r *Repository) GetUserByID(userID int64) (*models.User, error) {
+func (r *Repository) GetUserByID(ctx context.Context, userID int64) (*models.User, error) {
 	var user models.User
 
-	// 1. Select all properties matching your struct architecture
 	query := `
-		SELECT id, username, email, first_name, last_name, gender, 
-		       date_of_birth, is_public, avatar, nick_name, about_me, created_at
-		FROM users 
-		WHERE id = $1 
-		LIMIT 1
-	`
+        SELECT id, username, email, first_name, last_name, gender, date_of_birth, is_public, created_at
+        FROM users 
+        WHERE id = $1 
+        LIMIT 1
+    `
 
-	// 2. Scan row values using memory pointers directly into the target object properties
-	err := r.DB.Database.QueryRowContext(context.Background(), query, userID).Scan(
+	err := r.DB.Database.QueryRowContext(ctx, query, userID).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
@@ -32,16 +27,10 @@ func (r *Repository) GetUserByID(userID int64) (*models.User, error) {
 		&user.Gender,
 		&user.DateOfBirth,
 		&user.IsPublic,
-		&user.Avatar,
-		&user.NickName,
-		&user.AboutMe,
 		&user.CreatedAt,
 	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, sql.ErrNoRows
-		}
-		return nil, err
+		return nil, err // Returns sql.ErrNoRows if the ID doesn't exist
 	}
 
 	return &user, nil
@@ -58,7 +47,8 @@ func (r *Repository) CreateUser(ctx context.Context, payload models.InputRegiste
 		RETURNING id, username, email, first_name, last_name, gender, date_of_birth, is_public, avatar, nick_name, about_me, created_at
 	`
 
-	err := r.DB.Database.QueryRowContext(ctx, query,
+	err := r.DB.Database.QueryRowContext(
+		ctx, query,
 		strings.TrimSpace(payload.Username),
 		strings.ToLower(strings.TrimSpace(payload.Email)),
 		payload.FirstName,
