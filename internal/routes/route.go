@@ -9,12 +9,12 @@ import (
 
 func Register(h *handler.Handler, m *middleware.Middleware) *http.ServeMux {
 	mux := http.NewServeMux()
+	onlyPost := m.AllowMethods(http.MethodPost)
 
-	// Public routes
-	mux.Handle("/submit", m.AllowMethods("POST")(http.HandlerFunc(h.Health)))
+	loginHandler := http.HandlerFunc(h.Login)
 
-	// Protected routes
-	// mux.Handle("GET /profile", m.Auth(http.HandlerFunc(h.Profile)))
+	mux.Handle("/login", onlyPost(loginHandler))
 	mux.HandleFunc("GET /ws", h.WebSocket)
+	mux.Handle("/api/profile", m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.GetProfile))))
 	return mux
 }
