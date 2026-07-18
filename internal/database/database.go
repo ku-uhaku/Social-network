@@ -55,5 +55,5 @@ func runMigrations(db *sql.DB) {
 		log.Fatal("[MIGRATION UP] : ", err.Error())
 	}
 
-	log.Println("[MIGRATION] : Database is up to date! Users and Sessions tables verified.")
+	log.Println("[MIGRATION] : Database is UP!")
 }
