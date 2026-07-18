@@ -3,17 +3,18 @@ package helper
 import (
 	"encoding/json"
 	"net/http"
+
+	"kuu/internal/requests"
 )
 
-// JSONResponse defines the uniform structure for all API outputs
 type JSONResponse struct {
 	Success bool        `json:"success"`
 	Message string      `json:"message,omitempty"`
 	Data    interface{} `json:"data,omitempty"`
+	Errors  interface{} `json:"errors,omitempty"`
 }
 
-// WriteJSON sends a standardized JSON payload to the client
-func WriteJSON(w http.ResponseWriter, status int, success bool, message string, data interface{}) {
+func WriteJSON(w http.ResponseWriter, status int, success bool, message string, data interface{}, errs interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
@@ -21,17 +22,20 @@ func WriteJSON(w http.ResponseWriter, status int, success bool, message string, 
 		Success: success,
 		Message: message,
 		Data:    data,
+		Errors:  errs,
 	}
 
 	json.NewEncoder(w).Encode(resp)
 }
 
-// Success handles successful operations cleanly
 func Success(w http.ResponseWriter, status int, message string, data interface{}) {
-	WriteJSON(w, status, true, message, data)
+	WriteJSON(w, status, true, message, data, nil)
 }
 
-// Error handles API errors uniformly
 func Error(w http.ResponseWriter, status int, message string) {
-	WriteJSON(w, status, false, message, nil)
+	WriteJSON(w, status, false, message, nil, nil)
+}
+
+func ValidationErrorResponse(w http.ResponseWriter, status int, errs []requests.ValidationError) {
+	WriteJSON(w, status, false, "Validation failed", nil, errs)
 }

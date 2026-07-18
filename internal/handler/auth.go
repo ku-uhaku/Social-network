@@ -18,7 +18,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	if validationErrs := requests.ValidateRegister(payload); len(validationErrs) > 0 {
-		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", validationErrs)
+		helper.ValidationErrorResponse(w, http.StatusUnprocessableEntity, validationErrs)
 		return
 	}
 
@@ -40,7 +40,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	if validationErrs := requests.ValidateLogin(payload); len(validationErrs) > 0 {
-		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", validationErrs)
+		helper.ValidationErrorResponse(w, http.StatusUnprocessableEntity, validationErrs)
 		return
 	}
 
