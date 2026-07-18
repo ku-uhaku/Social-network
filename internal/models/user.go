@@ -23,6 +23,19 @@ type User struct {
 }
 
 type InputLoginPayload struct {
-	Identifier string `json:"identifier"`
-	Password   string `json:"password"`
+	Login    string `json:"login"`
+	Password string `json:"password"`
+}
+
+type InputRegisterPayload struct {
+	Username    string  `json:"username"`
+	Email       string  `json:"email"`
+	FirstName   string  `json:"first_name"`
+	LastName    string  `json:"last_name"`
+	Gender      string  `json:"gender"`
+	DateOfBirth string  `json:"date_of_birth"`
+	Password    string  `json:"password"`
+	Avatar      *string `json:"avatar,omitempty"`
+	NickName    *string `json:"nick_name,omitempty"`
+	AboutMe     *string `json:"about_me,omitempty"`
 }
