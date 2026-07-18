@@ -51,3 +51,37 @@ func (h *Handler) GetPublicGroups(w http.ResponseWriter, r *http.Request) {
 
 	helper.Success(w, http.StatusOK, "Public groups retrieved successfully", groups)
 }
+
+func (h *Handler) InviteMembers(w http.ResponseWriter, r *http.Request) {
+	// 1. Authenticate user context
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Authentication context missing")
+		return
+	}
+
+	// 2. Extract group ID from URL path (adjust helper according to your router framework)
+	groupID, err := helper.GetParamInt64(r, "id")
+	if err != nil {
+		helper.Error(w, http.StatusBadRequest, "Invalid group ID format")
+		return
+	}
+
+	// 3. Decode payload containing targets
+	var payload models.InviteMembersPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		helper.Error(w, http.StatusBadRequest, "Malformed JSON request body")
+		return
+	}
+	defer r.Body.Close()
+
+	// 4. Fire service processing
+	err = h.Service.InviteMembersToGroup(r.Context(), user.ID, groupID, payload)
+	if err != nil {
+		// You can check for specific errors here (e.g., unauthorized to invite, group not found)
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Invitations sent successfully", nil)
+}

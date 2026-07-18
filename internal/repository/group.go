@@ -87,3 +87,47 @@ func (r *Repository) FetchAllPublicGroups(ctx context.Context) ([]models.Group, 
 
 	return groups, nil
 }
+
+// IsGroupMember checks if a user is an accepted member/creator of the group
+func (r *Repository) IsGroupMember(ctx context.Context, userID int64, groupID int64) (bool, error) {
+	query := `
+        SELECT EXISTS (
+            SELECT 1 FROM group_members 
+            WHERE user_id = $1 AND group_id = $2 AND status = 'accepted'
+        )
+    `
+	var exists bool
+	err := r.DB.Database.QueryRowContext(ctx, query, userID, groupID).Scan(&exists)
+	return exists, err
+}
+
+// AddGroupMembersPending safely bulk inserts invitations with a 'pending' state
+func (r *Repository) AddGroupMembersPending(ctx context.Context, groupID int64, userIDs []int64) error {
+	tx, err := r.DB.Database.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// SQLite compliant UPSERT/IGNORE string so we don't crash on duplicate invitations
+	query := `
+        INSERT INTO group_members (user_id, group_id, status)
+        VALUES ($1, $2, 'pending')
+        ON CONFLICT(user_id, group_id) DO NOTHING
+    `
+
+	stmt, err := tx.PrepareContext(ctx, query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, userID := range userIDs {
+		_, err := stmt.ExecContext(ctx, userID, groupID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}

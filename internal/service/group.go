@@ -14,3 +14,21 @@ func (s *Service) CreateGroup(ctx context.Context, creatorID int64, payload mode
 func (s *Service) GetPublicGroups(ctx context.Context) ([]models.Group, error) {
 	return s.Repo.FetchAllPublicGroups(ctx)
 }
+
+func (s *Service) InviteMembersToGroup(ctx context.Context, requesterID int64, groupID int64, payload models.InviteMembersPayload) error {
+	if len(payload.TargetUsersID) == 0 {
+		return nil // Quick return if no users specified
+	}
+
+	// 1. Authorization check: Is the requester a member/creator of this group?
+	isMember, err := s.Repo.IsGroupMember(ctx, requesterID, groupID)
+	if err != nil {
+		return err
+	}
+	if !isMember {
+		return models.ErrUnauthorizedAction // Define custom errors as needed
+	}
+
+	// 2. Delegate database bulk insertion to repository
+	return s.Repo.AddGroupMembersPending(ctx, groupID, payload.TargetUsersID)
+}

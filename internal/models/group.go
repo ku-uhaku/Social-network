@@ -27,8 +27,8 @@ type CreateGroupPayload struct {
 }
 
 // InviteMemberPayload represents an invitation structure
-type InviteMemberPayload struct {
-	TargetUserID int64 `json:"target_user_id"`
+type InviteMembersPayload struct {
+	TargetUsersID []int64 `json:"target_users_ids"`
 }
 
 // HandleRequestPayload represents an approval action payload schema
