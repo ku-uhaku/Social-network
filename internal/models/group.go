@@ -8,7 +8,7 @@ type Group struct {
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	CreatorID   int64     `json:"creator_id"`
-	IsPublic    bool      `json:"is_public"` // 1 for true, 0 for false (SQLite compliance)
+	IsPublic    int       `json:"is_public"` // 1 for true, 0 for false (SQLite compliance)
 	CreatedAt   time.Time `json:"created_at"`
 }
 

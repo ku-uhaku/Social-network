@@ -23,6 +23,14 @@ func Register(h *handler.Handler, m *middleware.Middleware) *http.ServeMux {
 		"/api/v1/auth/login",
 		m.AllowMethods(http.MethodPost)(http.HandlerFunc(h.Login)),
 	)
+	mux.Handle(
+		"/api/v1/auth/me",
+		m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.Me))),
+	)
+	mux.Handle(
+		"/api/v1/auth/logout",
+		m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.Logout))),
+	)
 	// mux.Handle("/api/v1/auth/logout",
 	// 	m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.Logout))),
 	// )
