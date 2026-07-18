@@ -4,15 +4,18 @@ import (
 	"net/http"
 
 	"kuu/internal/repository"
+	"kuu/internal/websocket"
 )
 
 type Handler struct {
 	Repo *repository.Repository
+	Hub  *websocket.Hub
 }
 
-func New(repo *repository.Repository) *Handler {
+func New(repo *repository.Repository, hub *websocket.Hub) *Handler {
 	return &Handler{
 		Repo: repo,
+		Hub:  hub,
 	}
 }
 
