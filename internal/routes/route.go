@@ -11,7 +11,7 @@ func Register(h *handler.Handler, m *middleware.Middleware) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	// Public routes
-	mux.HandleFunc("GET /health", h.Health)
+	mux.Handle("/submit", m.AllowMethods("POST")(http.HandlerFunc(h.Health)))
 
 	// Protected routes
 	// mux.Handle("GET /profile", m.Auth(http.HandlerFunc(h.Profile)))
