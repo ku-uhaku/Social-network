@@ -1,25 +1,18 @@
 package handler
 
 import (
-	"net/http"
-
-	"kuu/internal/repository"
+	"kuu/internal/service"
 	"kuu/internal/websocket"
 )
 
 type Handler struct {
-	Repo *repository.Repository
-	Hub  *websocket.Hub
+	Service *service.Service
+	Hub     *websocket.Hub
 }
 
-func New(repo *repository.Repository, hub *websocket.Hub) *Handler {
+func New(svc *service.Service, hub *websocket.Hub) *Handler {
 	return &Handler{
-		Repo: repo,
-		Hub:  hub,
+		Service: svc,
+		Hub:     hub,
 	}
-}
-
-func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
 }

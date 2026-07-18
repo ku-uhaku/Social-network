@@ -10,6 +10,7 @@ import (
 	"kuu/internal/middleware"
 	"kuu/internal/repository"
 	"kuu/internal/routes"
+	"kuu/internal/service" // 1. Import your brand new service package
 	"kuu/internal/websocket"
 )
 
@@ -17,15 +18,20 @@ func Server() {
 	cfg := config.New()
 
 	db := database.New(cfg.DataBasePath)
-
 	defer db.Database.Close()
 
 	hub := websocket.New()
 	go hub.Run()
 
+	// 2. Build Repository (Takes Database Layer)
 	repo := repository.New(db)
-	h := handler.New(repo, hub)
-	m := middleware.New(repo)
+
+	// 3. Build Service (Takes Repository Layer)
+	svc := service.New(repo)
+
+	// 4. Handlers and Middlewares consume the Service Layer
+	h := handler.New(svc, hub)
+	m := middleware.New(repo) // Middleware can directly access repo to read contexts cleanly
 
 	router := routes.Register(h, m)
 
