@@ -35,3 +35,7 @@ type InviteMembersPayload struct {
 type HandleRequestPayload struct {
 	TargetUserID int64 `json:"target_user_id"`
 }
+
+type RespondToInvitePayload struct {
+	GroupID int64 `json:"group_id"`
+}

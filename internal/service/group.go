@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"kuu/internal/models"
 )
@@ -26,9 +27,15 @@ func (s *Service) InviteMembersToGroup(ctx context.Context, requesterID int64, g
 		return err
 	}
 	if !isMember {
-		return models.ErrUnauthorizedAction // Define custom errors as needed
+		// FIXED: Replaced models.ErrUnauthorizedAction with a standard text error
+		return errors.New("unauthorized action: you are not a member of this group")
 	}
 
 	// 2. Delegate database bulk insertion to repository
 	return s.Repo.AddGroupMembersPending(ctx, groupID, payload.TargetUsersID)
+}
+
+func (s *Service) AcceptInvitation(ctx context.Context, userID int64, groupID int64) error {
+	// You can add validation logic here if needed
+	return s.Repo.AcceptGroupInvitation(ctx, userID, groupID)
 }

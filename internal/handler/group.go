@@ -85,3 +85,34 @@ func (h *Handler) InviteMembers(w http.ResponseWriter, r *http.Request) {
 
 	helper.Success(w, http.StatusOK, "Invitations sent successfully", nil)
 }
+
+func (h *Handler) AcceptInvitation(w http.ResponseWriter, r *http.Request) {
+	// 1. Authenticate user context
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Authentication context missing")
+		return
+	}
+
+	// 2. Decode the incoming group target payload
+	var payload models.RespondToInvitePayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		helper.Error(w, http.StatusBadRequest, "Malformed JSON request body")
+		return
+	}
+	defer r.Body.Close()
+
+	if payload.GroupID <= 0 {
+		helper.Error(w, http.StatusBadRequest, "Invalid group ID parameter")
+		return
+	}
+
+	// 3. Execute change operation
+	err := h.Service.AcceptInvitation(r.Context(), user.ID, payload.GroupID)
+	if err != nil {
+		helper.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Successfully joined the group!", nil)
+}

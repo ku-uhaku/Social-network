@@ -2,6 +2,9 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"time"
 
 	"kuu/internal/models"
 )
@@ -130,4 +133,31 @@ func (r *Repository) AddGroupMembersPending(ctx context.Context, groupID int64, 
 	}
 
 	return tx.Commit()
+}
+
+func (r *Repository) AcceptGroupInvitation(ctx context.Context, userID int64, groupID int64) error {
+	// First, check if an invitation or request actually exists for this user
+	var currentStatus string
+	checkQuery := `SELECT status FROM group_members WHERE user_id = $1 AND group_id = $2`
+
+	err := r.DB.Database.QueryRowContext(ctx, checkQuery, userID, groupID).Scan(&currentStatus)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errors.New("no invitation or join request found for this group")
+		}
+		return err
+	}
+
+	if currentStatus == "accepted" {
+		return errors.New("you are already a member of this group")
+	}
+
+	// Update the status to accepted
+	updateQuery := `
+		UPDATE group_members 
+		SET status = 'accepted', joined_at = $1 
+		WHERE user_id = $2 AND group_id = $3
+	`
+	_, err = r.DB.Database.ExecContext(ctx, updateQuery, time.Now(), userID, groupID)
+	return err
 }
