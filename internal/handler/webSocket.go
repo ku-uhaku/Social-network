@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 
@@ -34,44 +33,27 @@ func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
 
 	// 3. Initialize client with the authenticated UserID
 	client := &ws.Client{
-		UserID: user.ID, 
+		UserID: user.ID,
 		Conn:   conn,
 		Send:   make(chan []byte, 256),
 	}
 
 	h.Hub.Register <- client
 
-	// Reader Loop (Inbound messages from the client's browser)
 	go func() {
-		defer func() {
-			h.Hub.Unregister <- client
-		}()
+		onlineSnapshot := h.Hub.GetOnlineUsers()
 
-		for {
-			_, msg, err := conn.ReadMessage()
-			if err != nil {
-				break
-			}
-
-			// Parse whatever JSON the frontend sends into your flexible Event struct
-			var incomingEvent ws.Event
-			if err := json.Unmarshal(msg, &incomingEvent); err != nil {
-				log.Printf("[WS] Failed to parse incoming JSON payload from user %d: %v", user.ID, err)
-				continue
-			}
-
-			// Optional safety check: Ensure the payload always tracks who actually sent it
-			if incomingEvent.Payload == nil {
-				incomingEvent.Payload = make(map[string]interface{})
-			}
-			if m, ok := incomingEvent.Payload.(map[string]interface{}); ok {
-				m["sender_id"] = user.ID
-			}
-
-			// Forward the event to the Hub broadcast logic cleanly
-			h.Hub.Broadcast <- incomingEvent
+		initEvent := ws.Event{
+			Type:         "online_users_list",
+			TargetUserID: user.ID, // Targeted exclusively to this user's connection
+			Payload: map[string]interface{}{
+				"online_user_ids": onlineSnapshot,
+			},
 		}
+
+		h.Hub.Broadcast <- initEvent
 	}()
+	// ---------------------------------------------------------------------
 
 	// Writer Loop (Outbound messages pushing data to client's browser)
 	go func() {
