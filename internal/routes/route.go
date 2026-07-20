@@ -32,6 +32,12 @@ func Register(h *handler.Handler, m *middleware.Middleware) *http.ServeMux {
 		m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.Logout))),
 	)
 
+	// --- User Profile Endpoints ---
+	mux.Handle(
+		"/api/v1/user/profile/update",
+		m.AllowMethods(http.MethodPut)(m.RequireAuth(http.HandlerFunc(h.UpdateProfile))),
+	)
+
 	mux.Handle(
 		"/api/v1/groups",
 		m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.CreateGroup))),

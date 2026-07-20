@@ -39,3 +39,15 @@ type InputRegisterPayload struct {
 	NickName    *string `json:"nick_name,omitempty"`
 	AboutMe     *string `json:"about_me,omitempty"`
 }
+
+// UpdateProfilePayload represents the incoming JSON contract for changing user details
+type UpdateProfilePayload struct {
+	FirstName   string  `json:"first_name"`
+	LastName    string  `json:"last_name"`
+	Gender      string  `json:"gender"`
+	DateOfBirth string  `json:"date_of_birth"`
+	IsPublic    int     `json:"is_public"` // 1 for true, 0 for false
+	Avatar      *string `json:"avatar"`
+	NickName    *string `json:"nick_name"`
+	AboutMe     *string `json:"about_me"`
+}

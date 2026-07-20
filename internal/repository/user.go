@@ -79,3 +79,47 @@ func (r *Repository) CreateUser(ctx context.Context, payload models.InputRegiste
 
 	return &user, nil
 }
+
+func (r *Repository) UpdateUserProfile(ctx context.Context, userID int64, payload models.UpdateProfilePayload) (*models.User, error) {
+	var user models.User
+
+	query := `
+		UPDATE users 
+		SET first_name = $1, last_name = $2, gender = $3, date_of_birth = $4, 
+		    is_public = $5, avatar = $6, nick_name = $7, about_me = $8
+		WHERE id = $9
+		RETURNING id, username, email, first_name, last_name, gender, date_of_birth, 
+		          is_public, avatar, nick_name, about_me, created_at
+	`
+
+	err := r.DB.Database.QueryRowContext(
+		ctx, query,
+		payload.FirstName,
+		payload.LastName,
+		payload.Gender,
+		payload.DateOfBirth,
+		payload.IsPublic,
+		payload.Avatar,
+		payload.NickName,
+		payload.AboutMe,
+		userID,
+	).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.FirstName,
+		&user.LastName,
+		&user.Gender,
+		&user.DateOfBirth,
+		&user.IsPublic,
+		&user.Avatar,
+		&user.NickName,
+		&user.AboutMe,
+		&user.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
