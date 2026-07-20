@@ -116,3 +116,28 @@ func (h *Handler) AcceptInvitation(w http.ResponseWriter, r *http.Request) {
 
 	helper.Success(w, http.StatusOK, "Successfully joined the group!", nil)
 }
+
+func (h *Handler) JoinPublicGroup(w http.ResponseWriter, r *http.Request) {
+	// 1. Authenticate user context
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Authentication context missing")
+		return
+	}
+
+	// 2. Extract group ID from query string parameter (e.g., ?id=42)
+	groupID, err := helper.GetParamInt64(r, "id")
+	if err != nil {
+		helper.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// 3. Fire service processing
+	err = h.Service.JoinPublicGroup(r.Context(), user.ID, groupID)
+	if err != nil {
+		helper.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Successfully joined public group directly", nil)
+}

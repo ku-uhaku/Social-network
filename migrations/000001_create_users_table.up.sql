@@ -17,3 +17,101 @@ CREATE TABLE IF NOT EXISTS users (
     
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+PRAGMA foreign_keys = ON;
+
+INSERT INTO users (
+    id, 
+    username, 
+    email, 
+    first_name, 
+    last_name, 
+    gender, 
+    date_of_birth, 
+    is_public, 
+    password, 
+    avatar, 
+    nick_name, 
+    about_me
+) VALUES (
+    1, 
+    'kuuhaku', 
+    'kuuhaku@email.com', 
+    'Sora', 
+    'Shiro', 
+    'male', 
+    '2000-01-01', 
+    1, 
+    '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=kuuhaku', 
+    'Blank', 
+    'Master of all games. Built with Go and SQLite.'
+);
+
+INSERT INTO users (username, email, first_name, last_name, gender, date_of_birth, is_public, password, avatar, nick_name, about_me)
+VALUES 
+(
+    'yassine_b', 
+    'yassine.bennani@email.com', 
+    'Yassine', 
+    'Bennani', 
+    'male', 
+    '1994-04-12', 
+    1, 
+    '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=Yassine', 
+    'Yass', 
+    'Software developer from Casablanca, passionate about backend engineering and sports.'
+),
+(
+    'amina_alami', 
+    'amina.alami@email.com', 
+    'Amina', 
+    'Alami', 
+    'female', 
+    '1998-11-23', 
+    1, 
+    '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=Amina', 
+    'Ami', 
+    'Graphic designer based in Rabat. Love art, photography, and Moroccan architecture.'
+),
+(
+    'mehdi_tazi', 
+    'mehdi.tazi@email.com', 
+    'Mehdi', 
+    'Tazi', 
+    'male', 
+    '1991-07-05', 
+    1, 
+    '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
+    NULL, 
+    'Mido', 
+    'Project manager from Fez. Big fan of traditional Andalusian music and history.'
+),
+(
+    'meriem_idrissi', 
+    'm.idrissi@email.com', 
+    'Meriem', 
+    'Idrissi', 
+    'female', 
+    '2001-02-18', 
+    1, 
+    '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=Meriem', 
+    'Mimi', 
+    'Data science student at EHTP. Exploring machine learning models.'
+),
+(
+    'amza_mansouri', 
+    'hamza.mansouri@email.com', 
+    'Hamza', 
+    'Mansouri', 
+    'male', 
+    '1996-09-30', 
+    0, -- Private profile example
+    '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
+    NULL, 
+    NULL, 
+    'UI/UX researcher located in Marrakech. Cyclist and travel enthusiast.'
+);

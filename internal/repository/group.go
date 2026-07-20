@@ -161,3 +161,34 @@ func (r *Repository) AcceptGroupInvitation(ctx context.Context, userID int64, gr
 	_, err = r.DB.Database.ExecContext(ctx, updateQuery, time.Now(), userID, groupID)
 	return err
 }
+
+func (r *Repository) JoinPublicGroup(ctx context.Context, userID int64, groupID int64) error {
+	// 1. Verify group exists and check its public status
+	var isPublic int
+	checkQuery := `SELECT is_public FROM groups WHERE id = $1 LIMIT 1`
+
+	err := r.DB.Database.QueryRowContext(ctx, checkQuery, groupID).Scan(&isPublic)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errors.New("group not found")
+		}
+		return err
+	}
+
+	// 2. Enforce that this endpoint only allows direct entry to public groups
+	if isPublic != 1 {
+		return errors.New("this group is private and requires a regular join request or invitation")
+	}
+
+	// 3. Insert or update membership status straight to 'accepted'
+	insertQuery := `
+		INSERT INTO group_members (user_id, group_id, status, joined_at)
+		VALUES ($1, $2, 'accepted', $3)
+		ON CONFLICT(user_id, group_id) DO UPDATE SET
+			status = CASE WHEN status != 'accepted' THEN 'accepted' ELSE status END,
+			joined_at = CASE WHEN status != 'accepted' THEN $3 ELSE joined_at END
+	`
+
+	_, err = r.DB.Database.ExecContext(ctx, insertQuery, userID, groupID, time.Now())
+	return err
+}

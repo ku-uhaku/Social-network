@@ -42,13 +42,18 @@ func Register(h *handler.Handler, m *middleware.Middleware) *http.ServeMux {
 		m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.GetPublicGroups))),
 	)
 	mux.Handle(
-		"/api/v1/groups/{id}/invite",
-		m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.GetPublicGroups))),
+		"/api/v1/groups/invite", // Removed /{id}
+		m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.InviteMembers))),
 	)
 
 	mux.Handle(
 		"/api/v1/groups/invitations/accept",
 		m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.AcceptInvitation))),
+	)
+
+	mux.Handle(
+		"/api/v1/groups/join-public",
+		m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.JoinPublicGroup))),
 	)
 
 	return mux

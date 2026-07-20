@@ -39,3 +39,7 @@ func (s *Service) AcceptInvitation(ctx context.Context, userID int64, groupID in
 	// You can add validation logic here if needed
 	return s.Repo.AcceptGroupInvitation(ctx, userID, groupID)
 }
+
+func (s *Service) JoinPublicGroup(ctx context.Context, userID int64, groupID int64) error {
+	return s.Repo.JoinPublicGroup(ctx, userID, groupID)
+}
