@@ -18,6 +18,7 @@ func Register(h *handler.Handler, m *middleware.Middleware) *http.ServeMux {
 	registerAuthRoutes(mux, h, m)
 	registerUserRoutes(mux, h, m)
 	registerGroupRoutes(mux, h, m)
+	registerPostRoutes(mux, h, m)
 
 	return mux
 }
