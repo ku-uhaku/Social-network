@@ -14,11 +14,13 @@ type DB struct {
 	Database *sql.DB
 }
 
+
 func New(path string) *DB {
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		log.Fatal("[DATABASE] : ", err.Error())
 	}
+	
 
 	if err := db.Ping(); err != nil {
 		db.Close()
