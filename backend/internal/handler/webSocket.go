@@ -1,37 +1,36 @@
 package handler
 
 import (
+	"context"
+	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 
 	"kuu/internal/middleware"
+	"kuu/internal/models"
 	ws "kuu/internal/websocket"
 
 	"github.com/gorilla/websocket"
 )
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
+	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
 func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
-	// 1. Resolve user authorization details from the middleware context
 	user, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	// 2. Upgrade the connection to a persistent WebSocket pipe
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("[WS] Upgrade failure: %v", err)
 		return
 	}
 
-	// 3. Initialize client with the authenticated UserID
 	client := &ws.Client{
 		UserID: user.ID,
 		Conn:   conn,
@@ -40,22 +39,20 @@ func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
 
 	h.Hub.Register <- client
 
+	// Send initial list of online users to this connection
 	go func() {
 		onlineSnapshot := h.Hub.GetOnlineUsers()
-
 		initEvent := ws.Event{
 			Type:         "online_users_list",
-			TargetUserID: user.ID, // Targeted exclusively to this user's connection
+			TargetUserID: user.ID,
 			Payload: map[string]interface{}{
 				"online_user_ids": onlineSnapshot,
 			},
 		}
-
 		h.Hub.Broadcast <- initEvent
 	}()
-	// ---------------------------------------------------------------------
 
-	// Writer Loop (Outbound messages pushing data to client's browser)
+	// Outbound Writer Loop (Pushes messages to client browser)
 	go func() {
 		for msg := range client.Send {
 			if err := conn.WriteMessage(websocket.TextMessage, msg); err != nil {
@@ -63,4 +60,84 @@ func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}()
+
+	// Inbound Reader Loop (Reads incoming frames from client)
+	go h.handleIncomingWSMessages(r.Context(), client)
+}
+
+func (h *Handler) handleIncomingWSMessages(ctx context.Context, client *ws.Client) {
+	defer func() {
+		h.Hub.Unregister <- client
+	}()
+
+	for {
+		_, rawMessage, err := client.Conn.ReadMessage()
+		if err != nil {
+			break // Connection closed or failed
+		}
+
+		var incoming ws.Event
+		if err := json.Unmarshal(rawMessage, &incoming); err != nil {
+			log.Printf("[WS] Invalid event payload from user %d: %v", client.UserID, err)
+			continue
+		}
+
+		switch incoming.Type {
+		case "send_direct_message":
+			h.processDirectMessage(ctx, client.UserID, incoming.Payload)
+
+		case "send_group_message":
+			h.processGroupMessage(ctx, client.UserID, incoming.Payload)
+		}
+	}
+}
+
+func (h *Handler) processDirectMessage(ctx context.Context, senderID int64, rawPayload interface{}) {
+	payloadBytes, _ := json.Marshal(rawPayload)
+	var req models.SendMessagePayload
+	if err := json.Unmarshal(payloadBytes, &req); err != nil || req.ReceiverID == nil || strings.TrimSpace(req.Content) == "" {
+		return
+	}
+
+	// Save DM via Service
+	msg, err := h.Service.SaveDirectMessage(ctx, senderID, *req.ReceiverID, req.Content)
+	if err != nil {
+		log.Printf("[WS] Failed to save DM: %v", err)
+		return
+	}
+
+	// Dispatch real-time event to recipient and sender (for multi-tab sync)
+	h.Hub.Broadcast <- ws.Event{
+		Type:           "new_direct_message",
+		TargetUsersIDs: []int64{senderID, *req.ReceiverID},
+		Payload:        msg,
+	}
+}
+
+func (h *Handler) processGroupMessage(ctx context.Context, senderID int64, rawPayload interface{}) {
+	payloadBytes, _ := json.Marshal(rawPayload)
+	var req models.SendMessagePayload
+	if err := json.Unmarshal(payloadBytes, &req); err != nil || req.GroupID == nil || strings.TrimSpace(req.Content) == "" {
+		return
+	}
+
+	// Save Group Message via Service (validates group membership inside Service)
+	msg, err := h.Service.SaveGroupMessage(ctx, senderID, *req.GroupID, req.Content)
+	if err != nil {
+		log.Printf("[WS] Failed to save group message: %v", err)
+		return
+	}
+
+	// Fetch active group members to route event
+	memberIDs, err := h.Service.GetGroupMemberIDs(ctx, *req.GroupID)
+	if err != nil {
+		return
+	}
+
+	h.Hub.Broadcast <- ws.Event{
+		Type:           "new_group_message",
+		TargetGroupID:  *req.GroupID,
+		TargetUsersIDs: memberIDs,
+		Payload:        msg,
+	}
 }
