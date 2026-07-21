@@ -150,3 +150,130 @@ func (h *Handler) DeleteGroup(w http.ResponseWriter, r *http.Request) {
 
 	helper.Success(w, http.StatusOK, "Group deleted successfully", nil)
 }
+
+// InviteMembers POST /api/v1/groups/invite
+func (h *Handler) InviteMembers(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var payload models.InviteMembersPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+		return
+	}
+
+	if errs := requests.ValidateInviteMembers(payload); len(errs) > 0 {
+		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, errs)
+		return
+	}
+
+	if err := h.Service.InviteUsers(r.Context(), user.ID, payload); err != nil {
+		if errors.Is(err, service.ErrNotGroupCreator) {
+			helper.Error(w, http.StatusForbidden, err.Error())
+			return
+		}
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Invitations sent successfully", nil)
+}
+
+// AcceptInvitation POST /api/v1/groups/invitations/accept
+func (h *Handler) AcceptInvitation(w http.ResponseWriter, r *http.Request) {
+	h.respondInvite(w, r, true)
+}
+
+// DeclineInvitation POST /api/v1/groups/invitations/decline
+func (h *Handler) DeclineInvitation(w http.ResponseWriter, r *http.Request) {
+	h.respondInvite(w, r, false)
+}
+
+func (h *Handler) respondInvite(w http.ResponseWriter, r *http.Request, accept bool) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var payload models.GroupActionPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+		return
+	}
+
+	if err := h.Service.RespondToInvitation(r.Context(), user.ID, payload.GroupID, accept); err != nil {
+		helper.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	msg := "Invitation declined"
+	if accept {
+		msg = "Invitation accepted successfully"
+	}
+	helper.Success(w, http.StatusOK, msg, nil)
+}
+
+// JoinGroup POST /api/v1/groups/join
+func (h *Handler) JoinGroup(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var payload models.GroupActionPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+		return
+	}
+
+	if err := h.Service.JoinGroup(r.Context(), user.ID, payload.GroupID); err != nil {
+		helper.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Join request processed", nil)
+}
+
+// LeaveGroup POST /api/v1/groups/leave
+func (h *Handler) LeaveGroup(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var payload models.GroupActionPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+		return
+	}
+
+	if err := h.Service.LeaveGroup(r.Context(), user.ID, payload.GroupID); err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Successfully left the group", nil)
+}
+
+// GetMyInvitations GET /api/v1/groups/invitations
+func (h *Handler) GetMyInvitations(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	invites, err := h.Service.GetPendingInvitations(r.Context(), user.ID)
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Pending invitations retrieved", invites)
+}

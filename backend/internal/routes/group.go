@@ -37,4 +37,13 @@ func registerGroupRoutes(mux *http.ServeMux, h *handler.Handler, m *middleware.M
 		"/api/v1/groups/delete",
 		m.AllowMethods(http.MethodDelete)(m.RequireAuth(http.HandlerFunc(h.DeleteGroup))),
 	)
+	// --- Group Invitations & Membership ---
+	mux.Handle("/api/v1/groups/invite", m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.InviteMembers))))
+	mux.Handle("/api/v1/groups/invitations", m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.GetMyInvitations))))
+	mux.Handle("/api/v1/groups/invitations/accept", m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.AcceptInvitation))))
+	mux.Handle("/api/v1/groups/invitations/decline", m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.DeclineInvitation))))
+
+	// --- Joining & Leaving ---
+	mux.Handle("/api/v1/groups/join", m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.JoinGroup))))
+	mux.Handle("/api/v1/groups/leave", m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.LeaveGroup))))
 }

@@ -48,3 +48,22 @@ func ValidateUpdateGroup(payload models.UpdateGroupPayload) []error {
 
 	return errs
 }
+
+func ValidateInviteMembers(payload models.InviteMembersPayload) []error {
+	var errs []error
+	if payload.GroupID <= 0 {
+		errs = append(errs, errors.New("group_id is required"))
+	}
+	if len(payload.TargetUserIDs) == 0 {
+		errs = append(errs, errors.New("target_user_ids must contain at least one user ID"))
+	}
+	return errs
+}
+
+func ValidateGroupAction(payload models.GroupActionPayload) []error {
+	var errs []error
+	if payload.GroupID <= 0 {
+		errs = append(errs, errors.New("group_id is required"))
+	}
+	return errs
+}

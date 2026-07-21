@@ -156,3 +156,105 @@ func (r *Repository) DeleteGroup(ctx context.Context, groupID int64) error {
 
 	return nil
 }
+
+func (r *Repository) InviteUsersBatch(ctx context.Context, groupID int64, userIDs []int64) error {
+	tx, err := r.DB.Database.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	query := `
+		INSERT INTO group_members (group_id, user_id, status)
+		VALUES ($1, $2, 'pending')
+		ON CONFLICT (group_id, user_id) DO NOTHING
+	`
+	stmt, err := tx.PrepareContext(ctx, query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, uid := range userIDs {
+		if _, err := stmt.ExecContext(ctx, groupID, uid); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+// UpdateMemberStatus updates membership status ('accepted', 'declined', etc.)
+func (r *Repository) UpdateMemberStatus(ctx context.Context, groupID int64, userID int64, status string) error {
+	query := `
+		UPDATE group_members 
+		SET status = $1 
+		WHERE group_id = $2 AND user_id = $3
+	`
+	res, err := r.DB.Database.ExecContext(ctx, query, status, groupID, userID)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+// AddMember directly inserts an accepted member (for public group join)
+func (r *Repository) AddMember(ctx context.Context, groupID int64, userID int64, status string) error {
+	query := `
+		INSERT INTO group_members (group_id, user_id, status)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (group_id, user_id) DO UPDATE SET status = EXCLUDED.status
+	`
+	_, err := r.DB.Database.ExecContext(ctx, query, groupID, userID, status)
+	return err
+}
+
+// RemoveMember deletes a user membership record (Leave group or Kick user)
+func (r *Repository) RemoveMember(ctx context.Context, groupID int64, userID int64) error {
+	query := `DELETE FROM group_members WHERE group_id = $1 AND user_id = $2`
+	_, err := r.DB.Database.ExecContext(ctx, query, groupID, userID)
+	return err
+}
+
+// IsMember returns current member status if row exists
+func (r *Repository) GetMemberStatus(ctx context.Context, groupID int64, userID int64) (string, error) {
+	var status string
+	query := `SELECT status FROM group_members WHERE group_id = $1 AND user_id = $2 LIMIT 1`
+	err := r.DB.Database.QueryRowContext(ctx, query, groupID, userID).Scan(&status)
+	if err != nil {
+		return "", err
+	}
+	return status, nil
+}
+
+// GetUserPendingInvitations returns all group invitations sent to a user
+func (r *Repository) GetUserPendingInvitations(ctx context.Context, userID int64) ([]models.GroupInvitationView, error) {
+	query := `
+		SELECT g.id, g.title, g.creator_id, gm.status, gm.joined_at
+		FROM group_members gm
+		JOIN groups g ON g.id = gm.group_id
+		WHERE gm.user_id = $1 AND gm.status = 'pending'
+	`
+	rows, err := r.DB.Database.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var invites []models.GroupInvitationView
+	for rows.Next() {
+		var inv models.GroupInvitationView
+		if err := rows.Scan(&inv.GroupID, &inv.GroupTitle, &inv.InvitedBy, &inv.Status, &inv.RequestedAt); err != nil {
+			return nil, err
+		}
+		invites = append(invites, inv)
+	}
+	return invites, nil
+}

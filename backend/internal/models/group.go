@@ -12,26 +12,31 @@ type Group struct {
 	CreatedAt   time.Time `json:"created_at"`
 }
 
-// GroupMember represents a membership relation status entry
 type GroupMember struct {
 	UserID   int64     `json:"user_id"`
 	GroupID  int64     `json:"group_id"`
-	Status   string    `json:"status"` // 'pending' or 'accepted'
+	Status   string    `json:"status"` // 'pending', 'accepted', 'declined'
 	JoinedAt time.Time `json:"joined_at"`
 }
 
-// InviteMemberPayload represents an invitation structure
+// InviteMembersPayload allows the group creator to invite one or multiple users
 type InviteMembersPayload struct {
-	TargetUsersID []int64 `json:"target_users_ids"`
+	GroupID       int64   `json:"group_id"`
+	TargetUserIDs []int64 `json:"target_user_ids"`
 }
 
-// HandleRequestPayload represents an approval action payload schema
-type HandleRequestPayload struct {
-	TargetUserID int64 `json:"target_user_id"`
+// GroupInvitationResponse represents incoming invitation/request items for a user UI
+type GroupInvitationView struct {
+	GroupID     int64     `json:"group_id"`
+	GroupTitle  string    `json:"group_title"`
+	InvitedBy   int64     `json:"invited_by"`
+	Status      string    `json:"status"`
+	RequestedAt time.Time `json:"requested_at"`
 }
-
-type RespondToInvitePayload struct {
-	GroupID int64 `json:"group_id"`
+// GroupActionPayload handles single-user membership actions (accept, decline, join, leave)
+type GroupActionPayload struct {
+	GroupID      int64 `json:"group_id"`
+	TargetUserID int64 `json:"target_user_id,omitempty"` // Used by creator when accepting join requests
 }
 
 // CreateGroupPayload defines incoming request payload for group creation
