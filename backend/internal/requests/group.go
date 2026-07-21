@@ -1,31 +1,49 @@
 package requests
 
 import (
+	"errors"
 	"strings"
 
 	"kuu/internal/models"
 )
 
-func ValidateCreateGroup(payload models.CreateGroupPayload) []ValidationError {
-	var errs []ValidationError
+// ValidateCreateGroup checks required fields when making a new group
+func ValidateCreateGroup(payload models.CreateGroupPayload) []error {
+	var errs []error
 
 	if strings.TrimSpace(payload.Title) == "" {
-		errs = append(errs, ValidationError{
-			Field:   "title",
-			Message: "group title is required",
-		})
-	} else if len(payload.Title) > 100 {
-		errs = append(errs, ValidationError{
-			Field:   "title",
-			Message: "group title cannot exceed 100 characters",
-		})
+		errs = append(errs, errors.New("title is required"))
+	} else if len(strings.TrimSpace(payload.Title)) < 3 {
+		errs = append(errs, errors.New("title must be at least 3 characters long"))
 	}
 
 	if strings.TrimSpace(payload.Description) == "" {
-		errs = append(errs, ValidationError{
-			Field:   "description",
-			Message: "group description is required",
-		})
+		errs = append(errs, errors.New("description is required"))
+	}
+
+	if payload.IsPublic == nil {
+		errs = append(errs, errors.New("is_public is required (1 for public, 0 for private)"))
+	} else if *payload.IsPublic != 0 && *payload.IsPublic != 1 {
+		errs = append(errs, errors.New("is_public must be either 0 (private) or 1 (public)"))
+	}
+
+	return errs
+}
+
+// ValidateUpdateGroup handles validation when updating an existing group
+func ValidateUpdateGroup(payload models.UpdateGroupPayload) []error {
+	var errs []error
+
+	if strings.TrimSpace(payload.Title) == "" {
+		errs = append(errs, errors.New("title cannot be empty"))
+	}
+
+	if strings.TrimSpace(payload.Description) == "" {
+		errs = append(errs, errors.New("description cannot be empty"))
+	}
+
+	if payload.IsPublic != nil && *payload.IsPublic != 0 && *payload.IsPublic != 1 {
+		errs = append(errs, errors.New("is_public must be either 0 (private) or 1 (public)"))
 	}
 
 	return errs

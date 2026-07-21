@@ -1,0 +1,152 @@
+package handler
+
+import (
+	"encoding/json"
+	"errors"
+	"net/http"
+	"strconv"
+
+	"kuu/internal/helper"
+	"kuu/internal/middleware"
+	"kuu/internal/models"
+	"kuu/internal/requests"
+	"kuu/internal/service"
+)
+
+// CreateGroup handles POST /api/v1/groups
+func (h *Handler) CreateGroup(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Authentication context missing")
+		return
+	}
+
+	var payload models.CreateGroupPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		helper.Error(w, http.StatusBadRequest, "Malformed JSON request body")
+		return
+	}
+	defer r.Body.Close()
+
+	if validationErrs := requests.ValidateCreateGroup(payload); len(validationErrs) > 0 {
+		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, validationErrs)
+		return
+	}
+
+	group, err := h.Service.CreateGroup(r.Context(), user.ID, payload)
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusCreated, "Group created successfully", group)
+}
+
+// GetGroup handles GET /api/v1/groups/detail?id=123
+func (h *Handler) GetGroup(w http.ResponseWriter, r *http.Request) {
+	groupIDStr := r.URL.Query().Get("id")
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil || groupID <= 0 {
+		helper.Error(w, http.StatusBadRequest, "Invalid or missing group ID parameter")
+		return
+	}
+
+	group, err := h.Service.GetGroupByID(r.Context(), groupID)
+	if err != nil {
+		if errors.Is(err, service.ErrGroupNotFound) {
+			helper.Error(w, http.StatusNotFound, "Group not found")
+			return
+		}
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Group retrieved successfully", group)
+}
+
+// GetAllGroups handles GET /api/v1/groups
+func (h *Handler) GetAllGroups(w http.ResponseWriter, r *http.Request) {
+	groups, err := h.Service.GetAllGroups(r.Context())
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Groups retrieved successfully", groups)
+}
+
+// UpdateGroup handles PUT /api/v1/groups?id=123
+func (h *Handler) UpdateGroup(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Authentication context missing")
+		return
+	}
+
+	groupIDStr := r.URL.Query().Get("id")
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil || groupID <= 0 {
+		helper.Error(w, http.StatusBadRequest, "Invalid or missing group ID parameter")
+		return
+	}
+
+	var payload models.UpdateGroupPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		helper.Error(w, http.StatusBadRequest, "Malformed JSON request body")
+		return
+	}
+	defer r.Body.Close()
+
+	if validationErrs := requests.ValidateUpdateGroup(payload); len(validationErrs) > 0 {
+		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, validationErrs)
+		return
+	}
+
+	updatedGroup, err := h.Service.UpdateGroup(r.Context(), user.ID, groupID, payload)
+	if err != nil {
+		if errors.Is(err, service.ErrGroupNotFound) {
+			helper.Error(w, http.StatusNotFound, "Group not found")
+			return
+		}
+		if errors.Is(err, service.ErrUnauthorized) {
+			helper.Error(w, http.StatusForbidden, "Only the group creator can update group details")
+			return
+		}
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Group updated successfully", updatedGroup)
+}
+
+// DeleteGroup handles DELETE /api/v1/groups?id=123
+func (h *Handler) DeleteGroup(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Authentication context missing")
+		return
+	}
+
+	groupIDStr := r.URL.Query().Get("id")
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil || groupID <= 0 {
+		helper.Error(w, http.StatusBadRequest, "Invalid or missing group ID parameter")
+		return
+	}
+
+	err = h.Service.DeleteGroup(r.Context(), user.ID, groupID)
+	if err != nil {
+		if errors.Is(err, service.ErrGroupNotFound) {
+			helper.Error(w, http.StatusNotFound, "Group not found")
+			return
+		}
+		if errors.Is(err, service.ErrUnauthorized) {
+			helper.Error(w, http.StatusForbidden, "Only the group creator can delete this group")
+			return
+		}
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Group deleted successfully", nil)
+}

@@ -20,12 +20,6 @@ type GroupMember struct {
 	JoinedAt time.Time `json:"joined_at"`
 }
 
-type CreateGroupPayload struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	IsPublic    int    `json:"is_public"` // Pointer to distinguish between missing vs explicitly sending 0
-}
-
 // InviteMemberPayload represents an invitation structure
 type InviteMembersPayload struct {
 	TargetUsersID []int64 `json:"target_users_ids"`
@@ -38,4 +32,18 @@ type HandleRequestPayload struct {
 
 type RespondToInvitePayload struct {
 	GroupID int64 `json:"group_id"`
+}
+
+// CreateGroupPayload defines incoming request payload for group creation
+type CreateGroupPayload struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	IsPublic    *int   `json:"is_public"` // Pointer allows 0 to be valid JSON input
+}
+
+// UpdateGroupPayload defines incoming request payload for updates
+type UpdateGroupPayload struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	IsPublic    *int   `json:"is_public"`
 }
