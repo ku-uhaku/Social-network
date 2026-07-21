@@ -1,2 +1,29 @@
 @import "tailwindcss";
 
+@theme {
+  /* Backgrounds */
+  --color-hk-abyss: #0a0d12;
+  --color-hk-surface: #121820;
+  --color-hk-border: #212d3d;
+
+  /* Typography */
+  --color-hk-bone: #e2e8f0;
+  --color-hk-muted: #8a99ad;
+
+  /* Highlights & Accents */
+  --color-hk-soul: #00e5ff;
+  --color-hk-amber: #ffb020;
+  --color-hk-infection: #ff5500;
+}
+
+:root {
+  --background: var(--color-hk-abyss);
+  --foreground: var(--color-hk-bone);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+}
