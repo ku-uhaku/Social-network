@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 
 	"kuu/internal/models"
@@ -122,4 +123,109 @@ func (r *Repository) UpdateUserProfile(ctx context.Context, userID int64, payloa
 	}
 
 	return &user, nil
+}
+
+// InsertFollowRelation inserts or updates a follow relation with appropriate status
+func (r *Repository) InsertFollowRelation(ctx context.Context, followerID, targetID int64, status string) error {
+	query := `
+		INSERT INTO follows (follower_id, following_id, status)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (follower_id, following_id) 
+		DO UPDATE SET status = EXCLUDED.status
+	`
+	_, err := r.DB.Database.ExecContext(ctx, query, followerID, targetID, status)
+	return err
+}
+
+// RemoveFollowRelation removes the follower relationship
+func (r *Repository) RemoveFollowRelation(ctx context.Context, followerID, targetID int64) error {
+	query := `DELETE FROM follows WHERE follower_id = $1 AND following_id = $2`
+	_, err := r.DB.Database.ExecContext(ctx, query, followerID, targetID)
+	return err
+}
+
+// UpdateFollowStatus changes request status ('pending' -> 'accepted')
+func (r *Repository) UpdateFollowStatus(ctx context.Context, followerID, targetID int64, status string) error {
+	query := `
+		UPDATE follows 
+		SET status = $1 
+		WHERE follower_id = $2 AND following_id = $3
+	`
+	res, err := r.DB.Database.ExecContext(ctx, query, status, followerID, targetID)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+// GetFollowRelation fetches current relation status if any
+func (r *Repository) GetFollowRelation(ctx context.Context, followerID, targetID int64) (string, error) {
+	var status string
+	query := `SELECT status FROM follows WHERE follower_id = $1 AND following_id = $2 LIMIT 1`
+	err := r.DB.Database.QueryRowContext(ctx, query, followerID, targetID).Scan(&status)
+	if err != nil {
+		return "", err
+	}
+	return status, nil
+}
+
+// GetFollowers retrieves all users following a target user (accepted status only)
+func (r *Repository) GetFollowers(ctx context.Context, targetUserID int64) ([]models.UserFollowView, error) {
+	query := `
+		SELECT u.id, u.username, u.first_name, u.last_name, u.avatar
+		FROM follows f
+		JOIN users u ON u.id = f.follower_id
+		WHERE f.following_id = $1 AND f.status = 'accepted'
+		ORDER BY f.created_at DESC
+	`
+	return r.scanUserFollowViews(ctx, query, targetUserID)
+}
+
+// GetFollowing retrieves all users followed by target user (accepted status only)
+func (r *Repository) GetFollowing(ctx context.Context, userID int64) ([]models.UserFollowView, error) {
+	query := `
+		SELECT u.id, u.username, u.first_name, u.last_name, u.avatar
+		FROM follows f
+		JOIN users u ON u.id = f.following_id
+		WHERE f.follower_id = $1 AND f.status = 'accepted'
+		ORDER BY f.created_at DESC
+	`
+	return r.scanUserFollowViews(ctx, query, userID)
+}
+
+// GetPendingFollowRequests retrieves follow requests waiting for target user's approval
+func (r *Repository) GetPendingFollowRequests(ctx context.Context, targetUserID int64) ([]models.UserFollowView, error) {
+	query := `
+		SELECT u.id, u.username, u.first_name, u.last_name, u.avatar
+		FROM follows f
+		JOIN users u ON u.id = f.follower_id
+		WHERE f.following_id = $1 AND f.status = 'pending'
+		ORDER BY f.created_at DESC
+	`
+	return r.scanUserFollowViews(ctx, query, targetUserID)
+}
+
+func (r *Repository) scanUserFollowViews(ctx context.Context, query string, arg int64) ([]models.UserFollowView, error) {
+	rows, err := r.DB.Database.QueryContext(ctx, query, arg)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	views := []models.UserFollowView{}
+	for rows.Next() {
+		var u models.UserFollowView
+		if err := rows.Scan(&u.ID, &u.Username, &u.FirstName, &u.LastName, &u.Avatar); err != nil {
+			return nil, err
+		}
+		views = append(views, u)
+	}
+	return views, nil
 }

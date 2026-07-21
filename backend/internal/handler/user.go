@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"kuu/internal/helper"
 	"kuu/internal/middleware"
@@ -41,4 +42,146 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 	// 5. Return success data
 	helper.Success(w, http.StatusOK, "Profile updated successfully", updatedUser)
+}
+
+// FollowUser POST /api/v1/user/follow
+func (h *Handler) FollowUser(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var payload models.FollowActionPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+		return
+	}
+
+	if errs := requests.ValidateFollowAction(payload); len(errs) > 0 {
+		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, errs)
+		return
+	}
+
+	status, err := h.Service.FollowUser(r.Context(), user.ID, payload.TargetUserID)
+	if err != nil {
+		helper.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	msg := "Successfully followed user"
+	if status == "pending" {
+		msg = "Follow request sent successfully"
+	}
+	helper.Success(w, http.StatusOK, msg, map[string]string{"status": status})
+}
+
+// UnfollowUser POST /api/v1/user/unfollow
+func (h *Handler) UnfollowUser(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var payload models.FollowActionPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+		return
+	}
+
+	if err := h.Service.UnfollowUser(r.Context(), user.ID, payload.TargetUserID); err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Unfollowed user successfully", nil)
+}
+
+// AcceptFollowRequest POST /api/v1/user/follow/accept
+func (h *Handler) AcceptFollowRequest(w http.ResponseWriter, r *http.Request) {
+	h.respondToFollowRequest(w, r, true)
+}
+
+// DeclineFollowRequest POST /api/v1/user/follow/decline
+func (h *Handler) DeclineFollowRequest(w http.ResponseWriter, r *http.Request) {
+	h.respondToFollowRequest(w, r, false)
+}
+
+func (h *Handler) respondToFollowRequest(w http.ResponseWriter, r *http.Request, accept bool) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var payload models.FollowActionPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+		return
+	}
+
+	if err := h.Service.HandleFollowRequest(r.Context(), user.ID, payload.TargetUserID, accept); err != nil {
+		helper.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	msg := "Follow request declined"
+	if accept {
+		msg = "Follow request accepted"
+	}
+	helper.Success(w, http.StatusOK, msg, nil)
+}
+
+// GetFollowers GET /api/v1/user/followers?id=123
+func (h *Handler) GetFollowers(w http.ResponseWriter, r *http.Request) {
+	userIDStr := r.URL.Query().Get("id")
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil || userID <= 0 {
+		helper.Error(w, http.StatusBadRequest, "Invalid user ID")
+		return
+	}
+
+	followers, err := h.Service.GetFollowers(r.Context(), userID)
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Followers retrieved successfully", followers)
+}
+
+// GetFollowing GET /api/v1/user/following?id=123
+func (h *Handler) GetFollowing(w http.ResponseWriter, r *http.Request) {
+	userIDStr := r.URL.Query().Get("id")
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil || userID <= 0 {
+		helper.Error(w, http.StatusBadRequest, "Invalid user ID")
+		return
+	}
+
+	following, err := h.Service.GetFollowing(r.Context(), userID)
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Following list retrieved successfully", following)
+}
+
+// GetFollowRequests GET /api/v1/user/follow/requests
+func (h *Handler) GetFollowRequests(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	requestsList, err := h.Service.GetPendingRequests(r.Context(), user.ID)
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Pending requests retrieved successfully", requestsList)
 }

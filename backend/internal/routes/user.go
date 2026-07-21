@@ -12,4 +12,6 @@ func registerUserRoutes(mux *http.ServeMux, h *handler.Handler, m *middleware.Mi
 		"/api/v1/user/profile/update",
 		m.AllowMethods(http.MethodPut)(m.RequireAuth(http.HandlerFunc(h.UpdateProfile))),
 	)
+
+	mux.Handle("/api/v1/user/follow", m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.FollowUser))))
 }
