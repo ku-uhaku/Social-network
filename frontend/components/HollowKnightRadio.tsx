@@ -1,27 +1,28 @@
+// components/HollowKnightRadio.tsx
 "use client";
 
 import React from "react";
 import Image from "next/image";
 
-interface HKCheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface HKRadioProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
 }
 
-export default function HollowKnightCheckbox({ label, className = "", ...props }: HKCheckboxProps) {
+export default function HollowKnightRadio({ label, className = "", ...props }: HKRadioProps) {
   return (
     <label className="group relative inline-flex items-center gap-3 cursor-pointer select-none py-1">
-      {/* Hidden real checkbox */}
-      <input type="checkbox" className="sr-only peer" {...props} />
+      {/* Hidden real radio */}
+      <input type="radio" className="sr-only peer" {...props} />
 
       {/* Left Pointer on Hover/Focus */}
       <span className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-hk-bone text-xs">
         ‹<span className="text-[9px] -ml-0.5">❖</span>
       </span>
 
-      {/* Custom Checkbox Box — direct sibling of input, so peer-checked works here */}
+      {/* Custom Radio Circle — rounded-full frame */}
       <div
         className="
-          relative w-5 h-5 bg-hk-surface border border-hk-border rounded-sm
+          relative w-5 h-5 bg-hk-surface border border-hk-border rounded-full
           flex items-center justify-center transition-all duration-300
           peer-checked:border-hk-soul peer-checked:bg-hk-soul/10
           peer-checked:[box-shadow:0_0_10px_rgba(0,229,255,0.3)]
