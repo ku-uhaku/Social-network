@@ -19,8 +19,8 @@ func ValidateUpdateProfile(payload models.UpdateProfilePayload) []error {
 	}
 
 	gender := strings.ToLower(strings.TrimSpace(payload.Gender))
-	if gender != "male" && gender != "female" && gender != "other" {
-		errs = append(errs, errors.New("gender must be either 'male', 'female', or 'other'"))
+	if gender != "male" && gender != "female" {
+		errs = append(errs, errors.New("gender must be either 'male', 'female'"))
 	}
 
 	if strings.TrimSpace(payload.DateOfBirth) == "" {
