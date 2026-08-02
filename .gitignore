@@ -7,10 +7,6 @@ frontend/dist/
 backend/.env
 frontend/.env*
 
-frontend/next-env.d.ts
-frontend/.turbo/
-frontend/npm-debug.log*
-
 .vscode/
 
 priv/

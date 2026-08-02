@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import HollowKnightInput from "@/components/HollowKnightInput";
-import HollowKnightCheckbox from "@/components/HollowKnightCheckbox";
-import HollowKnightSelect from "@/components/HollowKnightSelect";
-import HollowKnightButton from "@/components/HollowKnightButton";
-import HollowKnightModal from "@/components/HollowKnightModal";
-import HollowKnightToast from "@/components/HollowKnightToast";
+import HollowKnightInput from "@/components/small/HollowKnightInput";
+import HollowKnightCheckbox from "@/components/small/HollowKnightCheckbox";
+import HollowKnightSelect from "@/components/small/HollowKnightSelect";
+import HollowKnightButton from "@/components/small/HollowKnightButton";
+import HollowKnightModal from "@/components/small/HollowKnightModal";
+import HollowKnightToast from "@/components/small/HollowKnightToast";
 import { useAudio, TRACKS } from "@/contexts/AudioContext";
 
 export default function SettingsPage() {

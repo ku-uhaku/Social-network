@@ -18,7 +18,7 @@ export function AudioProvider({ children }) {
   const [isMusicMuted, setIsMusicMuted] = useState(false);
   const [isEffectsMuted, setIsEffectsMuted] = useState(false);
 
-  // Create the music + ambient wind elements once.
+  // create sounds music once
   useEffect(() => {
     const music = new Audio();
     music.loop = true;
@@ -35,7 +35,7 @@ export function AudioProvider({ children }) {
     };
   }, []);
 
-  // Switch tracks.
+  // on track changed
   useEffect(() => {
     const music = musicRef.current;
     const track = TRACKS.find((t) => t.id === currentTrack);
@@ -45,12 +45,12 @@ export function AudioProvider({ children }) {
     music.play().catch(() => {});
   }, [currentTrack]);
 
-  // Keep music mute state in sync.
+  // on music muted
   useEffect(() => {
     if (musicRef.current) musicRef.current.muted = isMusicMuted;
   }, [isMusicMuted]);
 
-  // Play/pause ambient wind with the effects toggle.
+  // on sfx muted
   useEffect(() => {
     const ambient = ambientRef.current;
     if (!ambient) return;
