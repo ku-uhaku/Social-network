@@ -58,7 +58,6 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		Value:    sessionInfo.ID,
 		Expires:  sessionInfo.ExpiresAt,
 		HttpOnly: true,
-		Secure:   true, // Forces HTTPS connections
 		SameSite: http.SameSiteLaxMode,
 		Path:     "/",
 	})
@@ -81,7 +80,6 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		MaxAge:   -1, // Tells browser to delete immediately
 		HttpOnly: true,
-		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
 	})
 

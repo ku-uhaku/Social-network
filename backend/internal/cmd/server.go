@@ -37,6 +37,6 @@ func Server() {
 	router := routes.Register(h, m)
 
 	handlerWithCORS := middleware.CORS(router)
-	log.Printf("[SERVER] : Listening on :%s", cfg.Port)
+	log.Printf("[SERVER] : Listening on http://localhost:%s", cfg.Port)
 	log.Fatal(http.ListenAndServe(":"+cfg.Port, handlerWithCORS))
 }
