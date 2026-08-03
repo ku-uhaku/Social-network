@@ -6,13 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mime"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 )
 
 // GetParamInt64 extracts a query parameter from the URL string and parses it to int64
@@ -30,35 +28,42 @@ func GetParamInt64(r *http.Request, key string) (int64, error) {
 	return val, nil
 }
 
-// SaveUploadedImage saves a multipart uploaded image to disk and returns the stored filename.
+const maxImageUploadSize = 20 << 20 // 20 MB
+
+var allowedImageTypes = map[string]string{
+	"image/png":  ".png",
+	"image/jpeg": ".jpg",
+	"image/gif":  ".gif",
+}
+
 func SaveUploadedImage(file multipart.File, header *multipart.FileHeader, mediaDir string) (string, error) {
 	if file == nil || header == nil || header.Size == 0 {
 		return "", fmt.Errorf("uploaded file is empty")
 	}
 
-	fileBytes, err := io.ReadAll(file)
+	if header.Size > maxImageUploadSize {
+		return "", fmt.Errorf("uploaded file exceeds maximum allowed size of 20MB")
+	}
+
+	fileBytes, err := io.ReadAll(io.LimitReader(file, maxImageUploadSize+1))
 	if err != nil {
 		return "", fmt.Errorf("failed to read uploaded file: %w", err)
 	}
 
+	if int64(len(fileBytes)) > maxImageUploadSize {
+		return "", fmt.Errorf("uploaded file exceeds maximum allowed size of 20MB")
+	}
+
+	// check header instead of extension
+	detectedType := http.DetectContentType(fileBytes)
+	ext, ok := allowedImageTypes[detectedType]
+	if !ok {
+		return "", fmt.Errorf("unsupported image type %q: only PNG, JPEG, and GIF are allowed", detectedType)
+	}
+
 	hash := sha256.Sum256(fileBytes)
-	filename := hex.EncodeToString(hash[:])
+	filename := hex.EncodeToString(hash[:]) + ext
 
-	ext := strings.ToLower(filepath.Ext(header.Filename))
-	if ext == "" {
-		contentType := header.Header.Get("Content-Type")
-		if contentType == "" {
-			contentType = http.DetectContentType(fileBytes)
-		}
-		if guesses, _ := mime.ExtensionsByType(contentType); len(guesses) > 0 {
-			ext = strings.ToLower(guesses[0])
-		}
-	}
-	if ext == "" {
-		ext = ".bin"
-	}
-
-	filename += ext
 	if err := os.MkdirAll(mediaDir, 0o755); err != nil {
 		return "", fmt.Errorf("failed to prepare media directory: %w", err)
 	}

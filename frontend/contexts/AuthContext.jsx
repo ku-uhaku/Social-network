@@ -43,7 +43,6 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  // TODO: simplify `value` later, we don't need all these vars
   return (
     <AuthContext.Provider value={{ user, loading, login, register, logout, refresh }}> 
       {children}

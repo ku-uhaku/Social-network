@@ -121,30 +121,3 @@ func (h *Handler) GetComments(w http.ResponseWriter, r *http.Request) {
 
 	helper.Success(w, http.StatusOK, "Comments retrieved successfully", comments)
 }
-
-// React POST /api/v1/posts/react
-func (h *Handler) React(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
-	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
-		return
-	}
-
-	var payload models.ReactionPayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
-		return
-	}
-
-	if errs := requests.ValidateReaction(payload); len(errs) > 0 {
-		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, errs)
-		return
-	}
-
-	if err := h.Service.ToggleReaction(r.Context(), user.ID, payload); err != nil {
-		helper.Error(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	helper.Success(w, http.StatusOK, "Reaction recorded successfully", nil)
-}

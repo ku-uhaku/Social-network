@@ -61,6 +61,7 @@ export function AudioProvider({ children }) {
     }
   }, [isEffectsMuted]);
 
+  // on sfx
   const playEffect = (src) => {
     if (isEffectsMuted) return;
     new Audio(src).play().catch(() => {});

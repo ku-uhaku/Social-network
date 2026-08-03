@@ -41,14 +41,3 @@ func ValidateCreateComment(p models.CreateCommentPayload) []error {
 	}
 	return errs
 }
-
-func ValidateReaction(p models.ReactionPayload) []error {
-	var errs []error
-	if (p.PostID == nil || *p.PostID <= 0) && (p.CommentID == nil || *p.CommentID <= 0) {
-		errs = append(errs, errors.New("must specify either post_id or comment_id"))
-	}
-	if p.Type != 1 && p.Type != -1 && p.Type != 0 {
-		errs = append(errs, errors.New("reaction type must be 1 (like), -1 (dislike), or 0 (remove)"))
-	}
-	return errs
-}

@@ -53,10 +53,6 @@ func (s *Service) GetComments(ctx context.Context, userID int64, postID int64) (
 	return s.Repo.GetPostComments(ctx, postID, userID)
 }
 
-func (s *Service) ToggleReaction(ctx context.Context, userID int64, payload models.ReactionPayload) error {
-	return s.Repo.SetReaction(ctx, userID, payload)
-}
-
 func (s *Service) checkPostVisibility(ctx context.Context, userID int64, post *models.Post) error {
 	if post.UserID == userID || post.Privacy == "public" {
 		return nil

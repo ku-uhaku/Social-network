@@ -19,7 +19,7 @@ export default function MainLayout({ children }) {
 
   if (loading || !user) return null;
 
-  const username = user?.first_name || user?.username || "User";
+  const username = user?.username || "User";
 
   return (
     <main className="homePage">
@@ -31,21 +31,20 @@ export default function MainLayout({ children }) {
         <div className="userInfo">
           <AvatarImage avatar={user?.avatar} name={username} size={52} />
           <div>
-            <span className="greeting">Welcome back,</span>
             <strong className="userName">{username}</strong>
           </div>
         </div>
 
         <div className="headerControls">
-          <button type="button" className="logoutButton" onClick={logout}>
-            Logout
-          </button>
           <button
             type="button"
             className="settingsButton"
             onClick={() => setSettingsOpen(!settingsOpen)}
           >
             {settingsOpen ? "Close settings" : "Settings"}
+          </button>
+          <button type="button" className="logoutButton" onClick={logout}>
+            Logout
           </button>
         </div>
       </header>

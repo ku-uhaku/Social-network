@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import styles from "@/css/auth.css";
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
@@ -14,7 +13,7 @@ export default function LoginPage() {
   }, [loading, user, router]);
 
   return (
-    <div className={styles.page}>
+    <div className="page">
       <LoginForm />
     </div>
   );
@@ -44,16 +43,16 @@ function LoginForm() {
   }
 
   return (
-    <form className={styles.card} onSubmit={handleSubmit}>
-      <h1 className={styles.title}>Log in</h1>
+    <form className="card" onSubmit={handleSubmit}>
+      <h1 className="title">Log in</h1>
 
-      {error && <div className={styles.error}>{error}</div>}
+      {error && <div className="error">{error}</div>}
 
-      <div className={styles.field}>
-        <label className={styles.label} htmlFor="identifier">Email or nickname</label>
+      <div className="field">
+        <label className="label" htmlFor="identifier">Email or nickname</label>
         <input
           id="identifier"
-          className={styles.input}
+          className="input"
           type="text"
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}
@@ -61,11 +60,11 @@ function LoginForm() {
         />
       </div>
 
-      <div className={styles.field}>
-        <label className={styles.label} htmlFor="password">Password</label>
+      <div className="field">
+        <label className="label" htmlFor="password">Password</label>
         <input
           id="password"
-          className={styles.input}
+          className="input"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -73,12 +72,12 @@ function LoginForm() {
         />
       </div>
 
-      <button className={styles.button} type="submit" disabled={submitting}>
+      <button className="button" type="submit" disabled={submitting}>
         {submitting ? "Logging in..." : "Log in"}
       </button>
 
-      <div className={styles.footer}>
-        Don&apos;t have an account? <a className={styles.link} href="/register">Register</a>
+      <div className="footer">
+        Don&apos;t have an account? <a className="link" href="/register">Register</a>
       </div>
     </form>
   );

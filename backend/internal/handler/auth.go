@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"kuu/internal/helper"
 	"kuu/internal/middleware"
@@ -53,11 +54,14 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	const sessionCookieDuration = 10 * 365 * 24 * time.Hour // never expires
+
 	// 2. Set the secure HTTP-Only cookie so the middleware can authenticate upcoming requests
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_token",
 		Value:    sessionInfo.ID,
-		Expires:  sessionInfo.ExpiresAt, // TODO: never expire (see subject)
+		Expires:  time.Now().Add(sessionCookieDuration),
+		MaxAge:   int(sessionCookieDuration.Seconds()),
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 		Path:     "/",

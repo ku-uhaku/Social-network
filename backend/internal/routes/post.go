@@ -20,7 +20,4 @@ func registerPostRoutes(mux *http.ServeMux, h *handler.Handler, m *middleware.Mi
 			h.GetComments(w, r)
 		}
 	}))))
-
-	// Reactions (Likes / Dislikes) for Posts and Comments
-	mux.Handle("/api/v1/posts/react", m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.React))))
 }
