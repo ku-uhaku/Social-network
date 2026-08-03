@@ -8,8 +8,14 @@ import (
 )
 
 func registerPostRoutes(mux *http.ServeMux, h *handler.Handler, m *middleware.Middleware) {
-	// Post Creation & Feed
-	mux.Handle("/api/v1/posts", m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.CreatePost))))
+	// Post Creation, retrieval, & feed
+	mux.Handle("/api/v1/posts", m.AllowMethods(http.MethodPost, http.MethodGet)(m.RequireAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			h.CreatePost(w, r)
+			return
+		}
+		h.GetPost(w, r)
+	}))))
 	mux.Handle("/api/v1/posts/feed", m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.GetFeed))))
 
 	// Comments

@@ -54,9 +54,8 @@ func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64) ([]m
 		LEFT JOIN group_members gm ON gm.group_id = p.group_id AND gm.user_id = $1 AND gm.status = 'accepted'
 		WHERE 
 			p.user_id = $1 OR
-			p.privacy = 'public' OR
-			(p.privacy = 'followers' AND f.follower_id IS NOT NULL) OR
-			(p.privacy = 'group' AND gm.user_id IS NOT NULL)
+			(p.group_id IS NOT NULL AND gm.user_id IS NOT NULL) OR
+			(p.group_id IS NULL AND (p.privacy = 'public' OR (p.privacy = 'almost private' AND f.follower_id IS NOT NULL)))
 		ORDER BY p.created_at DESC
 	`
 

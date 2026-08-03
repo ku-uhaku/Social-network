@@ -16,7 +16,6 @@ func (s *Service) CreatePost(ctx context.Context, userID int64, payload models.C
 		if err != nil || status != "accepted" {
 			return nil, ErrAccessDenied
 		}
-		payload.Privacy = "group"
 	}
 
 	return s.Repo.CreatePost(ctx, userID, payload)
@@ -24,6 +23,19 @@ func (s *Service) CreatePost(ctx context.Context, userID int64, payload models.C
 
 func (s *Service) GetFeed(ctx context.Context, userID int64) ([]models.Post, error) {
 	return s.Repo.GetFeedPosts(ctx, userID)
+}
+
+func (s *Service) GetPost(ctx context.Context, userID int64, postID int64) (*models.Post, error) {
+	post, err := s.Repo.GetPostByID(ctx, postID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.checkPostVisibility(ctx, userID, post); err != nil {
+		return nil, err
+	}
+
+	return post, nil
 }
 
 func (s *Service) AddComment(ctx context.Context, userID int64, payload models.CreateCommentPayload) (*models.Comment, error) {
@@ -54,17 +66,22 @@ func (s *Service) GetComments(ctx context.Context, userID int64, postID int64) (
 }
 
 func (s *Service) checkPostVisibility(ctx context.Context, userID int64, post *models.Post) error {
-	if post.UserID == userID || post.Privacy == "public" {
+	if post.UserID == userID {
 		return nil
 	}
-	if post.Privacy == "followers" {
-		status, err := s.Repo.GetFollowRelation(ctx, userID, post.UserID)
+	// Group posts are visible only to accepted group members, regardless of privacy
+	if post.GroupID != nil && *post.GroupID > 0 {
+		status, err := s.Repo.GetMemberStatus(ctx, *post.GroupID, userID)
 		if err == nil && status == "accepted" {
 			return nil
 		}
+		return ErrAccessDenied
 	}
-	if post.Privacy == "group" && post.GroupID != nil {
-		status, err := s.Repo.GetMemberStatus(ctx, *post.GroupID, userID)
+	if post.Privacy == "public" {
+		return nil
+	}
+	if post.Privacy == "almost private" {
+		status, err := s.Repo.GetFollowRelation(ctx, userID, post.UserID)
 		if err == nil && status == "accepted" {
 			return nil
 		}

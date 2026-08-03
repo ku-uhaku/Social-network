@@ -132,28 +132,209 @@
   flex: 1;
   padding: 24px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
+  gap: 24px;
+}
+
+.feedHeader {
+  width: 100%;
+  max-width: 1080px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.feedTitle {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: 0.02em;
+}
+
+.feedSubtitle {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.createPostButton {
+  white-space: nowrap;
+}
+
+.feedList {
+  width: 100%;
+  max-width: 1080px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.postsPlaceholder,
+.postsError {
+  width: 100%;
+  max-width: 760px;
+  padding: 32px;
+  border-radius: 18px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .postsPlaceholder {
-  width: 100%;
-  max-width: 760px;
-  padding: 40px;
   border: 1px dashed var(--border);
-  border-radius: 18px;
-  text-align: center;
   color: var(--muted);
-  background: rgba(255, 255, 255, 0.02);
 }
 
-.homeFooter {
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 18px 24px;
+.postsError {
+  border: 1px solid rgba(255, 0, 0, 0.25);
+  color: #ff7a7a;
+}
+
+.postCard {
+  width: 100%;
+  padding: 22px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+.postCardLink {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.postCardLink:hover {
+  border-color: var(--soul);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.postCardHeader {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.postTitle {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.postMeta {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.postSnippet {
+  margin: 0;
+  color: var(--bone);
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.postDetails {
+  display: grid;
+  gap: 20px;
+  width: 100%;
+  max-width: 1080px;
+}
+
+.postDetailContent {
+  width: 100%;
+  padding: 24px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.postDetailTitle {
+  margin: 0 0 10px;
+  font-size: 1.75rem;
+}
+
+.postDetailMeta {
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+
+.postDetailText {
+  color: var(--bone);
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.postDetailImage {
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  border-radius: 16px;
+  margin-top: 18px;
+}
+
+.postFormWrapper {
+  width: 100%;
+  max-width: 760px;
+}
+
+.postForm {
+  width: 100%;
+  display: grid;
+  gap: 18px;
+}
+
+.postForm .field,
+.postForm .row {
+  display: grid;
+  gap: 10px;
+}
+
+.postForm label {
+  color: var(--muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+
+.postForm input,
+.postForm textarea,
+.postForm select {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--bone);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-family: inherit;
+}
+
+.postForm input:focus,
+.postForm textarea:focus,
+.postForm select:focus {
+  outline: none;
+  border-color: var(--soul);
+}
+
+.postForm textarea {
+  min-height: 180px;
+  resize: vertical;
+}
+
+.postFormActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.postFormButton {
+  min-width: 160px;
+}
+
+.guideText {
+  color: var(--muted);
+  font-size: 0.95rem;
 }

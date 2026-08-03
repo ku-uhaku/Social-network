@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAudio } from "@/contexts/AudioContext";
-import AvatarImage from "@/components/shared/AvatarImage";
+import ImageUploader from "@/components/shared/ImageUploader";
 
 export default function MainLayout({ children }) {
   const { user, loading, logout } = useAuth();
@@ -29,7 +29,7 @@ export default function MainLayout({ children }) {
         </Link>
 
         <div className="userInfo">
-          <AvatarImage avatar={user?.avatar} name={username} size={52} />
+          <ImageUploader avatar={user?.avatar} name={username} size={52} />
           <div>
             <strong className="userName">{username}</strong>
           </div>

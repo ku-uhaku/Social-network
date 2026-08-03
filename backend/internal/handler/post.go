@@ -62,6 +62,33 @@ func (h *Handler) GetFeed(w http.ResponseWriter, r *http.Request) {
 	helper.Success(w, http.StatusOK, "Feed retrieved successfully", posts)
 }
 
+// GetPost GET /api/v1/posts?post_id=123
+func (h *Handler) GetPost(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	postID, err := helper.GetParamInt64(r, "post_id")
+	if err != nil {
+		helper.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	post, err := h.Service.GetPost(r.Context(), user.ID, postID)
+	if err != nil {
+		if errors.Is(err, service.ErrAccessDenied) {
+			helper.Error(w, http.StatusForbidden, err.Error())
+			return
+		}
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Post retrieved successfully", post)
+}
+
 // CreateComment POST /api/v1/posts/comments
 func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	user, ok := middleware.GetUserFromContext(r.Context())

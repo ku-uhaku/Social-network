@@ -17,15 +17,8 @@ func ValidateCreatePost(p models.CreatePostPayload) []error {
 	}
 
 	p.Privacy = strings.ToLower(strings.TrimSpace(p.Privacy))
-	if p.GroupID != nil && *p.GroupID > 0 {
-		// If group_id is present, enforce group scope
-		if p.Privacy != "group" {
-			errs = append(errs, errors.New("privacy must be 'group' when posting to a group"))
-		}
-	} else {
-		if p.Privacy != "public" && p.Privacy != "followers" {
-			errs = append(errs, errors.New("privacy must be 'public' or 'followers' for user posts"))
-		}
+	if p.Privacy != "public" && p.Privacy != "almost private" && p.Privacy != "private" {
+		errs = append(errs, errors.New("privacy must be 'public', 'almost private', or 'private'"))
 	}
 
 	return errs

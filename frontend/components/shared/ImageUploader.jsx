@@ -21,7 +21,7 @@ function resolveMediaSrc(value) {
   return `/media/${normalized}`;
 }
 
-export default function AvatarImage({ avatar, name, size = 64 }) {
+export default function ImageUploader({ avatar, name, size = 64 }) {
   const label = name
     ? name
         .split(" ")

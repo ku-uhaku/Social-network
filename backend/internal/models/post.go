@@ -9,7 +9,7 @@ type Post struct {
 	GroupID       *int64    `json:"group_id,omitempty"`
 	Title         string    `json:"title"`
 	Content       string    `json:"content"`
-	Privacy       string    `json:"privacy"` // 'public', 'followers', 'group'
+	Privacy       string    `json:"privacy"` // 'public', 'almost private', 'private'
 	ImageURL      *string   `json:"image_url,omitempty"`
 	CommentsCount int       `json:"comments_count"`
 	CreatedAt     time.Time `json:"created_at"`
@@ -19,7 +19,7 @@ type CreatePostPayload struct {
 	GroupID  *int64  `json:"group_id,omitempty"`
 	Title    string  `json:"title"`
 	Content  string  `json:"content"`
-	Privacy  string  `json:"privacy"` // 'public', 'followers', 'group'
+	Privacy  string  `json:"privacy"` // 'public', 'almost private', 'private'
 	ImageURL *string `json:"image_url,omitempty"`
 }
 
