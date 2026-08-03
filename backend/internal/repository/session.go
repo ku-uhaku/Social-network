@@ -66,7 +66,7 @@ func (r *Repository) GetUserBySessionToken(ctx context.Context, token string) (*
 
 	query := `
         SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.gender, u.date_of_birth, 
-               u.is_public, u.avatar, u.nick_name, u.about_me, u.created_at
+               u.is_public, u.avatar, u.about_me, u.created_at
         FROM sessions s
         JOIN users u ON s.user_id = u.id
         WHERE s.id = $1 AND s.expires_at > CURRENT_TIMESTAMP
@@ -83,7 +83,6 @@ func (r *Repository) GetUserBySessionToken(ctx context.Context, token string) (*
 		&user.DateOfBirth,
 		&user.IsPublic,
 		&user.Avatar,
-		&user.NickName,
 		&user.AboutMe,
 		&user.CreatedAt,
 	)

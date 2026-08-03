@@ -18,7 +18,7 @@ func (r *Repository) AuthenticationUser(ctx context.Context, payload models.Inpu
 
 	query := `
 		SELECT id, username, email, first_name, last_name, gender, date_of_birth, 
-		       is_public, password, avatar, nick_name, about_me, created_at 
+		       is_public, password, avatar, about_me, created_at 
 		FROM users 
 		WHERE LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($1) 
 		LIMIT 1
@@ -37,7 +37,6 @@ func (r *Repository) AuthenticationUser(ctx context.Context, payload models.Inpu
 		&user.IsPublic,
 		&hashedPassword, // Scan password to check against plaintext input
 		&user.Avatar,
-		&user.NickName,
 		&user.AboutMe,
 		&user.CreatedAt,
 	)

@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS users (
     password TEXT NOT NULL,
     
     avatar TEXT,                  
-    nick_name TEXT,
     about_me TEXT,
     
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -31,7 +30,6 @@ INSERT INTO users (
     is_public, 
     password, 
     avatar, 
-    nick_name, 
     about_me
 ) VALUES (
     1, 
@@ -44,11 +42,10 @@ INSERT INTO users (
     1, 
     '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
     'https://api.dicebear.com/7.x/avataaars/svg?seed=kuuhaku', 
-    'Blank', 
     'Master of all games. Built with Go and SQLite.'
 );
 
-INSERT INTO users (username, email, first_name, last_name, gender, date_of_birth, is_public, password, avatar, nick_name, about_me)
+INSERT INTO users (username, email, first_name, last_name, gender, date_of_birth, is_public, password, avatar, about_me)
 VALUES 
 (
     'yassine_b', 
@@ -60,7 +57,6 @@ VALUES
     1, 
     '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
     'https://api.dicebear.com/7.x/avataaars/svg?seed=Yassine', 
-    'Yass', 
     'Software developer from Casablanca, passionate about backend engineering and sports.'
 ),
 (
@@ -73,7 +69,6 @@ VALUES
     1, 
     '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
     'https://api.dicebear.com/7.x/avataaars/svg?seed=Amina', 
-    'Ami', 
     'Graphic designer based in Rabat. Love art, photography, and Moroccan architecture.'
 ),
 (
@@ -86,7 +81,6 @@ VALUES
     1, 
     '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
     NULL, 
-    'Mido', 
     'Project manager from Fez. Big fan of traditional Andalusian music and history.'
 ),
 (
@@ -99,7 +93,6 @@ VALUES
     1, 
     '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
     'https://api.dicebear.com/7.x/avataaars/svg?seed=Meriem', 
-    'Mimi', 
     'Data science student at EHTP. Exploring machine learning models.'
 ),
 (
@@ -111,7 +104,6 @@ VALUES
     '1996-09-30', 
     0, -- Private profile example
     '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
-    NULL, 
     NULL, 
     'UI/UX researcher located in Marrakech. Cyclist and travel enthusiast.'
 );

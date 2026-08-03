@@ -14,10 +14,8 @@ type User struct {
 	IsPublic    int    `json:"is_public"`     // 1 for true, 0 for false (SQLite compliance)
 	Password    string `json:"-"`             // Password is never exposed in JSON responses
 
-	// The 3 optional database fields (using pointers to allow for nil/null)
-	Avatar   *string `json:"avatar"`
-	NickName *string `json:"nick_name"`
-	AboutMe  *string `json:"about_me"`
+	Avatar  *string `json:"avatar"`
+	AboutMe *string `json:"about_me"`
 
 	CreatedAt time.Time `json:"created_at"`
 }
@@ -36,20 +34,19 @@ type InputRegisterPayload struct {
 	DateOfBirth string  `json:"date_of_birth"`
 	Password    string  `json:"password"`
 	Avatar      *string `json:"avatar,omitempty"`
-	NickName    *string `json:"nick_name,omitempty"`
 	AboutMe     *string `json:"about_me,omitempty"`
 }
 
 // UpdateProfilePayload represents the incoming JSON contract for changing user details
 type UpdateProfilePayload struct {
-	FirstName   string  `json:"first_name"`
-	LastName    string  `json:"last_name"`
-	Gender      string  `json:"gender"`
-	DateOfBirth string  `json:"date_of_birth"`
-	IsPublic    int     `json:"is_public"` // 1 for true, 0 for false
-	Avatar      *string `json:"avatar"`
-	NickName    *string `json:"nick_name"`
-	AboutMe     *string `json:"about_me"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	Gender      string `json:"gender"`
+	DateOfBirth string `json:"date_of_birth"`
+	// TODO: only allow updating IsPublic
+	IsPublic int     `json:"is_public"` // 1 for true, 0 for false
+	Avatar   *string `json:"avatar"`
+	AboutMe  *string `json:"about_me"`
 }
 
 // Follow represents the database record for follower relationships

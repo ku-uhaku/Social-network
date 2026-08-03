@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"kuu/internal/helper"
@@ -11,14 +12,14 @@ import (
 )
 
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
-	var payload models.InputRegisterPayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		helper.Error(w, http.StatusBadRequest, "Malformed JSON request body")
+	payload, err := requests.ParseRegisterPayload(r)
+	if err != nil {
+		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	defer r.Body.Close()
 
 	if validationErrs := requests.ValidateRegister(payload); len(validationErrs) > 0 {
+		fmt.Println("Validation errors:", validationErrs)
 		helper.ValidationErrorResponse(w, http.StatusUnprocessableEntity, validationErrs)
 		return
 	}
@@ -56,7 +57,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_token",
 		Value:    sessionInfo.ID,
-		Expires:  sessionInfo.ExpiresAt,
+		Expires:  sessionInfo.ExpiresAt, // TODO: never expire (see subject)
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 		Path:     "/",

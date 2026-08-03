@@ -43,9 +43,9 @@ func (r *Repository) CreateUser(ctx context.Context, payload models.InputRegiste
 	query := `
 		INSERT INTO users (
 			username, email, first_name, last_name, gender, 
-			date_of_birth, password, is_public, avatar, nick_name, about_me
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, 1, $8, $9, $10)
-		RETURNING id, username, email, first_name, last_name, gender, date_of_birth, is_public, avatar, nick_name, about_me, created_at
+			date_of_birth, password, is_public, avatar, about_me
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, 1, $8, $9)
+		RETURNING id, username, email, first_name, last_name, gender, date_of_birth, is_public, avatar, about_me, created_at
 	`
 
 	err := r.DB.Database.QueryRowContext(
@@ -58,7 +58,6 @@ func (r *Repository) CreateUser(ctx context.Context, payload models.InputRegiste
 		payload.DateOfBirth,
 		hashedPassword,
 		payload.Avatar,
-		payload.NickName,
 		payload.AboutMe,
 	).Scan(
 		&user.ID,
@@ -70,7 +69,6 @@ func (r *Repository) CreateUser(ctx context.Context, payload models.InputRegiste
 		&user.DateOfBirth,
 		&user.IsPublic,
 		&user.Avatar,
-		&user.NickName,
 		&user.AboutMe,
 		&user.CreatedAt,
 	)
@@ -87,10 +85,10 @@ func (r *Repository) UpdateUserProfile(ctx context.Context, userID int64, payloa
 	query := `
 		UPDATE users 
 		SET first_name = $1, last_name = $2, gender = $3, date_of_birth = $4, 
-		    is_public = $5, avatar = $6, nick_name = $7, about_me = $8
+		    is_public = $5, avatar = $6, about_me = $7
 		WHERE id = $9
 		RETURNING id, username, email, first_name, last_name, gender, date_of_birth, 
-		          is_public, avatar, nick_name, about_me, created_at
+		          is_public, avatar, about_me, created_at
 	`
 
 	err := r.DB.Database.QueryRowContext(
@@ -101,7 +99,6 @@ func (r *Repository) UpdateUserProfile(ctx context.Context, userID int64, payloa
 		payload.DateOfBirth,
 		payload.IsPublic,
 		payload.Avatar,
-		payload.NickName,
 		payload.AboutMe,
 		userID,
 	).Scan(
@@ -114,7 +111,6 @@ func (r *Repository) UpdateUserProfile(ctx context.Context, userID int64, payloa
 		&user.DateOfBirth,
 		&user.IsPublic,
 		&user.Avatar,
-		&user.NickName,
 		&user.AboutMe,
 		&user.CreatedAt,
 	)
