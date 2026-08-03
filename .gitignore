@@ -3,6 +3,8 @@ frontend/.next/
 frontend/out/
 frontend/build/
 frontend/dist/
+backend/media/
+*.db
 
 backend/.env
 frontend/.env*

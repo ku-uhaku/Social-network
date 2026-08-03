@@ -1,18 +1,13 @@
 package requests
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/mail"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
+	"kuu/internal/helper"
 	"kuu/internal/models"
 )
 
@@ -41,35 +36,15 @@ func ParseRegisterPayload(r *http.Request) (models.InputRegisterPayload, error) 
 		if file, header, err := r.FormFile("avatar"); err == nil {
 			defer file.Close()
 			if header != nil && header.Size > 0 {
-				fileBytes, err := io.ReadAll(file)
+				avatarName, err := helper.SaveUploadedImage(file, header, "media")
 				if err != nil {
-					return payload, fmt.Errorf("failed to read avatar file: %w", err)
-				}
-
-				hash := sha256.Sum256(fileBytes)
-				avatarName := hex.EncodeToString(hash[:])
-				mediaDir := filepath.Join("backend", "media")
-				if err := os.MkdirAll(mediaDir, 0o755); err != nil {
-					return payload, fmt.Errorf("failed to prepare avatar directory: %w", err)
-				}
-
-				avatarPath := filepath.Join(mediaDir, avatarName)
-				if err := os.WriteFile(avatarPath, fileBytes, 0o644); err != nil {
 					return payload, fmt.Errorf("failed to save avatar file: %w", err)
 				}
 
 				payload.Avatar = &avatarName
 			}
 		}
-
-		return payload, nil
 	}
-
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		return payload, fmt.Errorf("malformed json request body: %w", err)
-	}
-	defer r.Body.Close()
-
 	return payload, nil
 }
 
@@ -114,10 +89,16 @@ func ValidateRegister(payload models.InputRegisterPayload) []ValidationError {
 		})
 	}
 
-	if strings.TrimSpace(payload.Gender) == "" {
+	gender := strings.TrimSpace(payload.Gender)
+	if gender == "" {
 		errs = append(errs, ValidationError{
 			Field:   "gender",
 			Message: "gender is required",
+		})
+	} else if gender != "male" && gender != "female" {
+		errs = append(errs, ValidationError{
+			Field:   "gender",
+			Message: "gender must be either male or female",
 		})
 	}
 

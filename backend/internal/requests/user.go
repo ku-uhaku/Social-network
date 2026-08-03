@@ -18,7 +18,7 @@ func ValidateUpdateProfile(payload models.UpdateProfilePayload) []error {
 		errs = append(errs, errors.New("last_name cannot be blank"))
 	}
 
-	gender := strings.ToLower(strings.TrimSpace(payload.Gender))
+	gender := strings.TrimSpace(payload.Gender)
 	if gender != "male" && gender != "female" {
 		errs = append(errs, errors.New("gender must be either 'male', 'female'"))
 	}

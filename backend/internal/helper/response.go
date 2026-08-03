@@ -3,8 +3,6 @@ package helper
 import (
 	"encoding/json"
 	"net/http"
-
-	"kuu/internal/requests"
 )
 
 type JSONResponse struct {
@@ -36,6 +34,6 @@ func Error(w http.ResponseWriter, status int, message string) {
 	WriteJSON(w, status, false, message, nil, nil)
 }
 
-func ValidationErrorResponse(w http.ResponseWriter, status int, errs []requests.ValidationError) {
+func ValidationErrorResponse(w http.ResponseWriter, status int, errs interface{}) {
 	WriteJSON(w, status, false, "Validation failed", nil, errs)
 }

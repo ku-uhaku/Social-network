@@ -1,6 +1,7 @@
 import { AudioProvider } from "@/contexts/AudioContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import "@/css/globals.css";
+import "@/css/home.css";
 
 export default function RootLayout({ children }) {
   return (

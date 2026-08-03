@@ -9,10 +9,12 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const parseUserResponse = (response) => response?.data ?? response?.user ?? null;
+
   const refresh = useCallback(async () => {
     try {
       const data = await authApi.me();
-      setUser(data?.user ?? data ?? null);
+      setUser(parseUserResponse(data));
     } catch {
       setUser(null);
     } finally {
@@ -26,13 +28,13 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (identifier, password) => {
     const data = await authApi.login({ identifier, password });
-    setUser(data?.user ?? data ?? null);
+    setUser(parseUserResponse(data));
     return data;
   }, []);
 
   const register = useCallback(async (formData) => {
     const data = await authApi.register(formData);
-    setUser(data?.user ?? data ?? null);
+    setUser(parseUserResponse(data));
     return data;
   }, []);
 
@@ -41,8 +43,9 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  // TODO: simplify `value` later, we don't need all these vars
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, refresh }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, refresh }}> 
       {children}
     </AuthContext.Provider>
   );

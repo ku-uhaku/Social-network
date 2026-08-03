@@ -11,6 +11,8 @@ import (
 func Register(h *handler.Handler, m *middleware.Middleware) *http.ServeMux {
 	mux := http.NewServeMux()
 
+	mux.Handle("/media/", http.StripPrefix("/media/", http.FileServer(http.Dir("media"))))
+
 	// WebSocket / Realtime (Protected by Method Check & Auth Middleware)
 	mux.Handle("/ws", m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.WebSocket))))
 
