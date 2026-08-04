@@ -19,6 +19,7 @@ export default function LoginPage() {
   );
 }
 
+// TODO: display main_logo.png briefly after successful login
 function LoginForm() {
   const router = useRouter();
   const { login } = useAuth();

@@ -49,6 +49,7 @@ export default function MainLayout({ children }) {
         </div>
       </header>
 
+      {/* TODO: settings for particles */}
       <section className={`settingsPanel ${settingsOpen ? "open" : ""}`}>
         <div className="settingsRow">
           <span className="toggleLabel">Music</span>
