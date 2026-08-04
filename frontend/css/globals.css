@@ -24,6 +24,28 @@ body {
   font-family: Georgia, "Times New Roman", serif;
 }
 
+/* ---- Splash screen ---- */
+.splashScreen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--abyss);
+  z-index: 10000;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.splashScreen.hidden {
+  opacity: 0;
+}
+
+.splashLogo {
+  max-width: 80vw;
+  max-height: 60vh;
+  object-fit: contain;
+}
+
 /* ---- Custom cursor ---- */
 body.customCursor,
 body.customCursor * {
