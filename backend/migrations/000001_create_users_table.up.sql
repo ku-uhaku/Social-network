@@ -33,77 +33,82 @@ INSERT INTO users (
     about_me
 ) VALUES (
     1, 
-    'kuuhaku', 
-    'kuuhaku@email.com', 
-    'Sora', 
-    'Shiro', 
+    'the_knight', 
+    'the.knight@hallownest.com', 
+    'Ghost', 
+    'Vessel', 
     'male', 
-    '2000-01-01', 
+    '1950-01-01', 
     1, 
     '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=kuuhaku', 
-    'Master of all games. Built with Go and SQLite.'
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=the_knight', 
+    'The little ghost who fell into Hallownest. Armed with a broken nail and a whole lot of determination.'
 );
 
-INSERT INTO users (username, email, first_name, last_name, gender, date_of_birth, is_public, password, avatar, about_me)
+INSERT INTO users (id, username, email, first_name, last_name, gender, date_of_birth, is_public, password, avatar, about_me)
 VALUES 
 (
-    'yassine_b', 
-    'yassine.bennani@email.com', 
-    'Yassine', 
-    'Bennani', 
-    'male', 
-    '1994-04-12', 
-    1, 
-    '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=Yassine', 
-    'Software developer from Casablanca, passionate about backend engineering and sports.'
-),
-(
-    'amina_alami', 
-    'amina.alami@email.com', 
-    'Amina', 
-    'Alami', 
+    2, 
+    'hornet', 
+    'hornet@deepnest.com', 
+    'Hornet', 
+    'Protector', 
     'female', 
-    '1998-11-23', 
+    '1965-06-15', 
     1, 
     '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=Amina', 
-    'Graphic designer based in Rabat. Love art, photography, and Moroccan architecture.'
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=hornet', 
+    'Guardian of Hallownest and spinner of silk. Also known as the Gendered Child. Do not test me.'
 ),
 (
-    'mehdi_tazi', 
-    'mehdi.tazi@email.com', 
-    'Mehdi', 
-    'Tazi', 
+    3, 
+    'quirrel', 
+    'quirrel@blue.lake.com', 
+    'Quirrel', 
+    'Scholar', 
     'male', 
-    '1991-07-05', 
+    '1958-03-22', 
     1, 
     '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
-    NULL, 
-    'Project manager from Fez. Big fan of traditional Andalusian music and history.'
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=quirrel', 
+    'Wandering scholar with a nail and a thirst for knowledge. Ask me about the Blue Lake.'
 ),
 (
-    'meriem_idrissi', 
-    'm.idrissi@email.com', 
-    'Meriem', 
-    'Idrissi', 
+    4, 
+    'zote_the_mighty', 
+    'zote@colo.fools.com', 
+    'Zote', 
+    'Mighty', 
+    'male', 
+    '1952-11-08', 
+    1, 
+    '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=zote_the_mighty', 
+    'The 57th Precept: Do not run to satisfy yourself. Glory awaits those who speak loudly and swing bigger.'
+),
+(
+    5, 
+    'myla', 
+    'myla@crystal.peak.com', 
+    'Myla', 
+    'Miner', 
     'female', 
-    '2001-02-18', 
-    1, 
-    '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=Meriem', 
-    'Data science student at EHTP. Exploring machine learning models.'
-),
-(
-    'amza_mansouri', 
-    'hamza.mansouri@email.com', 
-    'Hamza', 
-    'Mansouri', 
-    'male', 
-    '1996-09-30', 
+    '1972-09-05', 
     0, -- Private profile example
     '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
-    NULL, 
-    'UI/UX researcher located in Marrakech. Cyclist and travel enthusiast.'
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=myla', 
+    'Just a little miner digging for geo in Crystal Peak. La la la! The crystals are singing to me...'
+),
+(
+    6, 
+    'sly', 
+    'sly@dirtmouth.shop.com', 
+    'Sly', 
+    'The Great Zote-Like Shopkeeper', 
+    'male', 
+    '1940-04-30', 
+    1, 
+    '$2a$10$OQ8d7gdfOe5uy3tCm1u1leT9RP0EOhsrq8k4HdtuBSUoE.EBCzutK', -- Plaintext: SecurePassword123!
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=sly', 
+    'Former Nailmaster turned humble shopkeeper in Dirtmouth. Everything is for sale—except my secrets.'
 );
