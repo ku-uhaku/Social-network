@@ -5,14 +5,8 @@ import styles from "@/css/error.css";
 export default function ErrorDisplay({ message, onRetry, homeHref = "/" }) {
   return (
     <div className={styles.page}>
+      <img className={styles.wallpaper} src={"/images/err_wallpaper.png"} alt="" />
       <div className={styles.card}>
-        <img
-          src="/globe.svg"
-          alt=""
-          className={styles.image}
-          width={96}
-          height={96}
-        />
         <h1 className={styles.title}>Something went wrong</h1>
         <p className={styles.message}>{message || "An unexpected error occurred."}</p>
 

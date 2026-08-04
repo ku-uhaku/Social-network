@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import AuthBackground from "@/components/shared/AuthBackground";
+import NailButton from "@/components/shared/NailButton";
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
@@ -13,9 +15,9 @@ export default function LoginPage() {
   }, [loading, user, router]);
 
   return (
-    <div className="page">
+    <AuthBackground>
       <LoginForm />
-    </div>
+    </AuthBackground>
   );
 }
 
@@ -73,12 +75,13 @@ function LoginForm() {
         />
       </div>
 
-      <button className="button" type="submit" disabled={submitting}>
+      <NailButton type="submit" disabled={submitting}>
         {submitting ? "Logging in..." : "Log in"}
-      </button>
+      </NailButton>
 
       <div className="footer">
-        Don&apos;t have an account? <a className="link" href="/register">Register</a>
+        {"Don't have an account? "}
+        <a className="link" href="/register">Register</a>
       </div>
     </form>
   );

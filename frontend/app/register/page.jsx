@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import ImageUploadButton from "@/components/shared/ImageUploadButton";
+import AuthBackground from "@/components/shared/AuthBackground";
+import NailButton from "@/components/shared/NailButton";
 
 const initialState = {
   username: "",
@@ -25,9 +27,9 @@ export default function RegisterPage() {
   }, [loading, user, router]);
 
   return (
-    <div className="page">
+    <AuthBackground>
       <RegisterForm />
-    </div>
+    </AuthBackground>
   );
 }
 
@@ -128,9 +130,9 @@ function RegisterForm() {
         <textarea id="about_me" name="about_me" className="input" rows={3} value={values.about_me} onChange={handleChange} />
       </div>
 
-      <button className="button" type="submit" disabled={submitting}>
+      <NailButton type="submit" disabled={submitting}>
         {submitting ? "Creating account..." : "Create account"}
-      </button>
+      </NailButton>
 
       <div className="footer">
         Already have an account? <a className="link" href="/login">Log in</a>

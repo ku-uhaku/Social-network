@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getFeed } from "@/lib/api/posts";
 import PostCard from "@/components/posts/PostCard";
+import NailButton from "@/components/shared/NailButton";
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -36,8 +37,8 @@ export default function HomePage() {
             {user ? `Welcome back, ${user.username}.` : "Your latest posts appear below."}
           </p>
         </div>
-        <Link href="/posts/create" className="button createPostButton">
-          Create post
+        <Link href="/posts/create" className="createPostLink">
+          <NailButton>Create post</NailButton>
         </Link>
       </div>
 

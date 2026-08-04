@@ -81,6 +81,8 @@ export default function PostDetailPage({ params }) {
       <div className="postDetails">
         <PostCard post={post} isFeed={false} />
 
+        <img className="postCommentSeparator" src={"/images/post_comment_separator.png"} alt="" />
+
         <div className="commentsSection">
           <h2 className="commentsTitle">Comments ({post.comments_count})</h2>
 

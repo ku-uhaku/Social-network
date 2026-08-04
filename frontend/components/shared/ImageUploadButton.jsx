@@ -44,6 +44,7 @@ export default function ImageUploadButton({ label = "Upload image", value, onCha
     onChange?.(file);
   }
 
+  // TODO ugly default style
   return (
     <div className={styles.field}>
       <label className={styles.label} htmlFor={inputId}>{label}</label>

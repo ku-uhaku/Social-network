@@ -1,36 +1,47 @@
 .page {
+  position: relative;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f4f4f5;
   padding: 2rem 1rem;
+  overflow: hidden;
+}
+
+.wallpaper {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
 }
 
 .card {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 420px;
-  background: #fff;
+  background: rgba(10, 13, 18, 0.88);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 2rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   text-align: center;
-}
-
-.image {
-  opacity: 0.6;
-  margin: 0 auto 1rem;
-  display: block;
 }
 
 .title {
   font-size: 1.375rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--bone);
 }
 
 .message {
-  color: #555;
+  color: var(--muted);
   font-size: 0.95rem;
   margin-bottom: 1.5rem;
   word-break: break-word;
@@ -44,17 +55,26 @@
 
 .button {
   padding: 0.65rem;
-  background: #6366f1;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
+  background: transparent;
+  color: var(--bone);
+  border: 1px solid var(--border);
+  border-radius: 4px;
   font-size: 1rem;
   font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
   cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.button:hover {
+  border-color: var(--soul);
+  color: var(--soul);
 }
 
 .link {
-  color: #6366f1;
+  color: var(--soul);
   text-decoration: none;
   font-size: 0.9rem;
 }

@@ -1,9 +1,19 @@
 .homePage {
+  position: relative;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: radial-gradient(circle at top, rgba(0, 229, 255, 0.06), transparent 35%), var(--abyss);
   color: var(--bone);
+}
+
+.mainWallpaper {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .homeHeader {
@@ -16,7 +26,8 @@
   gap: 18px;
   padding: 18px 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(18, 24, 32, 0.96);
+  background: rgba(10, 13, 18, 0.92);
+  backdrop-filter: blur(4px);
 }
 
 .brandLogo {
@@ -81,10 +92,34 @@
   text-transform: uppercase;
 }
 
+.settingsButton {
+  display: grid;
+  place-items: center;
+  padding: 8px;
+}
+
+.settingsIcon {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
 .logoutButton {
   background: rgba(255, 255, 255, 0.04);
 }
+
+.headerSeparator,
+.footerSeparator {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: block;
+  pointer-events: none;
+}
+
 .settingsPanel {
+  position: relative;
+  z-index: 1;
   overflow: hidden;
   max-height: 0;
   opacity: 0;
@@ -110,22 +145,128 @@
   padding: 14px 16px;
   border: 1px solid var(--border);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(10, 13, 18, 0.7);
 }
 
 .toggleLabel {
   color: var(--muted);
   font-size: 14px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
 }
 
-.toggleButton {
+/* ---- CharmToggle ---- */
+.charmToggle {
+  position: relative;
   border: none;
-  background: var(--border);
-  color: var(--bone);
-  padding: 10px 16px;
-  border-radius: 999px;
+  background: transparent;
+  padding: 0;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.charmToggleSwitch {
+  width: 64px;
+  height: 32px;
+  object-fit: contain;
+  display: block;
+  transition: filter 0.2s ease;
+}
+
+.charmToggleCharm {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.6);
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.charmToggle:hover .charmToggleCharm {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+.charmToggle:hover .charmToggleSwitch {
+  filter: drop-shadow(0 0 8px var(--soul-dim));
+}
+
+/* ---- NailButton ---- */
+.nailButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px 24px;
   font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 0.2s;
+}
+
+.nailButton:hover {
+  color: var(--bone);
+}
+
+.nailButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.nailButtonLabel {
+  position: relative;
+  z-index: 1;
+}
+
+.nailButtonDecoration {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%) scaleX(0);
+  opacity: 0;
+  height: 24px;
+  width: auto;
+  pointer-events: none;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.nailButtonDecorationLeft {
+  right: calc(100% + 4px);
+  transform-origin: right center;
+}
+
+.nailButtonDecorationRight {
+  left: calc(100% + 4px);
+  transform-origin: left center;
+}
+
+.nailButton:hover .nailButtonDecorationLeft {
+  transform: translateY(-50%) scaleX(1);
+  opacity: 1;
+}
+
+.nailButton:hover .nailButtonDecorationRight {
+  transform: translateY(-50%) scaleX(1);
+  opacity: 1;
+}
+
+.pageContent {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .postsContainer {
@@ -158,8 +299,9 @@
   font-size: 0.95rem;
 }
 
-.createPostButton {
+.createPostLink {
   white-space: nowrap;
+  text-decoration: none;
 }
 
 .feedList {
@@ -177,7 +319,7 @@
   padding: 32px;
   border-radius: 18px;
   text-align: center;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(10, 13, 18, 0.7);
 }
 
 .postsPlaceholder {
@@ -194,7 +336,7 @@
   width: 100%;
   padding: 22px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(10, 13, 18, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
 }
@@ -208,7 +350,7 @@
 
 .postCardLink:hover {
   border-color: var(--soul);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(10, 13, 18, 0.85);
 }
 
 .postCardHeader {
@@ -265,11 +407,17 @@
   max-width: 1080px;
 }
 
+.postCommentSeparator {
+  width: 100%;
+  display: block;
+  pointer-events: none;
+}
+
 .postDetailContent {
   width: 100%;
   padding: 24px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(10, 13, 18, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -325,7 +473,7 @@
 .postForm select {
   width: 100%;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(10, 13, 18, 0.7);
   color: var(--bone);
   border-radius: 12px;
   padding: 12px 14px;
@@ -375,7 +523,7 @@
   gap: 16px;
   padding: 20px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(10, 13, 18, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -394,7 +542,7 @@
 .commentForm textarea {
   width: 100%;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(10, 13, 18, 0.7);
   color: var(--bone);
   border-radius: 12px;
   padding: 12px 14px;
@@ -432,7 +580,7 @@
 .commentCard {
   padding: 18px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(10, 13, 18, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -478,4 +626,18 @@
   object-fit: cover;
   border-radius: 12px;
   margin-top: 12px;
+}
+
+.homeFooter {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(10, 13, 18, 0.92);
+  color: var(--muted);
+  font-size: 0.85rem;
 }

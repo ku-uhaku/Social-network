@@ -2,81 +2,64 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 
-export const TRACKS = [
-  { id: "dirtmouth", title: "Dirtmouth", src: "/audio/02. Dirtmouth.mp3" },
-  { id: "greenpath", title: "Greenpath", src: "/audio/05. Greenpath.mp3" },
-  { id: "reflection", title: "Reflection", src: "/audio/07. Reflection.mp3" },
-];
-
 const AudioCtx = createContext(null);
 
 export function AudioProvider({ children }) {
   const musicRef = useRef(null);
-  const ambientRef = useRef(null);
-
-  const [currentTrack, setCurrentTrack] = useState("greenpath");
+  const musicSrcRef = useRef(null);
+  const mutedRef = useRef(false);
+  const [musicSrc, setMusicSrc] = useState(null);
   const [isMusicMuted, setIsMusicMuted] = useState(false);
-  const [isEffectsMuted, setIsEffectsMuted] = useState(false);
 
-  // create sounds music once
+  // keep refs in sync with latest state (refs only touched inside effects)
+  useEffect(() => {
+    musicSrcRef.current = musicSrc;
+    mutedRef.current = isMusicMuted;
+  }, [musicSrc, isMusicMuted]);
+
   useEffect(() => {
     const music = new Audio();
     music.loop = true;
     musicRef.current = music;
 
-    const ambient = new Audio("/audio/Cave Wind Loop.mp3");
-    ambient.loop = true;
-    ambient.volume = 0.3;
-    ambientRef.current = ambient;
+    const unlock = () => { // sound if muted by default until poage is clicked
+      const el = musicRef.current;
+      if (el && musicSrcRef.current) {
+        el.muted = mutedRef.current;
+        el.play().catch(() => {});
+      }
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+    window.addEventListener("pointerdown", unlock);
+    window.addEventListener("keydown", unlock);
 
     return () => {
       music.pause();
-      ambient.pause();
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
     };
   }, []);
 
-  // on track changed
   useEffect(() => {
     const music = musicRef.current;
-    const track = TRACKS.find((t) => t.id === currentTrack);
-    if (!music || !track) return;
-    music.src = track.src;
+    if (!music || !musicSrc) return;
+    music.src = musicSrc;
+    music.load();
     music.muted = isMusicMuted;
     music.play().catch(() => {});
-  }, [currentTrack]);
+  }, [musicSrc, isMusicMuted]);
 
-  // on music muted
   useEffect(() => {
     if (musicRef.current) musicRef.current.muted = isMusicMuted;
   }, [isMusicMuted]);
 
-  // on sfx muted
-  useEffect(() => {
-    const ambient = ambientRef.current;
-    if (!ambient) return;
-    if (isEffectsMuted) {
-      ambient.pause();
-    } else {
-      ambient.play().catch(() => {});
-    }
-  }, [isEffectsMuted]);
-
-  // on sfx
-  const playEffect = (src) => {
-    if (isEffectsMuted) return;
-    new Audio(src).play().catch(() => {});
-  };
-
   return (
     <AudioCtx.Provider
       value={{
-        currentTrack,
-        setCurrentTrack,
+        setMusic: setMusicSrc,
         isMusicMuted,
         toggleMusicMuted: () => setIsMusicMuted((m) => !m),
-        isEffectsMuted,
-        toggleEffectsMuted: () => setIsEffectsMuted((m) => !m),
-        playEffect,
       }}
     >
       {children}
