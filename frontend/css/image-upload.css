@@ -4,10 +4,12 @@
 
 .label {
   display: block;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 500;
   margin-bottom: 0.25rem;
-  color: #333;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .row {
@@ -19,28 +21,62 @@
 .input {
   flex: 1;
   font-size: 0.9rem;
+  color: var(--bone);
+}
+
+.input::file-selector-button {
+  padding: 0.45rem 0.9rem;
+  margin-right: 0.75rem;
+  background: transparent;
+  color: var(--bone);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.input::file-selector-button:hover {
+  border-color: var(--soul);
+  color: var(--soul);
 }
 
 .clearButton {
-  padding: 0.35rem 0.75rem;
-  background: #f4f4f5;
-  border: 1px solid #d4d4d8;
-  border-radius: 6px;
+  padding: 0.45rem 0.9rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
   font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
   cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.clearButton:hover {
+  border-color: var(--soul);
+  color: var(--soul);
 }
 
 .preview {
-  margin-top: 0.5rem;
-  width: 96px;
-  height: 96px;
-  object-fit: cover;
-  border-radius: 6px;
-  border: 1px solid #d4d4d8;
+  margin-top: 0.75rem;
+  max-width: 240px;
+  max-height: 180px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid var(--border);
 }
 
 .error {
   margin-top: 0.35rem;
   font-size: 0.8rem;
-  color: #b91c1c;
+  color: #ff7a7a;
 }

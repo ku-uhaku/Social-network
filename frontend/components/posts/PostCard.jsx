@@ -9,13 +9,13 @@ export default function PostCard({ post, isFeed = true }) {
   const createdAt = new Date(post.created_at).toLocaleDateString();
   const imageSrc = resolveMediaSrc(post.image_url);
   const author = post.user || {};
-  const authorName = [author.first_name, author.last_name].filter(Boolean).join(" ") || author.username || "Unknown";
+  const authorName = author.username || "Unknown";
 
   const cardContent = (
     <>
       <div className="postCardHeader">
         <div className="postAuthorInfo">
-          <Avatar avatar={author.avatar} name={authorName} size={40} />
+          <Avatar avatar={author.avatar} username={authorName} size={40} />
           <div>
             <div className="postAuthorName">{authorName}</div>
             <div className="postMeta">

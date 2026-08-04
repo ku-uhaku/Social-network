@@ -1,15 +1,15 @@
 /* ---- Theme tokens ---- */
 :root {
-  --abyss: #0a0d12;
-  --surface: #121820;
-  --surface-2: #1a2330;
-  --border: #2a3a4d;
-  --bone: #e8e6e1;
-  --muted: #8a99ad;
-  --soul: #00e5ff;
-  --soul-dim: rgba(0, 229, 255, 0.35);
-  --brass: #c9a86a;
-  --brass-dim: rgba(201, 168, 106, 0.4);
+  --abyss: #000000;
+  --surface: #06080c;
+  --surface-2: #0d121a;
+  --border: #28384d;
+  --bone: #ffffff;
+  --muted: #b8c7d9;
+  --soul: #00f0ff;
+  --soul-dim: rgba(0, 240, 255, 0.5);
+  --brass: #f5d087;
+  --brass-dim: rgba(245, 208, 135, 0.5);
 }
 
 * {

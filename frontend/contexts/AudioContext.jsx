@@ -8,21 +8,24 @@ export function AudioProvider({ children }) {
   const musicRef = useRef(null);
   const musicSrcRef = useRef(null);
   const mutedRef = useRef(false);
+  const sfxMutedRef = useRef(false);
+
   const [musicSrc, setMusicSrc] = useState(null);
   const [isMusicMuted, setIsMusicMuted] = useState(false);
+  const [isSfxMuted, setIsSfxMuted] = useState(false);
 
-  // keep refs in sync with latest state (refs only touched inside effects)
   useEffect(() => {
     musicSrcRef.current = musicSrc;
     mutedRef.current = isMusicMuted;
-  }, [musicSrc, isMusicMuted]);
+    sfxMutedRef.current = isSfxMuted;
+  }, [musicSrc, isMusicMuted, isSfxMuted]);
 
   useEffect(() => {
     const music = new Audio();
     music.loop = true;
     musicRef.current = music;
 
-    const unlock = () => { // sound if muted by default until poage is clicked
+    const unlock = () => { // sound is muted by default until page is clicked
       const el = musicRef.current;
       if (el && musicSrcRef.current) {
         el.muted = mutedRef.current;
@@ -54,12 +57,21 @@ export function AudioProvider({ children }) {
     if (musicRef.current) musicRef.current.muted = isMusicMuted;
   }, [isMusicMuted]);
 
+  function playSfx(src) {
+    if (sfxMutedRef.current || !src) return;
+    const sfx = new Audio(src);
+    sfx.play().catch(() => {});
+  }
+
   return (
     <AudioCtx.Provider
       value={{
         setMusic: setMusicSrc,
         isMusicMuted,
         toggleMusicMuted: () => setIsMusicMuted((m) => !m),
+        isSfxMuted,
+        toggleSfxMuted: () => setIsSfxMuted((m) => !m),
+        playSfx,
       }}
     >
       {children}

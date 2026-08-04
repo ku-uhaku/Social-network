@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"kuu/internal/models"
 )
@@ -55,7 +56,8 @@ func (r *Repository) GetPostByID(ctx context.Context, postID int64) (*models.Pos
 }
 
 // GetFeedPosts retrieves posts filtered by user visibility (Public, Follower posts, Group posts)
-func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64) ([]models.Post, error) {
+// Paginated by cursor (last post id) and limit. Returns hasMore indicating whether more posts exist.
+func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64, limit int, cursor *int64) ([]models.Post, bool, error) {
 	query := `
 		SELECT DISTINCT p.id, p.user_id, p.group_id, p.title, p.content, p.privacy, p.image_url, p.created_at,
 			(SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comments_count,
@@ -68,12 +70,20 @@ func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64) ([]m
 			p.user_id = $1 OR
 			(p.group_id IS NOT NULL AND gm.user_id IS NOT NULL) OR
 			(p.group_id IS NULL AND (p.privacy = 'public' OR (p.privacy = 'almost private' AND f.follower_id IS NOT NULL)))
-		ORDER BY p.created_at DESC
+		ORDER BY p.created_at DESC, p.id DESC
 	`
 
-	rows, err := r.DB.Database.QueryContext(ctx, query, currentUserID)
+	args := []interface{}{currentUserID}
+	if cursor != nil {
+		query += ` AND p.id < $2`
+		args = append(args, *cursor)
+	}
+	query += fmt.Sprintf(` LIMIT $%d`, len(args)+1)
+	args = append(args, limit+1)
+
+	rows, err := r.DB.Database.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	defer rows.Close()
 
@@ -85,11 +95,16 @@ func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64) ([]m
 			&p.CommentsCount,
 			&p.User.ID, &p.User.Username, &p.User.FirstName, &p.User.LastName, &p.User.Avatar,
 		); err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		posts = append(posts, p)
 	}
-	return posts, nil
+
+	hasMore := len(posts) > limit
+	if hasMore {
+		posts = posts[:limit]
+	}
+	return posts, hasMore, nil
 }
 
 // CreateComment inserts a new post comment

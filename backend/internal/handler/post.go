@@ -43,7 +43,7 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	helper.Success(w, http.StatusCreated, "Post created successfully", post)
 }
 
-// GetFeed GET /api/v1/posts/feed
+// GetFeed GET /api/v1/posts/feed?limit=10&cursor=123
 func (h *Handler) GetFeed(w http.ResponseWriter, r *http.Request) {
 	user, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
@@ -51,13 +51,46 @@ func (h *Handler) GetFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	posts, err := h.Service.GetFeed(r.Context(), user.ID)
+	limit := 10
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		parsed, err := strconv.Atoi(limitStr)
+		if err != nil || parsed < 1 {
+			helper.Error(w, http.StatusBadRequest, "Invalid limit parameter")
+			return
+		}
+		limit = parsed
+		if limit > 50 {
+			limit = 50
+		}
+	}
+
+	var cursor *int64
+	if cursorStr := r.URL.Query().Get("cursor"); cursorStr != "" {
+		parsed, err := strconv.ParseInt(cursorStr, 10, 64)
+		if err != nil || parsed < 1 {
+			helper.Error(w, http.StatusBadRequest, "Invalid cursor parameter")
+			return
+		}
+		cursor = &parsed
+	}
+
+	posts, hasMore, err := h.Service.GetFeed(r.Context(), user.ID, limit, cursor)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	helper.Success(w, http.StatusOK, "Feed retrieved successfully", posts)
+	var nextCursor *int64
+	if hasMore && len(posts) > 0 {
+		lastID := posts[len(posts)-1].ID
+		nextCursor = &lastID
+	}
+
+	helper.Success(w, http.StatusOK, "Feed retrieved successfully", map[string]interface{}{
+		"posts":       posts,
+		"next_cursor": nextCursor,
+		"has_more":    hasMore,
+	})
 }
 
 // GetPost GET /api/v1/posts?post_id=123

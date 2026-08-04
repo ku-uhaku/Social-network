@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import styles from "@/css/image-upload.css";
+import "@/css/image-upload.css";
 
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/gif"];
 const ACCEPTED_EXT = ".png,.jpg,.jpeg,.gif";
@@ -44,33 +44,32 @@ export default function ImageUploadButton({ label = "Upload image", value, onCha
     onChange?.(file);
   }
 
-  // TODO ugly default style
   return (
-    <div className={styles.field}>
-      <label className={styles.label} htmlFor={inputId}>{label}</label>
+    <div className="field">
+      <label className="label" htmlFor={inputId}>{label}</label>
 
-      <div className={styles.row}>
+      <div className="row">
         <input
           id={inputId}
           ref={inputRef}
-          className={styles.input}
+          className="input"
           type="file"
           accept={ACCEPTED_EXT}
           onChange={handleFile}
           required={required}
         />
         {(preview || value) && (
-          <button type="button" className={styles.clearButton} onClick={reset}>
+          <button type="button" className="clearButton" onClick={reset}>
             Remove
           </button>
         )}
       </div>
 
       {preview && (
-        <img src={preview} alt="Preview" className={styles.preview} />
+        <img src={preview} alt="Preview" className="preview" />
       )}
 
-      {error && <div className={styles.error}>{error}</div>}
+      {error && <div className="error">{error}</div>}
     </div>
   );
 }

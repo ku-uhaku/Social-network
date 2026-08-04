@@ -69,6 +69,7 @@ export default function PostDetailPage({ params }) {
   }
 
   if (error) {
+    // TODO: make inline error into a component since it's used in many places (search postsError)
     return <div className="postsError">{error}</div>;
   }
 

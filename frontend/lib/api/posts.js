@@ -1,7 +1,11 @@
 import { apiFetch } from "./fetcher";
 
-export function getFeed() {
-  return apiFetch("/api/v1/posts/feed", { method: "GET" });
+export function getFeed({ limit, cursor } = {}) {
+  const params = new URLSearchParams();
+  if (limit) params.set("limit", limit);
+  if (cursor) params.set("cursor", cursor);
+  const qs = params.toString();
+  return apiFetch(`/api/v1/posts/feed${qs ? `?${qs}` : ""}`, { method: "GET" });
 }
 
 export function getPost(postId) {

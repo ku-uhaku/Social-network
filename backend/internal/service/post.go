@@ -21,8 +21,8 @@ func (s *Service) CreatePost(ctx context.Context, userID int64, payload models.C
 	return s.Repo.CreatePost(ctx, userID, payload)
 }
 
-func (s *Service) GetFeed(ctx context.Context, userID int64) ([]models.Post, error) {
-	return s.Repo.GetFeedPosts(ctx, userID)
+func (s *Service) GetFeed(ctx context.Context, userID int64, limit int, cursor *int64) ([]models.Post, bool, error) {
+	return s.Repo.GetFeedPosts(ctx, userID, limit, cursor)
 }
 
 func (s *Service) GetPost(ctx context.Context, userID int64, postID int64) (*models.Post, error) {

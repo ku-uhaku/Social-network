@@ -1,22 +1,22 @@
 "use client";
 
-import styles from "@/css/error.css";
+import "@/css/error.css";
 
 export default function ErrorDisplay({ message, onRetry, homeHref = "/" }) {
   return (
-    <div className={styles.page}>
-      <img className={styles.wallpaper} src={"/images/err_wallpaper.png"} alt="" />
-      <div className={styles.card}>
-        <h1 className={styles.title}>Something went wrong</h1>
-        <p className={styles.message}>{message || "An unexpected error occurred."}</p>
+    <div className="page">
+      <img className="wallpaper" src={"/images/err_wallpaper.png"} alt="" />
+      <div className="card">
+        <h1 className="title">Death and decay awaits</h1>
+        <p className="message">{message || "An unexpected error occurred."}</p>
 
-        <div className={styles.actions}>
+        <div className="actions">
           {onRetry && (
-            <button className={styles.button} onClick={onRetry}>
+            <button className="button" onClick={onRetry}>
               Try again
             </button>
           )}
-          <a className={styles.link} href={homeHref}>
+          <a className="link" href={homeHref}>
             Go home
           </a>
         </div>

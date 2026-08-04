@@ -1,19 +1,28 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 const CURSOR_IMG = "/images/cursor.png";
-const PARTICLES = [
+const PARTICLE_SPRITES = [
   "/images/mouse_particle_1.png",
   "/images/mouse_particle_2.png",
   "/images/mouse_particle_3.png",
 ];
-const MAX_PARTICLES = 24;
-const PARTICLE_LIFETIME = 700;
+const MAX_PARTICLES = 100;
+const PARTICLE_LIFETIME = 1000;
 
-export default function CursorParticles() {
+const ParticlesCtx = createContext(null);
+
+export function ParticlesProvider({ children }) {
+  const [isParticlesEnabled, setIsParticlesEnabled] = useState(true);
+  const enabledRef = useRef(isParticlesEnabled);
+
   const overlayRef = useRef(null);
   const cursorRef = useRef(null);
+
+  useEffect(() => {
+    enabledRef.current = isParticlesEnabled;
+  }, [isParticlesEnabled]);
 
   useEffect(() => {
     document.body.classList.add("customCursor");
@@ -26,6 +35,8 @@ export default function CursorParticles() {
     let lastY = 0;
 
     function spawnParticle(x, y) {
+      if (!enabledRef.current) return;
+
       if (particles.length >= MAX_PARTICLES) {
         const oldest = particles.shift();
         oldest.remove();
@@ -33,8 +44,8 @@ export default function CursorParticles() {
 
       const img = document.createElement("img");
       img.className = "cursorParticle";
-      img.src = PARTICLES[Math.floor(Math.random() * PARTICLES.length)];
-      const size = 14 + Math.random() * 22;
+      img.src = PARTICLE_SPRITES[Math.floor(Math.random() * PARTICLE_SPRITES.length)];
+      const size = 30 + Math.random() * 60;
       img.style.width = `${size}px`;
       img.style.height = `${size}px`;
 
@@ -58,7 +69,7 @@ export default function CursorParticles() {
       const dx = e.clientX - lastX;
       const dy = e.clientY - lastY;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance > 12) {
+      if (distance > 6) {
         spawnParticle(e.clientX, e.clientY);
         lastX = e.clientX;
         lastY = e.clientY;
@@ -76,8 +87,22 @@ export default function CursorParticles() {
   }, []);
 
   return (
-    <div className="cursorOverlay" ref={overlayRef}>
-      <img className="cursorImage" ref={cursorRef} src={CURSOR_IMG} alt="" />
-    </div>
+    <ParticlesCtx.Provider
+      value={{
+        isParticlesEnabled,
+        toggleParticles: () => setIsParticlesEnabled((e) => !e),
+      }}
+    >
+      {children}
+      <div className="cursorOverlay" ref={overlayRef}>
+        <img className="cursorImage" ref={cursorRef} src={CURSOR_IMG} alt="" />
+      </div>
+    </ParticlesCtx.Provider>
   );
+}
+
+export function useParticles() {
+  const ctx = useContext(ParticlesCtx);
+  if (!ctx) throw new Error("useParticles must be used within a ParticlesProvider");
+  return ctx;
 }
