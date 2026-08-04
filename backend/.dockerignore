@@ -1,0 +1,4 @@
+media/
+*.db
+internal/database/
+.git

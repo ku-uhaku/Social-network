@@ -14,3 +14,14 @@ export function createPost(payload) {
     body: payload,
   });
 }
+
+export function getComments(postId) {
+  return apiFetch(`/api/v1/posts/comments?post_id=${encodeURIComponent(postId)}`, { method: "GET" });
+}
+
+export function createComment(payload) {
+  return apiFetch("/api/v1/posts/comments", {
+    method: "POST",
+    body: payload,
+  });
+}

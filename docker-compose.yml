@@ -5,6 +5,8 @@ services:
       dockerfile: backend/Dockerfile
     ports:
       - "8080:8080"
+    volumes:
+      - social-db:/app/internal/database
     restart: unless-stopped
 
   web:
@@ -13,6 +15,11 @@ services:
       dockerfile: frontend/Dockerfile
     ports:
       - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
     depends_on:
       - go
     restart: unless-stopped
+
+volumes:
+  social-db:

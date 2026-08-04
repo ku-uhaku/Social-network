@@ -62,7 +62,7 @@ func (s *Service) GetComments(ctx context.Context, userID int64, postID int64) (
 		return nil, err
 	}
 
-	return s.Repo.GetPostComments(ctx, postID, userID)
+	return s.Repo.GetPostComments(ctx, postID)
 }
 
 func (s *Service) checkPostVisibility(ctx context.Context, userID int64, post *models.Post) error {

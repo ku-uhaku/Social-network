@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createPost } from "@/lib/api/posts";
-import ImageUploader from "@/components/shared/ImageUploader";
+import ImageUploadButton from "@/components/shared/ImageUploadButton";
 
 export default function CreatePostPage() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [privacy, setPrivacy] = useState("public");
+  const [image, setImage] = useState(null);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -19,16 +20,25 @@ export default function CreatePostPage() {
     setSubmitting(true);
 
     try {
-      const payload = {
-        title: title.trim(),
-        content: content.trim(),
-        privacy,
-      };
+      const payload = image
+        ? (() => {
+            const formData = new FormData();
+            formData.append("title", title.trim());
+            formData.append("content", content.trim());
+            formData.append("privacy", privacy);
+            formData.append("image", image);
+            return formData;
+          })()
+        : {
+            title: title.trim(),
+            content: content.trim(),
+            privacy,
+          };
 
       const response = await createPost(payload);
       const post = response?.data;
       if (post?.id) {
-        router.push(`/posts/${post.id}`);
+        router.push(`/`);
       } else {
         setError("Unexpected response from the server.");
       }
@@ -82,13 +92,13 @@ export default function CreatePostPage() {
               </select>
             </div>
             <div className="field">
-              <label htmlFor="image_url">Image (optional)</label>
-              <ImageUploader avatar={null} name={title || "Post"} size={64} />
-              
+              <ImageUploadButton
+                label="Image (optional)"
+                value={image}
+                onChange={setImage}
+              />
             </div>
           </div>
-
-          <p className="guideText">You can add an image URL to include a visual preview on the post page.</p>
 
           <div className="postFormActions">
             <button className="button postFormButton" type="submit" disabled={submitting}>

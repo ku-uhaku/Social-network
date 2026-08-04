@@ -1,14 +1,12 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
 
 	"kuu/internal/helper"
 	"kuu/internal/middleware"
-	"kuu/internal/models"
 	"kuu/internal/requests"
 	"kuu/internal/service"
 )
@@ -21,9 +19,9 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var payload models.CreatePostPayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+	payload, err := requests.ParseCreatePostPayload(r)
+	if err != nil {
+		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -97,9 +95,9 @@ func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var payload models.CreateCommentPayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+	payload, err := requests.ParseCreateCommentPayload(r)
+	if err != nil {
+		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
 

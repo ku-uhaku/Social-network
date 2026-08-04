@@ -1,11 +1,46 @@
 package requests
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"net/http"
+	"strconv"
 	"strings"
 
+	"kuu/internal/helper"
 	"kuu/internal/models"
 )
+
+func ParseCreatePostPayload(r *http.Request) (models.CreatePostPayload, error) {
+	var payload models.CreatePostPayload
+
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
+		if err := r.ParseMultipartForm(32 << 20); err != nil {
+			return payload, fmt.Errorf("malformed multipart form data: %w", err)
+		}
+
+		payload.Title = strings.TrimSpace(r.FormValue("title"))
+		payload.Content = strings.TrimSpace(r.FormValue("content"))
+		payload.Privacy = strings.TrimSpace(r.FormValue("privacy"))
+
+		if file, header, err := r.FormFile("image"); err == nil {
+			defer file.Close()
+			if header != nil && header.Size > 0 {
+				imageName, err := helper.SaveUploadedImage(file, header, "media")
+				if err != nil {
+					return payload, fmt.Errorf("failed to save post image: %w", err)
+				}
+
+				payload.ImageURL = &imageName
+			}
+		}
+	} else if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		return payload, fmt.Errorf("invalid JSON payload")
+	}
+
+	return payload, nil
+}
 
 func ValidateCreatePost(p models.CreatePostPayload) []error {
 	var errs []error
@@ -24,10 +59,47 @@ func ValidateCreatePost(p models.CreatePostPayload) []error {
 	return errs
 }
 
+func ParseCreateCommentPayload(r *http.Request) (models.CreateCommentPayload, error) {
+	var payload models.CreateCommentPayload
+
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
+		if err := r.ParseMultipartForm(32 << 20); err != nil {
+			return payload, fmt.Errorf("malformed multipart form data: %w", err)
+		}
+
+		postID, err := strconv.ParseInt(r.FormValue("post_id"), 10, 64)
+		if err != nil {
+			return payload, fmt.Errorf("invalid post_id")
+		}
+		payload.PostID = postID
+		payload.Title = strings.TrimSpace(r.FormValue("title"))
+		payload.Content = strings.TrimSpace(r.FormValue("content"))
+
+		if file, header, err := r.FormFile("image"); err == nil {
+			defer file.Close()
+			if header != nil && header.Size > 0 {
+				imageName, err := helper.SaveUploadedImage(file, header, "media")
+				if err != nil {
+					return payload, fmt.Errorf("failed to save comment image: %w", err)
+				}
+
+				payload.ImageURL = &imageName
+			}
+		}
+	} else if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		return payload, fmt.Errorf("invalid JSON payload")
+	}
+
+	return payload, nil
+}
+
 func ValidateCreateComment(p models.CreateCommentPayload) []error {
 	var errs []error
 	if p.PostID <= 0 {
 		errs = append(errs, errors.New("post_id is required"))
+	}
+	if strings.TrimSpace(p.Title) == "" {
+		errs = append(errs, errors.New("comment title is required"))
 	}
 	if strings.TrimSpace(p.Content) == "" {
 		errs = append(errs, errors.New("comment content cannot be empty"))

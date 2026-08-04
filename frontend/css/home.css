@@ -219,6 +219,19 @@
   margin-bottom: 14px;
 }
 
+.postAuthorInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.postAuthorName {
+  color: var(--bone);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+
 .postTitle {
   margin: 0;
   font-size: 1.25rem;
@@ -228,6 +241,14 @@
   color: var(--muted);
   font-size: 0.9rem;
   line-height: 1.5;
+}
+
+.postCardImage {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 14px;
+  margin: 0 0 14px;
 }
 
 .postSnippet {
@@ -337,4 +358,124 @@
 .guideText {
   color: var(--muted);
   font-size: 0.95rem;
+}
+
+.commentsSection {
+  display: grid;
+  gap: 20px;
+}
+
+.commentsTitle {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.commentForm {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.commentForm .field {
+  display: grid;
+  gap: 10px;
+}
+
+.commentForm label {
+  color: var(--muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+
+.commentForm input,
+.commentForm textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--bone);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-family: inherit;
+}
+
+.commentForm input:focus,
+.commentForm textarea:focus {
+  outline: none;
+  border-color: var(--soul);
+}
+
+.commentForm textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.commentFormRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.commentFormButton {
+  min-width: 140px;
+}
+
+.commentsList {
+  display: grid;
+  gap: 16px;
+}
+
+.commentCard {
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.commentCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.commentCardMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.commentAuthor {
+  color: var(--bone);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.commentDate {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.commentTitle {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+}
+
+.commentContent {
+  margin: 0;
+  color: var(--bone);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.commentImage {
+  width: 100%;
+  max-height: 240px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-top: 12px;
 }

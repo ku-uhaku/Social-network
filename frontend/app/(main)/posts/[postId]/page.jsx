@@ -1,18 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { getPost } from "@/lib/api/posts";
+import { getPost, getComments } from "@/lib/api/posts";
 import PostCard from "@/components/posts/PostCard";
+import CommentCard from "@/components/posts/CommentCard";
+import CommentCreate from "@/components/posts/CommentCreate";
 
 export default function PostDetailPage({ params }) {
-  const { postId } = params;
+  const { postId } = use(params); // params require await
   const router = useRouter();
   const { user, loading } = useAuth();
   const [post, setPost] = useState(null);
+  const [comments, setComments] = useState([]);
   const [loadingPost, setLoadingPost] = useState(true);
+  const [loadingComments, setLoadingComments] = useState(true);
   const [error, setError] = useState("");
+  const [commentsError, setCommentsError] = useState("");
 
   useEffect(() => {
     if (!loading && !user) {
@@ -35,6 +40,26 @@ export default function PostDetailPage({ params }) {
     loadPost();
   }, [postId]);
 
+  useEffect(() => {
+    async function loadComments() {
+      try {
+        const response = await getComments(postId);
+        setComments(response?.data || []);
+      } catch (err) {
+        setCommentsError(err?.message || "Could not load comments.");
+      } finally {
+        setLoadingComments(false);
+      }
+    }
+
+    loadComments();
+  }, [postId]);
+
+  function handleCommentCreated(comment) {
+    setComments((prev) => [...prev, comment]);
+    setPost((prev) => (prev ? { ...prev, comments_count: prev.comments_count + 1 } : prev));
+  }
+
   if (loading || (!user && !loading)) {
     return <div className="postsPlaceholder">Checking authentication…</div>;
   }
@@ -55,6 +80,26 @@ export default function PostDetailPage({ params }) {
     <section className="postsContainer">
       <div className="postDetails">
         <PostCard post={post} isFeed={false} />
+
+        <div className="commentsSection">
+          <h2 className="commentsTitle">Comments ({post.comments_count})</h2>
+
+          <CommentCreate postId={postId} onCreated={handleCommentCreated} />
+
+          {loadingComments ? (
+            <div className="postsPlaceholder">Loading comments…</div>
+          ) : commentsError ? (
+            <div className="postsError">{commentsError}</div>
+          ) : comments.length === 0 ? (
+            <div className="postsPlaceholder">No comments yet. Be the first to comment!</div>
+          ) : (
+            <div className="commentsList">
+              {comments.map((comment) => (
+                <CommentCard key={comment.id} comment={comment} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );
