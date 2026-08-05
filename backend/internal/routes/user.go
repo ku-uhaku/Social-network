@@ -13,6 +13,10 @@ func registerUserRoutes(mux *http.ServeMux, h *handler.Handler, m *middleware.Mi
 		m.AllowMethods(http.MethodPut)(m.RequireAuth(http.HandlerFunc(h.UpdateProfile))),
 	)
 
+	// Profile & Posts
+	mux.Handle("/api/v1/user/profile", m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.GetUserProfile))))
+	mux.Handle("/api/v1/user/posts", m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.GetUserPosts))))
+
 	mux.Handle("/api/v1/user/follow", m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.FollowUser))))
 	mux.Handle("/api/v1/user/unfollow", m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.UnfollowUser))))
 

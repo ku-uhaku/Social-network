@@ -19,6 +19,54 @@ func (s *Service) UpdateProfile(ctx context.Context, userID int64, payload model
 	return s.Repo.UpdateUserProfile(ctx, userID, payload)
 }
 
+// GetUserProfile fetches a user profile by username, enriched with follow stats
+// and the requesting viewer's relationship to the target user.
+func (s *Service) GetUserProfile(ctx context.Context, viewerID int64, username string) (*models.UserProfileView, error) {
+	user, err := s.Repo.GetUserByUsername(ctx, username)
+	if err != nil {
+		return nil, err
+	}
+
+	stats, err := s.Repo.GetFollowStats(ctx, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	view := &models.UserProfileView{
+		ID:             user.ID,
+		Username:       user.Username,
+		Email:          user.Email,
+		FirstName:      user.FirstName,
+		LastName:       user.LastName,
+		Gender:         user.Gender,
+		DateOfBirth:    user.DateOfBirth,
+		IsPublic:       user.IsPublic,
+		Avatar:         user.Avatar,
+		AboutMe:        user.AboutMe,
+		CreatedAt:      user.CreatedAt,
+		FollowersCount: stats.FollowersCount,
+		FollowingCount: stats.FollowingCount,
+		FollowStatus:   "none",
+	}
+
+	if viewerID == user.ID {
+		view.FollowStatus = "self"
+		return view, nil
+	}
+
+	status, err := s.Repo.GetFollowRelation(ctx, viewerID, user.ID)
+	if err == nil && (status == "pending" || status == "accepted") {
+		view.FollowStatus = status
+	}
+
+	return view, nil
+}
+
+// GetUserPosts retrieves a user's public posts
+func (s *Service) GetUserPosts(ctx context.Context, userID int64) ([]models.Post, error) {
+	return s.Repo.GetUserPosts(ctx, userID)
+}
+
 func (s *Service) FollowUser(ctx context.Context, followerID, targetID int64) (string, error) {
 	if followerID == targetID {
 		return "", ErrCannotFollowSelf

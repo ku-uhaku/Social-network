@@ -44,6 +44,64 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	helper.Success(w, http.StatusOK, "Profile updated successfully", updatedUser)
 }
 
+// GetUserProfile GET /api/v1/user/profile?username=john
+func (h *Handler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	username := r.URL.Query().Get("username")
+	if username == "" {
+		helper.Error(w, http.StatusBadRequest, "Invalid username parameter")
+		return
+	}
+
+	profile, err := h.Service.GetUserProfile(r.Context(), user.ID, username)
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Profile retrieved successfully", profile)
+}
+
+// GetUserPosts GET /api/v1/user/posts?username=john
+func (h *Handler) GetUserPosts(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	username := r.URL.Query().Get("username")
+	if username == "" {
+		helper.Error(w, http.StatusBadRequest, "Invalid username parameter")
+		return
+	}
+
+	targetUser, err := h.Service.GetUserProfile(r.Context(), user.ID, username)
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Only the owner or public profiles expose their posts
+	if targetUser.FollowStatus != "self" && targetUser.IsPublic == 0 {
+		helper.Error(w, http.StatusForbidden, "This account is private")
+		return
+	}
+
+	posts, err := h.Service.GetUserPosts(r.Context(), targetUser.ID)
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Posts retrieved successfully", posts)
+}
+
 // FollowUser POST /api/v1/user/follow
 func (h *Handler) FollowUser(w http.ResponseWriter, r *http.Request) {
 	user, ok := middleware.GetUserFromContext(r.Context())

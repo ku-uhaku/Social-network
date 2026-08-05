@@ -10,9 +10,9 @@ type User struct {
 	FirstName   string `json:"first_name"`
 	LastName    string `json:"last_name"`
 	Gender      string `json:"gender"`
-	DateOfBirth string `json:"date_of_birth"` // Handled as ISO 8601 string format
-	IsPublic    int    `json:"is_public"`     // 1 for true, 0 for false (SQLite compliance)
-	Password    string `json:"-"`             // Password is never exposed in JSON responses
+	DateOfBirth string `json:"date_of_birth"`
+	IsPublic    int    `json:"is_public"`
+	Password    string `json:"-"`
 
 	Avatar  *string `json:"avatar"`
 	AboutMe *string `json:"about_me"`
@@ -39,22 +39,27 @@ type InputRegisterPayload struct {
 
 // UpdateProfilePayload represents the incoming JSON contract for changing user details
 type UpdateProfilePayload struct {
-	FirstName   string `json:"first_name"`
-	LastName    string `json:"last_name"`
-	Gender      string `json:"gender"`
-	DateOfBirth string `json:"date_of_birth"`
-	// TODO: only allow updating IsPublic
-	IsPublic int     `json:"is_public"` // 1 for true, 0 for false
-	Avatar   *string `json:"avatar"`
-	AboutMe  *string `json:"about_me"`
+	IsPublic int `json:"is_public"` // 1 for true, 0 for false
 }
 
-// Follow represents the database record for follower relationships
-type Follow struct {
-	FollowerID  int64     `json:"follower_id"`
-	FollowingID int64     `json:"following_id"`
-	Status      string    `json:"status"` // 'pending' or 'accepted'
+// UserProfileView represents a user profile as displayed on the profile page,
+// including follow statistics and the viewer's relationship to the user.
+type UserProfileView struct {
+	ID          int64   `json:"id"`
+	Username    string  `json:"username"`
+	Email       string  `json:"email"`
+	FirstName   string  `json:"first_name"`
+	LastName    string  `json:"last_name"`
+	Gender      string  `json:"gender"`
+	DateOfBirth string  `json:"date_of_birth"`
+	IsPublic    int     `json:"is_public"`
+	Avatar      *string `json:"avatar"`
+	AboutMe     *string `json:"about_me"`
 	CreatedAt   time.Time `json:"created_at"`
+
+	FollowersCount int64  `json:"followers_count"`
+	FollowingCount int64  `json:"following_count"`
+	FollowStatus   string `json:"follow_status"` // 'self', 'none', 'pending', 'accepted'
 }
 
 // FollowActionPayload handles targets for follow/unfollow and request actions
@@ -69,7 +74,6 @@ type UserFollowView struct {
 	FirstName string  `json:"first_name"`
 	LastName  string  `json:"last_name"`
 	Avatar    *string `json:"avatar"`
-	Status    string  `json:"status,omitempty"` // For pending requests
 }
 
 // FollowStats summarizes follow counts

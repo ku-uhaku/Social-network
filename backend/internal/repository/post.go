@@ -55,8 +55,9 @@ func (r *Repository) GetPostByID(ctx context.Context, postID int64) (*models.Pos
 	return &p, nil
 }
 
-// GetFeedPosts retrieves posts filtered by user visibility (Public, Follower posts, Group posts)
-// Paginated by cursor (last post id) and limit. Returns hasMore indicating whether more posts exist.
+// GetFeedPosts retrieves posts from the current user and users they follow (accepted status),
+// plus group posts for groups they belong to. Paginated by cursor (last post id) and limit.
+// Returns hasMore indicating whether more posts exist.
 func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64, limit int, cursor *int64) ([]models.Post, bool, error) {
 	query := `
 		SELECT DISTINCT p.id, p.user_id, p.group_id, p.title, p.content, p.privacy, p.image_url, p.created_at,
@@ -69,7 +70,7 @@ func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64, limi
 		WHERE 
 			p.user_id = $1 OR
 			(p.group_id IS NOT NULL AND gm.user_id IS NOT NULL) OR
-			(p.group_id IS NULL AND (p.privacy = 'public' OR (p.privacy = 'almost private' AND f.follower_id IS NOT NULL)))
+			(p.group_id IS NULL AND f.follower_id IS NOT NULL AND p.privacy IN ('public', 'almost private'))
 		ORDER BY p.created_at DESC, p.id DESC
 	`
 

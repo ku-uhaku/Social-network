@@ -5,6 +5,7 @@ import SplashScreen from "@/components/shared/SplashScreen";
 import "@/css/globals.css";
 import "@/css/home.css";
 import "@/css/auth.css";
+import "@/css/profile.css";
 
 export default function RootLayout({ children }) {
   return (

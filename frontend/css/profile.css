@@ -1,0 +1,293 @@
+.profilePage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 24px;
+}
+
+.profileCard {
+  width: 100%;
+  max-width: 640px;
+  padding: 28px;
+  border-radius: 18px;
+  background: rgba(10, 13, 18, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.profileCardTop {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.profileToggleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profileToggleLabel {
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.profileUsername {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+.profileFullName {
+  margin: 0;
+  color: var(--bone);
+  font-size: 1rem;
+}
+
+.profileEmail {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.profileDetails {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.profileDetail {
+  color: var(--bone);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.profileDetail strong {
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+.profileStats {
+  display: flex;
+  gap: 24px;
+}
+
+.profileStatButton {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 20px;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.profileStatButton:hover {
+  border-color: var(--soul-dim);
+  color: var(--bone);
+}
+
+.profileStatButton strong {
+  color: var(--bone);
+  font-size: 1.05rem;
+}
+
+.profileFollowButton {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--bone);
+  padding: 10px 32px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.profileFollowButton:hover {
+  border-color: var(--soul);
+  color: var(--soul);
+}
+
+.profileFollowButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.profileFollowButton.pending {
+  border-color: var(--soul-dim);
+  color: var(--soul-dim);
+  cursor: default;
+}
+
+.profileFollowButton.accepted:hover {
+  border-color: #ff7a7a;
+  color: #ff7a7a;
+}
+
+.profilePosts {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.profilePostsTitle {
+  margin: 8px 0 0;
+  font-size: 1.4rem;
+  letter-spacing: 0.02em;
+}
+
+.profilePlaceholder {
+  width: 100%;
+  max-width: 640px;
+  padding: 32px;
+  border-radius: 18px;
+  text-align: center;
+  background: rgba(10, 13, 18, 0.7);
+  border: 1px dashed var(--border);
+  color: var(--muted);
+}
+
+.profileError {
+  width: 100%;
+  max-width: 640px;
+  padding: 32px;
+  border-radius: 18px;
+  text-align: center;
+  background: rgba(10, 13, 18, 0.7);
+  border: 1px solid rgba(255, 0, 0, 0.25);
+  color: #ff7a7a;
+}
+
+.profilePrivateNotice {
+  width: 100%;
+  max-width: 640px;
+  padding: 24px;
+  border-radius: 18px;
+  text-align: center;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  background: rgba(10, 13, 18, 0.7);
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+}
+
+/* Follow List Modal */
+.followListOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+}
+
+.followListModal {
+  width: 90%;
+  max-width: 440px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(6, 8, 12, 0.96);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02) inset,
+    0 16px 34px rgba(0, 0, 0, 0.55);
+}
+
+.followListModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.followListModalTitle {
+  margin: 0;
+  font-size: 1.15rem;
+  letter-spacing: 0.05em;
+}
+
+.followListCloseButton {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.6rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+}
+
+.followListCloseButton:hover {
+  color: var(--bone);
+}
+
+.followListModalBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.followListItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  text-decoration: none;
+  color: var(--bone);
+  transition: background 0.15s;
+}
+
+.followListItem:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.followListItemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.followListItemName {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.followListItemUsername {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.followListPlaceholder,
+.followListError {
+  padding: 24px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.followListError {
+  color: #ff7a7a;
+}

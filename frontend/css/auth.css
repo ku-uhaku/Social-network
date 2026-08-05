@@ -76,6 +76,7 @@
   background: var(--surface);
   color: var(--bone);
   font-family: inherit;
+  resize: none;
 }
 
 .input:focus {
