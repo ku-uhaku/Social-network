@@ -1,0 +1,264 @@
+/* ---- Notification button ---- */
+.notificationButton {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--bone);
+  padding: 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.notificationButton:hover {
+  border-color: var(--soul-dim);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.15);
+}
+
+.notificationBell {
+  font-size: 20px;
+  line-height: 1;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.6));
+}
+
+.notificationBadge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--soul);
+  color: #000;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+}
+
+/* ---- Notification panel ---- */
+.notificationPanel {
+  position: fixed;
+  top: var(--header-height, 88px);
+  right: 24px;
+  z-index: 20;
+  width: 340px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: rgba(6, 8, 12, 0.96);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02) inset,
+    0 16px 34px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s,
+    border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.notificationPanel.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+  border-color: var(--soul-dim);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02) inset,
+    0 0 18px rgba(0, 240, 255, 0.12), 0 16px 34px rgba(0, 0, 0, 0.55);
+}
+
+.notificationPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.notificationPanelTitle {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bone);
+}
+
+.notificationMarkAllRead {
+  background: transparent;
+  border: none;
+  color: var(--soul-dim);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  transition: color 0.2s;
+}
+
+.notificationMarkAllRead:hover {
+  color: var(--soul);
+}
+
+.notificationList {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 8px;
+}
+
+/* ---- Notification item ---- */
+.notificationItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: rgba(10, 13, 18, 0.6);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.notificationItem:hover {
+  border-color: var(--soul-dim);
+  background: rgba(10, 13, 18, 0.85);
+}
+
+.notificationItem.unread {
+  border-left: 2px solid var(--soul);
+}
+
+.notificationItem.expired {
+  opacity: 0.5;
+}
+
+.notificationItemHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.notificationAvatar,
+.notificationAvatarFallback {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  object-fit: cover;
+}
+
+.notificationAvatarFallback {
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.notificationMeta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.notificationTitle {
+  color: var(--bone);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notificationTime {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.notificationReadButton {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.notificationReadButton:hover {
+  border-color: var(--soul);
+  color: var(--soul);
+}
+
+.notificationMessage {
+  margin: 0;
+  color: var(--bone);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: break-word;
+}
+
+.notificationActions {
+  display: flex;
+  gap: 8px;
+}
+
+.notificationAction {
+  flex: 1;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--bone);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.notificationAction:hover {
+  border-color: var(--soul-dim);
+  color: var(--soul);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.15);
+}
+
+.notificationAction.accept:hover {
+  border-color: var(--soul);
+  color: var(--soul);
+}
+
+.notificationAction.decline:hover {
+  border-color: var(--brass-dim);
+  color: var(--brass);
+}
+
+.notificationEmpty {
+  padding: 24px 16px;
+  margin: 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}

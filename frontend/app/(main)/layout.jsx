@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAudio } from "@/contexts/AudioContext";
 import { useParticles } from "@/contexts/ParticlesContext";
+import { useNotifications } from "@/contexts/NotificationContext";
 import Avatar from "@/components/shared/Avatar";
 import CharmToggle from "@/components/shared/CharmToggle";
+import NotificationList from "@/components/notifications/NotificationList";
 
 const MAIN_WALLPAPER = "/images/main_wallpaper.gif";
 const MAIN_MUSIC = "/audio/main_music.mp3";
@@ -16,8 +18,10 @@ const ICON_SETTINGS = "/images/icon_settings.png";
 
 export default function MainLayout({ children }) {
   const { user, loading, logout } = useAuth();
+  const { unreadCount } = useNotifications();
   const router = useRouter();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const headerRef = useRef(null);
 
   useEffect(() => {
@@ -61,6 +65,15 @@ export default function MainLayout({ children }) {
         <div className="headerControls">
           <button
             type="button"
+            className="notificationButton"
+            title="Notifications"
+            onClick={() => setNotificationsOpen(!notificationsOpen)}
+          >
+            <span className="notificationBell">🔔</span>
+            {unreadCount > 0 && <span className="notificationBadge">{unreadCount}</span>}
+          </button>
+          <button
+            type="button"
             className="settingsButton"
             title="Settings"
             onClick={() => setSettingsOpen(!settingsOpen)}
@@ -75,6 +88,7 @@ export default function MainLayout({ children }) {
 
       <img className="headerSeparator" src={SEPARATOR} alt="" />
 
+      <NotificationList open={notificationsOpen} />
       <Settings open={settingsOpen} />
 
       <section className="pageContent">{children}</section>
