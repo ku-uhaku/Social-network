@@ -9,7 +9,7 @@ func (h *Hub) handleClientRegister(client *Client) {
 
 	// First tab open means the user is officially online
 	if h.OnlineUsers[client.UserID] == 1 {
-		h.BroadcastUserStatus("user_online", client.UserID)
+		h.BroadcastUserStatus(EventUserOnline, client.UserID)
 	}
 	log.Printf("[WS] User %d opened a tab. Total connections: %d", client.UserID, len(h.Clients))
 }
@@ -26,7 +26,7 @@ func (h *Hub) handleClientUnregister(client *Client) {
 		// If no tabs remain open, the user is officially offline
 		if h.OnlineUsers[client.UserID] <= 0 {
 			delete(h.OnlineUsers, client.UserID)
-			h.BroadcastUserStatus("user_offline", client.UserID)
+			h.BroadcastUserStatus(EventUserOffline, client.UserID)
 		}
 		log.Printf("[WS] User %d closed a tab. Remaining connections: %d", client.UserID, len(h.Clients))
 	}

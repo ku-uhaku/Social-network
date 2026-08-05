@@ -22,6 +22,7 @@ func Register(h *handler.Handler, m *middleware.Middleware) *http.ServeMux {
 	registerGroupRoutes(mux, h, m)
 	registerPostRoutes(mux, h, m)
 	registerChatRoutes(mux, h, m)
+	registerNotificationRoutes(mux, h, m)
 
 	return mux
 }

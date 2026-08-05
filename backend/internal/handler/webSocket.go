@@ -43,7 +43,7 @@ func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		onlineSnapshot := h.Hub.GetOnlineUsers()
 		initEvent := ws.Event{
-			Type:         "online_users_list",
+			Type:         ws.EventOnlineUsersList,
 			TargetUserID: user.ID,
 			Payload: map[string]interface{}{
 				"online_user_ids": onlineSnapshot,
@@ -83,10 +83,10 @@ func (h *Handler) handleIncomingWSMessages(ctx context.Context, client *ws.Clien
 		}
 
 		switch incoming.Type {
-		case "send_direct_message":
+		case ws.ClientSendDirectMessage:
 			h.processDirectMessage(ctx, client.UserID, incoming.Payload)
 
-		case "send_group_message":
+		case ws.ClientSendGroupMessage:
 			h.processGroupMessage(ctx, client.UserID, incoming.Payload)
 		}
 	}
@@ -108,7 +108,7 @@ func (h *Handler) processDirectMessage(ctx context.Context, senderID int64, rawP
 
 	// Dispatch real-time event to recipient and sender (for multi-tab sync)
 	h.Hub.Broadcast <- ws.Event{
-		Type:           "new_direct_message",
+		Type:           ws.EventNewDirectMessage,
 		TargetUsersIDs: []int64{senderID, *req.ReceiverID},
 		Payload:        msg,
 	}
@@ -135,7 +135,7 @@ func (h *Handler) processGroupMessage(ctx context.Context, senderID int64, rawPa
 	}
 
 	h.Hub.Broadcast <- ws.Event{
-		Type:           "new_group_message",
+		Type:           ws.EventNewGroupMessage,
 		TargetGroupID:  *req.GroupID,
 		TargetUsersIDs: memberIDs,
 		Payload:        msg,

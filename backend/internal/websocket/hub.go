@@ -52,10 +52,33 @@ func (h *Hub) routeEvent(event Event) {
 			select {
 			case client.Send <- msgBytes:
 			default:
-				close(client.Send)
-				delete(h.Clients, client)
-				client.Conn.Close()
+				// Slow client — defer cleanup to handleClientUnregister serially
+				h.Unregister <- client
 			}
 		}
 	}
+}
+
+// BroadcastToUser pushes an event to all tabs of a single user, non-blocking
+func (h *Hub) BroadcastToUser(userID int64, eventType string, payload interface{}) {
+	h.broadcast(Event{
+		Type:         eventType,
+		TargetUserID: userID,
+		Payload:      payload,
+	})
+}
+
+// BroadcastToUsers pushes an event to all tabs of multiple users, non-blocking
+func (h *Hub) BroadcastToUsers(userIDs []int64, eventType string, payload interface{}) {
+	h.broadcast(Event{
+		Type:           eventType,
+		TargetUsersIDs: userIDs,
+		Payload:        payload,
+	})
+}
+
+func (h *Hub) broadcast(event Event) {
+	go func() {
+		h.Broadcast <- event
+	}()
 }
