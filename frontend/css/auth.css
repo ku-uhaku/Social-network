@@ -1,3 +1,14 @@
+.container{
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.separator_right{
+  transform: scaleX(-1);
+}
+
 .authPage {
   position: relative;
   min-height: 100vh;
@@ -21,11 +32,10 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 420px;
 }
 
 .card {
-  width: 100%;
+  width: 60vw;
   background: rgba(10, 13, 18, 0.88);
   border: 1px solid var(--border);
   border-radius: 8px;

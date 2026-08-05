@@ -14,6 +14,7 @@
   object-fit: cover;
   z-index: 0;
   pointer-events: none;
+  filter: blur(3px) brightness(70%);
 }
 
 .homeHeader {

@@ -74,69 +74,73 @@ function RegisterForm() {
   }
 
   return (
-    <form className="card" onSubmit={handleSubmit}>
-      <h1 className="title">Create an account</h1>
+    <div className="container">
+      <img className="separator" src="/images/card_separator.png" alt="" />
+      <form className="card" onSubmit={handleSubmit}>
+        <h1 className="title">Create an account</h1>
 
-      {error && <div className="error">{error}</div>}
+        {error && <div className="error">{error}</div>}
 
-      <div className="field">
-        <label className="label" htmlFor="username">Nickname</label>
-        <input id="username" name="username" className="input" type="text" value={values.username} onChange={handleChange} required />
-      </div>
-
-      <div className="field">
-        <label className="label" htmlFor="email">Email</label>
-        <input id="email" name="email" className="input" type="email" value={values.email} onChange={handleChange} required />
-      </div>
-
-      <div className="field">
-        <label className="label" htmlFor="password">Password</label>
-        <input id="password" name="password" className="input" type="password" value={values.password} onChange={handleChange} required minLength={8} />
-      </div>
-
-      <div className="row">
         <div className="field">
-          <label className="label" htmlFor="first_name">First name</label>
-          <input id="first_name" name="first_name" className="input" type="text" value={values.first_name} onChange={handleChange} required />
+          <label className="label" htmlFor="username">Nickname</label>
+          <input id="username" name="username" className="input" type="text" value={values.username} onChange={handleChange} required minLength={3} maxLength={20} />
         </div>
+
         <div className="field">
-          <label className="label" htmlFor="last_name">Last name</label>
-          <input id="last_name" name="last_name" className="input" type="text" value={values.last_name} onChange={handleChange} required />
+          <label className="label" htmlFor="email">Email</label>
+          <input id="email" name="email" className="input" type="email" value={values.email} onChange={handleChange} required />
         </div>
-      </div>
 
-      <div className="field">
-        <label className="label" htmlFor="gender">Gender</label>
-        <select id="gender" name="gender" className="input" value={values.gender} onChange={handleChange} required>
-          <option value="">Select gender</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-        </select>
-      </div>
+        <div className="field">
+          <label className="label" htmlFor="password">Password</label>
+          <input id="password" name="password" className="input" type="password" value={values.password} onChange={handleChange} required minLength={8} />
+        </div>
 
-      <div className="field">
-        <label className="label" htmlFor="date_of_birth">Date of birth</label>
-        <input id="date_of_birth" name="date_of_birth" className="input" type="date" value={values.date_of_birth} onChange={handleChange} required />
-      </div>
+        <div className="row">
+          <div className="field">
+            <label className="label" htmlFor="first_name">First name</label>
+            <input id="first_name" name="first_name" className="input" type="text" value={values.first_name} onChange={handleChange} required />
+          </div>
+          <div className="field">
+            <label className="label" htmlFor="last_name">Last name</label>
+            <input id="last_name" name="last_name" className="input" type="text" value={values.last_name} onChange={handleChange} required />
+          </div>
+        </div>
 
-      <ImageUploadButton
-        label="Avatar (optional)"
-        value={avatar}
-        onChange={setAvatar}
-      />
+        <div className="field">
+          <label className="label" htmlFor="gender">Gender</label>
+          <select id="gender" name="gender" className="input" value={values.gender} onChange={handleChange} required>
+            <option value="">Select gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
 
-      <div className="field">
-        <label className="label" htmlFor="about_me">About me (optional)</label>
-        <textarea id="about_me" name="about_me" className="input" rows={3} value={values.about_me} onChange={handleChange} />
-      </div>
+        <div className="field">
+          <label className="label" htmlFor="date_of_birth">Date of birth</label>
+          <input id="date_of_birth" name="date_of_birth" className="input" type="date" value={values.date_of_birth} onChange={handleChange} required />
+        </div>
 
-      <NailButton type="submit" disabled={submitting}>
-        {submitting ? "Creating account..." : "Create account"}
-      </NailButton>
+        <ImageUploadButton
+          label="Avatar (optional)"
+          value={avatar}
+          onChange={setAvatar}
+        />
 
-      <div className="footer">
-        Already have an account? <a className="link" href="/login">Log in</a>
-      </div>
-    </form>
+        <div className="field">
+          <label className="label" htmlFor="about_me">About me (optional)</label>
+          <textarea id="about_me" name="about_me" className="input" rows={3} value={values.about_me} onChange={handleChange} />
+        </div>
+
+        <NailButton type="submit" disabled={submitting}>
+          {submitting ? "Creating account..." : "Create account"}
+        </NailButton>
+
+        <div className="footer">
+          Already have an account? <a className="link" href="/login">Log in</a>
+        </div>
+      </form>
+      <img className="separator separator_right" src="/images/card_separator.png" alt="" />
+    </div>
   );
 }

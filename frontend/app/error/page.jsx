@@ -1,8 +1,17 @@
-import ErrorDisplay from "@/components/error/ErrorDisplay";
+"use client";
 
-export default async function ErrorPage({ searchParams }) {
-  const params = await searchParams;
-  const message = params?.message || "An unexpected error occurred.";
+import ErrorDisplay from "@/components/error/ErrorDisplay";
+import { useAudio } from "@/contexts/AudioContext";
+import { useEffect } from "react";
+
+export default function ErrorPage({ searchParams }) {
+  const message = searchParams?.message || "Error.";
+
+  const { setMusic } = useAudio();
+
+  useEffect(() => {
+    setMusic("/audio/error_music.mp3");
+  }, [setMusic]);
 
   return <ErrorDisplay message={message} />;
 }

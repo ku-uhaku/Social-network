@@ -8,6 +8,8 @@ import PostCard from "@/components/posts/PostCard";
 import CommentCard from "@/components/posts/CommentCard";
 import CommentCreate from "@/components/posts/CommentCreate";
 
+// TODO: redirect to not-found if id is not number or post doesn't exist
+//       same for other pages that take a param (profile/[])
 export default function PostDetailPage({ params }) {
   const { postId } = use(params); // params require await
   const router = useRouter();

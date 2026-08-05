@@ -82,3 +82,14 @@
 .link:hover {
   text-decoration: underline;
 }
+
+.separator {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 180px;
+}
+
+.separator_right{
+  transform: scaleX(-1);
+}

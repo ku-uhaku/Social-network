@@ -21,7 +21,6 @@ export default function LoginPage() {
   );
 }
 
-// TODO: display main_logo.png briefly after successful login
 function LoginForm() {
   const router = useRouter();
   const { login } = useAuth();
@@ -46,43 +45,48 @@ function LoginForm() {
   }
 
   return (
-    <form className="card" onSubmit={handleSubmit}>
-      <h1 className="title">Log in</h1>
+    <div className="container">
+      <img className="separator" src="/images/card_separator.png" alt="" />
+      <form className="card" onSubmit={handleSubmit}>
+        <h1 className="title">Log in</h1>
 
-      {error && <div className="error">{error}</div>}
+        {error && <div className="error">{error}</div>}
 
-      <div className="field">
-        <label className="label" htmlFor="identifier">Email or nickname</label>
-        <input
-          id="identifier"
-          className="input"
-          type="text"
-          value={identifier}
-          onChange={(e) => setIdentifier(e.target.value)}
-          required
-        />
-      </div>
+        <div className="field">
+          <label className="label" htmlFor="identifier">Email or nickname</label>
+          <input
+            id="identifier"
+            className="input"
+            type="text"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            required
+          />
+        </div>
 
-      <div className="field">
-        <label className="label" htmlFor="password">Password</label>
-        <input
-          id="password"
-          className="input"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-      </div>
+        <div className="field">
+          <label className="label" htmlFor="password">Password</label>
+          <input
+            id="password"
+            className="input"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={8}
+          />
+        </div>
 
-      <NailButton type="submit" disabled={submitting}>
-        {submitting ? "Logging in..." : "Log in"}
-      </NailButton>
+        <NailButton type="submit" disabled={submitting}>
+          {submitting ? "Logging in..." : "Log in"}
+        </NailButton>
 
-      <div className="footer">
-        {"Don't have an account? "}
-        <a className="link" href="/register">Register</a>
-      </div>
-    </form>
+        <div className="footer">
+          {"Don't have an account? "}
+          <a className="link" href="/register">Register</a>
+        </div>
+      </form>
+      <img className="separator separator_right" src="/images/card_separator.png" alt="" />
+    </div>
   );
 }

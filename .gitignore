@@ -9,6 +9,7 @@ backend/media/
 backend/.env
 frontend/.env*
 
-.vscode/
-
 priv/
+
+.*
+!/.gitignore
