@@ -14,7 +14,7 @@
   object-fit: cover;
   z-index: 0;
   pointer-events: none;
-  filter: blur(3px) brightness(70%);
+  filter: blur(3px) brightness(70%) saturate(0.2);
 }
 
 .homeHeader {
@@ -31,12 +31,8 @@
   backdrop-filter: blur(4px);
 }
 
-.brandLogo {
-  color: var(--bone);
-  text-decoration: none;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+.brandLogo > img{
+  width:200px;
 }
 
 .headerControls {
@@ -47,6 +43,7 @@
 
 .userInfo {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 14px;
 }

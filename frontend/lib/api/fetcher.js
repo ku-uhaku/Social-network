@@ -1,5 +1,4 @@
-// TODO: this is duplicated in other files
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+import { API_BASE } from "@/lib/utils";
 
 export async function apiFetch(path, options = {}) {
   const { body, headers, ...rest } = options;

@@ -54,7 +54,7 @@ export default function MainLayout({ children }) {
 
       <header ref={headerRef} className="homeHeader">
         <Link href="/" className="brandLogo">
-          Social Network
+          <img src={"/images/main_logo.png"} alt="Social Network" />
         </Link>
 
         <div className="userInfo">

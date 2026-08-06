@@ -10,6 +10,24 @@
   --soul-dim: rgba(0, 240, 255, 0.5);
   --brass: #f5d087;
   --brass-dim: rgba(245, 208, 135, 0.5);
+  --font-normal: "Trajan Pro Regular", "Trajan Pro", Georgia, "Times New Roman", serif;
+  --font-bold: "Trajan Pro Bold", "Trajan Pro", Georgia, "Times New Roman", serif;
+}
+
+@font-face {
+  font-family: "Trajan Pro Regular";
+  src: url("/fonts/Trajan Pro Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Trajan Pro Bold";
+  src: url("/fonts/Trajan Pro Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
 }
 
 * {
@@ -21,7 +39,12 @@ body {
   min-height: 100vh;
   background: var(--abyss);
   color: var(--bone);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-normal);
+}
+
+h1, h2, h3, h4, h5, h6,
+strong, b {
+  font-family: var(--font-bold);
 }
 
 /* ---- Splash screen ---- */

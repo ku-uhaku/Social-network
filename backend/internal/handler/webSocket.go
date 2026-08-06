@@ -82,6 +82,19 @@ func (h *Handler) handleIncomingWSMessages(ctx context.Context, client *ws.Clien
 			continue
 		}
 
+		// Validate session on every client message
+		token := ""
+		if payloadMap, ok := incoming.Payload.(map[string]interface{}); ok {
+			if v, ok := payloadMap["token"].(string); ok {
+				token = v
+			}
+		}
+		if token != "" {
+			if _, err := h.Service.ValidateSession(ctx, token); err != nil {
+				break
+			}
+		}
+
 		switch incoming.Type {
 		case ws.ClientSendDirectMessage:
 			h.processDirectMessage(ctx, client.UserID, incoming.Payload)

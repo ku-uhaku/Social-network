@@ -4,6 +4,13 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getWebSocketUrl } from "@/lib/sockets";
 
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(";").shift();
+  return "";
+}
+
 const WebSocketContext = createContext(null);
 
 const reconnect_delay = 1000;
@@ -68,7 +75,9 @@ export function WebSocketProvider({ children }) {
   const send = (type, payload) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    ws.send(JSON.stringify({ type, payload }));
+    // pass token with every request
+    const token = getCookie("session_token") || "";
+    ws.send(JSON.stringify({ type, payload, token }));
   };
 
   const subscribe = (type, callback) => {
