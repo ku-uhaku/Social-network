@@ -2,37 +2,80 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"time"
 
 	"kuu/internal/models"
 )
 
-// CreatePost creates a new post record
+// CreatePost creates a new post in the database
 func (r *Repository) CreatePost(ctx context.Context, userID int64, payload models.CreatePostPayload) (*models.Post, error) {
-	query := `
-		INSERT INTO posts (user_id, group_id, title, content, privacy, image_url)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id, user_id, group_id, title, content, privacy, image_url, created_at
-	`
-	var p models.Post
-	err := r.DB.Database.QueryRowContext(
-		ctx, query,
-		userID, payload.GroupID, payload.Title, payload.Content, payload.Privacy, payload.ImageURL,
-	).Scan(&p.ID, &p.UserID, &p.GroupID, &p.Title, &p.Content, &p.Privacy, &p.ImageURL, &p.CreatedAt)
+	tx, err := r.DB.Database.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+			return
+		}
+		if commitErr := tx.Commit(); commitErr != nil {
+			err = fmt.Errorf("failed to commit transaction: %w", commitErr)
+		}
+	}()
+
+	// Insert post into posts table
+	post := models.Post{
+		UserID:    userID,
+		GroupID:   payload.GroupID,
+		Title:     payload.Title,
+		Content:   payload.Content,
+		Privacy:   payload.Privacy,
+		ImageURL:  payload.ImageURL,
+		CreatedAt: time.Now(),
+	}
+
+	stmt, err := tx.Prepare("INSERT INTO posts (user_id, group_id, title, content, privacy, image_url, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare insert statement: %w", err)
+	}
+	defer stmt.Close()
+
+	var id int64
+	err = stmt.QueryRow(userID, payload.GroupID, payload.Title, payload.Content, payload.Privacy, payload.ImageURL, post.CreatedAt).Scan(&id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert post: %w", err)
+	}
+	post.ID = id
+
+	// If private post, insert viewers into post_viewers table
+	if payload.Privacy == "private" && len(payload.VisibleTo) > 0 {
+		viewerStmt, err := tx.Prepare("INSERT INTO post_viewers (post_id, user_id) VALUES ($1, $2)")
+		if err != nil {
+			return nil, fmt.Errorf("failed to prepare viewer insert statement: %w", err)
+		}
+		defer viewerStmt.Close()
+
+		for _, viewerID := range payload.VisibleTo {
+			_, err = viewerStmt.Exec(post.ID, viewerID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to insert viewer: %w", err)
+			}
+		}
+	}
+
+	// Get author metadata
+	author, err := r.getUserMetadata(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
+	post.User = *author
 
-	author, err := r.getUserMetadata(ctx, p.UserID)
-	if err != nil {
-		return nil, err
-	}
-	p.User = *author
-
-	return &p, nil
+	return &post, nil
 }
 
-// GetPostByID fetches a single post
+// GetPostByID fetches a single post by ID
 func (r *Repository) GetPostByID(ctx context.Context, postID int64) (*models.Post, error) {
 	query := `
 		SELECT p.id, p.user_id, p.group_id, p.title, p.content, p.privacy, p.image_url, p.created_at,
@@ -57,7 +100,6 @@ func (r *Repository) GetPostByID(ctx context.Context, postID int64) (*models.Pos
 
 // GetFeedPosts retrieves posts from the current user and users they follow (accepted status),
 // plus group posts for groups they belong to. Paginated by cursor (last post id) and limit.
-// Returns hasMore indicating whether more posts exist.
 func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64, limit int, cursor *int64) ([]models.Post, bool, error) {
 	query := `
 		SELECT DISTINCT p.id, p.user_id, p.group_id, p.title, p.content, p.privacy, p.image_url, p.created_at,
@@ -67,13 +109,14 @@ func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64, limi
 		JOIN users u ON u.id = p.user_id
 		LEFT JOIN follows f ON f.following_id = p.user_id AND f.follower_id = $1 AND f.status = 'accepted'
 		LEFT JOIN group_members gm ON gm.group_id = p.group_id AND gm.user_id = $1 AND gm.status = 'accepted'
+		LEFT JOIN post_viewers pv ON pv.post_id = p.id AND pv.user_id = $1
 		WHERE 
 			p.user_id = $1 OR
 			(p.group_id IS NOT NULL AND gm.user_id IS NOT NULL) OR
-			(p.group_id IS NULL AND f.follower_id IS NOT NULL AND p.privacy IN ('public', 'almost private'))
+			(p.group_id IS NULL AND f.follower_id IS NOT NULL AND p.privacy IN ('public', 'almost private')) OR
+			(p.group_id IS NULL AND f.follower_id IS NOT NULL AND pv.user_id IS NOT NULL AND p.privacy = 'private')
 		ORDER BY p.created_at DESC, p.id DESC
 	`
-
 	args := []interface{}{currentUserID}
 	if cursor != nil {
 		query += ` AND p.id < $2`
@@ -177,4 +220,18 @@ func (r *Repository) getUserMetadata(ctx context.Context, userID int64) (*models
 		return nil, err
 	}
 	return &u, nil
+}
+
+// IsPostViewer checks if a user is allowed to view a post
+func (r *Repository) IsPostViewer(ctx context.Context, postID int64, userID int64) (bool, error) {
+	row := r.DB.Database.QueryRowContext(ctx, "SELECT 1 FROM post_viewers WHERE post_id = $1 AND user_id = $2", postID, userID)
+	var found int
+	err := row.Scan(&found)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to check viewer status: %w", err)
+	}
+	return found > 0, nil
 }

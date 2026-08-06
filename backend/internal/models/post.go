@@ -14,14 +14,17 @@ type Post struct {
 	ImageURL      *string      `json:"image_url,omitempty"`
 	CommentsCount int          `json:"comments_count"`
 	CreatedAt     time.Time    `json:"created_at"`
+	VisibleTo     []int64      `json:"visible_to,omitempty"` // New field to track viewers for private posts
 }
 
+// CreatePostPayload represents data for creating a post
 type CreatePostPayload struct {
 	GroupID  *int64  `json:"group_id,omitempty"`
 	Title    string  `json:"title"`
 	Content  string  `json:"content"`
 	Privacy  string  `json:"privacy"` // 'public', 'almost private', 'private'
 	ImageURL *string `json:"image_url,omitempty"`
+	VisibleTo []int64 `json:"visible_to,omitempty"` // New field to track viewers for private posts
 }
 
 // UserMetadata represents the author metadata displayed alongside a post or comment
@@ -45,6 +48,7 @@ type Comment struct {
 	CreatedAt time.Time    `json:"created_at"`
 }
 
+// CreateCommentPayload represents data for creating a comment
 type CreateCommentPayload struct {
 	PostID   int64   `json:"post_id"`
 	Title    string  `json:"title"`

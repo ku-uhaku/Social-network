@@ -67,9 +67,9 @@ func (s *Service) GetUserProfile(ctx context.Context, viewerID int64, username s
 	return view, nil
 }
 
-// GetUserPosts retrieves a user's public posts
-func (s *Service) GetUserPosts(ctx context.Context, userID int64) ([]models.Post, error) {
-	return s.Repo.GetUserPosts(ctx, userID)
+// GetUserPosts retrieves a user's posts (excluding group posts) with author metadata
+func (s *Service) GetUserPosts(ctx context.Context, targetUserID int64, viewerID int64) ([]models.Post, error) {
+    return s.Repo.GetUserPosts(ctx, targetUserID, viewerID)
 }
 
 func (s *Service) FollowUser(ctx context.Context, followerID, targetID int64) (string, error) {

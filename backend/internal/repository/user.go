@@ -148,18 +148,27 @@ func (r *Repository) UpdateUserProfile(ctx context.Context, userID int64, payloa
 	return &user, nil
 }
 
-// GetUserPosts retrieves a user's public posts (excluding group posts) with author metadata
-func (r *Repository) GetUserPosts(ctx context.Context, userID int64) ([]models.Post, error) {
+// GetUserPosts retrieves a user's posts (excluding group posts) with author metadata
+// viewerID is the ID of the user viewing the posts (for visibility checks)
+func (r *Repository) GetUserPosts(ctx context.Context, targetUserID int64, viewerID int64) ([]models.Post, error) {
 	query := `
 		SELECT p.id, p.user_id, p.group_id, p.title, p.content, p.privacy, p.image_url, p.created_at,
 			(SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comments_count,
 			u.id, u.username, u.first_name, u.last_name, u.avatar
 		FROM posts p
 		JOIN users u ON u.id = p.user_id
-		WHERE p.user_id = $1 AND p.group_id IS NULL AND p.privacy = 'public'
+		LEFT JOIN follows f ON f.following_id = p.user_id AND f.follower_id = $2 AND f.status = 'accepted'
+		LEFT JOIN post_viewers pv ON pv.post_id = p.id AND pv.user_id = $2
+		WHERE p.user_id = $1 AND p.group_id IS NULL
+		AND (
+			$2 = $1 OR
+			p.privacy = 'public' OR
+			(f.follower_id IS NOT NULL AND p.privacy = 'almost private') OR
+			(f.follower_id IS NOT NULL AND pv.user_id IS NOT NULL AND p.privacy = 'private')
+		)
 		ORDER BY p.created_at DESC, p.id DESC
 	`
-	rows, err := r.DB.Database.QueryContext(ctx, query, userID)
+	rows, err := r.DB.Database.QueryContext(ctx, query, targetUserID, viewerID)
 	if err != nil {
 		return nil, err
 	}

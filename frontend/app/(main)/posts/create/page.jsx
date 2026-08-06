@@ -1,18 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createPost } from "@/lib/api/posts";
+import { getFollowers } from "@/lib/api/user";
 import ImageUploadButton from "@/components/shared/ImageUploadButton";
+import { useAuth } from "@/contexts/AuthContext";
+import { resolveMediaSrc } from "@/lib/utils";
+import "@/css/createPost.css";
 
 export default function CreatePostPage() {
   const router = useRouter();
+  const { user: currentUser } = useAuth();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [privacy, setPrivacy] = useState("public");
   const [image, setImage] = useState(null);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [followers, setFollowers] = useState([]);
+  const [selectedViewers, setSelectedViewers] = useState([]);
+  const [loadingFollowers, setLoadingFollowers] = useState(false);
+
+  // Fetch current user's followers when privacy is private
+  useEffect(() => {
+    if (privacy === "private" && currentUser?.id) {
+      setLoadingFollowers(true);
+      getFollowers(currentUser.id)
+        .then((response) => {
+          setFollowers(response.data || []);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch followers:", err);
+          setError("Failed to load followers list");
+        })
+        .finally(() => {
+          setLoadingFollowers(false);
+        });
+    } else {
+      setSelectedViewers([]);
+      setFollowers([]);
+    }
+  }, [privacy, currentUser?.id]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -20,6 +49,13 @@ export default function CreatePostPage() {
     setSubmitting(true);
 
     try {
+      // Validate private posts
+      if (privacy === "private" && selectedViewers.length === 0) {
+        setError("Private posts must specify at least one viewer");
+        setSubmitting(false);
+        return;
+      }
+
       const payload = image
         ? (() => {
             const formData = new FormData();
@@ -27,12 +63,23 @@ export default function CreatePostPage() {
             formData.append("content", content.trim());
             formData.append("privacy", privacy);
             formData.append("image", image);
+
+            // Add selected viewers for private posts
+            if (privacy === "private" && selectedViewers.length > 0) {
+              selectedViewers.forEach((viewerId) => {
+                formData.append("visible_to", viewerId);
+              });
+            }
+
             return formData;
           })()
         : {
             title: title.trim(),
             content: content.trim(),
             privacy,
+            ...(privacy === "private" && selectedViewers.length > 0 && {
+              visible_to: selectedViewers,
+            }),
           };
 
       const response = await createPost(payload);
@@ -100,8 +147,63 @@ export default function CreatePostPage() {
             </div>
           </div>
 
+          {/* Follower selection for private posts */}
+          {privacy === "private" && (
+            <div className="field">
+              <label>Select Viewers (who can see this private post)</label>
+              {loadingFollowers ? (
+                <div>Loading followers...</div>
+              ) : followers.length > 0 ? (
+                <div className="followersChecklist">
+                  {followers.map((follower) => (
+                    <label key={follower.id} className="checkboxLabel">
+                      <input
+                        type="checkbox"
+                        checked={selectedViewers.includes(follower.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedViewers([...selectedViewers, follower.id]);
+                          } else {
+                            setSelectedViewers(
+                              selectedViewers.filter((id) => id !== follower.id)
+                            );
+                          }
+                        }}
+                      />
+                      <span className="checkboxCustom"></span>
+                      <div className="followerInfo">
+                        {follower.avatar && (
+                          <img
+                            src={resolveMediaSrc(follower.avatar)}
+                            alt={follower.username}
+                            className="followerAvatar"
+                          />
+                        )}
+                        <span className="followerName">
+                          {follower.first_name} {follower.last_name} (@
+                          {follower.username})
+                        </span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div>No followers found</div>
+              )}
+              {selectedViewers.length === 0 && (
+                <div className="errorText">
+                  At least 1 person
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="postFormActions">
-            <button className="button postFormButton" type="submit" disabled={submitting}>
+            <button
+              className="button postFormButton"
+              type="submit"
+              disabled={submitting || (privacy === "private" && selectedViewers.length === 0)}
+            >
               {submitting ? "Creating..." : "Publish post"}
             </button>
           </div>

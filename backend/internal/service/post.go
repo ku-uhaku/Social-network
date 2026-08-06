@@ -85,6 +85,18 @@ func (s *Service) checkPostVisibility(ctx context.Context, userID int64, post *m
 		if err == nil && status == "accepted" {
 			return nil
 		}
+		return ErrAccessDenied
+	}
+	if post.Privacy == "private" {
+		status, err := s.Repo.GetFollowRelation(ctx, userID, post.UserID)
+		if err != nil || status != "accepted" {
+			return ErrAccessDenied
+		}
+		isViewer, err := s.Repo.IsPostViewer(ctx, post.ID, userID)
+		if err != nil || !isViewer {
+			return ErrAccessDenied
+		}
+		return nil
 	}
 	return ErrAccessDenied
 }

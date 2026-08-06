@@ -12,6 +12,7 @@ import (
 	"kuu/internal/models"
 )
 
+// ParseCreatePostPayload parses the request body into a CreatePostPayload struct
 func ParseCreatePostPayload(r *http.Request) (models.CreatePostPayload, error) {
 	var payload models.CreatePostPayload
 
@@ -24,6 +25,19 @@ func ParseCreatePostPayload(r *http.Request) (models.CreatePostPayload, error) {
 		payload.Content = strings.TrimSpace(r.FormValue("content"))
 		payload.Privacy = strings.TrimSpace(r.FormValue("privacy"))
 
+		// Parse visible_to from multipart form
+		if visibleToValues := r.Form["visible_to"]; len(visibleToValues) > 0 {
+			visibleTo := make([]int64, 0, len(visibleToValues))
+			for _, v := range visibleToValues {
+				id, err := strconv.ParseInt(v, 10, 64)
+				if err != nil {
+					return payload, fmt.Errorf("invalid user ID in visible_to: %w", err)
+				}
+				visibleTo = append(visibleTo, id)
+			}
+			payload.VisibleTo = visibleTo
+		}
+
 		if file, header, err := r.FormFile("image"); err == nil {
 			defer file.Close()
 			if header != nil && header.Size > 0 {
@@ -31,7 +45,6 @@ func ParseCreatePostPayload(r *http.Request) (models.CreatePostPayload, error) {
 				if err != nil {
 					return payload, fmt.Errorf("failed to save post image: %w", err)
 				}
-
 				payload.ImageURL = &imageName
 			}
 		}
@@ -42,6 +55,7 @@ func ParseCreatePostPayload(r *http.Request) (models.CreatePostPayload, error) {
 	return payload, nil
 }
 
+// ValidateCreatePost validates the CreatePostPayload struct
 func ValidateCreatePost(p models.CreatePostPayload) []error {
 	var errs []error
 	if strings.TrimSpace(p.Title) == "" {
@@ -56,9 +70,15 @@ func ValidateCreatePost(p models.CreatePostPayload) []error {
 		errs = append(errs, errors.New("privacy must be 'public', 'almost private', or 'private'"))
 	}
 
+	// visible_to for private posts
+	if p.Privacy == "private" && len(p.VisibleTo) == 0 {
+		errs = append(errs, errors.New("private posts must specify visible_to users"))
+	}
+
 	return errs
 }
 
+// ParseCreateCommentPayload parses the request body into a CreateCommentPayload struct
 func ParseCreateCommentPayload(r *http.Request) (models.CreateCommentPayload, error) {
 	var payload models.CreateCommentPayload
 
@@ -82,7 +102,6 @@ func ParseCreateCommentPayload(r *http.Request) (models.CreateCommentPayload, er
 				if err != nil {
 					return payload, fmt.Errorf("failed to save comment image: %w", err)
 				}
-
 				payload.ImageURL = &imageName
 			}
 		}
@@ -93,6 +112,7 @@ func ParseCreateCommentPayload(r *http.Request) (models.CreateCommentPayload, er
 	return payload, nil
 }
 
+// ValidateCreateComment validates the CreateCommentPayload struct
 func ValidateCreateComment(p models.CreateCommentPayload) []error {
 	var errs []error
 	if p.PostID <= 0 {
@@ -104,5 +124,6 @@ func ValidateCreateComment(p models.CreateCommentPayload) []error {
 	if strings.TrimSpace(p.Content) == "" {
 		errs = append(errs, errors.New("comment content cannot be empty"))
 	}
+
 	return errs
 }

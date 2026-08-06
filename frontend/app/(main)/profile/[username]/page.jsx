@@ -112,7 +112,7 @@ export default function ProfilePage() {
     return "Follow";
   })();
 
-  const showPosts = isOwner || !isPrivate;
+  const showPosts = isOwner || !isPrivate || profile?.follow_status === "accepted";
 
   return (
     <section className="profilePage">

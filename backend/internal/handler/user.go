@@ -101,13 +101,13 @@ func (h *Handler) GetUserPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Only the owner or public profiles expose their posts
-	if targetUser.FollowStatus != "self" && targetUser.IsPublic == 0 {
+	// Only the owner, public profiles, or accepted followers can view posts
+	if targetUser.FollowStatus != "self" && targetUser.IsPublic == 0 && targetUser.FollowStatus != "accepted" {
 		helper.Error(w, http.StatusForbidden, "This account is private")
 		return
 	}
 
-	posts, err := h.Service.GetUserPosts(r.Context(), targetUser.ID)
+	posts, err := h.Service.GetUserPosts(r.Context(), targetUser.ID, user.ID)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
