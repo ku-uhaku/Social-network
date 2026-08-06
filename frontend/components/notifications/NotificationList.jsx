@@ -9,7 +9,14 @@ export default function NotificationList({ open }) {
   return (
     <section className={`notificationPanel ${open ? "open" : ""}`}>
       <div className="notificationPanelHeader">
-        <h3 className="notificationPanelTitle">Notifications</h3>
+        <h3 className="notificationPanelTitle">
+          <img
+            className="notificationPanelBell"
+            src={unreadCount > 0 ? "/images/notification_on.png" : "/images/notification_off.png"}
+            alt=""
+          />
+          Notifications
+        </h3>
         {unreadCount > 0 && (
           <button type="button" className="notificationMarkAllRead" onClick={markAllRead}>
             Mark all read
@@ -20,7 +27,7 @@ export default function NotificationList({ open }) {
       {loading ? (
         <p className="notificationEmpty">Loading...</p>
       ) : notifications.length === 0 ? (
-        <p className="notificationEmpty">No notifications yet</p>
+        <p className="notificationEmpty">Empty</p>
       ) : (
         <div className="notificationList">
           {notifications.map((n) => (

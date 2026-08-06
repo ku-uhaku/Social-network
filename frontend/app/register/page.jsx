@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -47,7 +48,7 @@ function RegisterForm() {
     setValues((v) => ({ ...v, [name]: value }));
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e) { // TODO: after register user is directed to home page with backend err: Authentication required: missing token
     e.preventDefault();
     setError("");
     setSubmitting(true);
@@ -137,7 +138,7 @@ function RegisterForm() {
         </NailButton>
 
         <div className="footer">
-          Already have an account? <a className="link" href="/login">Log in</a>
+          Already have an account? <Link className="link" href="/login">Log in</Link>
         </div>
       </form>
       <img className="separator separator_right" src="/images/card_separator.png" alt="" />

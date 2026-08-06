@@ -215,6 +215,31 @@ func (r *Repository) RemoveFollowRelation(ctx context.Context, followerID, targe
 	return err
 }
 
+// AcceptAllPendingFollows accepts all pending follow requests for a target user,
+// returning the list of follower IDs that were accepted.
+func (r *Repository) AcceptAllPendingFollows(ctx context.Context, targetUserID int64) ([]int64, error) {
+	query := `
+		UPDATE follows SET status = 'accepted'
+		WHERE following_id = $1 AND status = 'pending'
+		RETURNING follower_id
+	`
+	rows, err := r.DB.Database.QueryContext(ctx, query, targetUserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var followerIDs []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		followerIDs = append(followerIDs, id)
+	}
+	return followerIDs, rows.Err()
+}
+
 // UpdateFollowStatus changes request status ('pending' -> 'accepted')
 func (r *Repository) UpdateFollowStatus(ctx context.Context, followerID, targetID int64, status string) error {
 	query := `

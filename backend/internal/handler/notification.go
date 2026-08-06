@@ -131,3 +131,16 @@ func (h *Handler) ExpireAndPush(ctx context.Context, recipientID, notificationID
 	})
 	return nil
 }
+
+// TODO: might need to refactor each notification type into its file
+// ExpireFollowRequest finds and expires a follow_request notification for a recipient+requester pair
+func (h *Handler) ExpireFollowRequest(ctx context.Context, recipientID, requesterID int64) error {
+	n, err := h.Service.GetNotificationByActorType(ctx, recipientID, requesterID, models.NotificationFollowRequest)
+	if err != nil {
+		return err
+	}
+	if n == nil {
+		return nil
+	}
+	return h.ExpireAndPush(ctx, recipientID, n.ID)
+}

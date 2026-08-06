@@ -48,3 +48,13 @@ func (s *Service) ExpireNotification(ctx context.Context, recipientID, notificat
 func (s *Service) GetNotification(ctx context.Context, recipientID, notificationID int64) (*models.Notification, error) {
 	return s.Repo.GetNotification(ctx, recipientID, notificationID)
 }
+
+// GetNotificationByActorType finds a notification by recipient + actor + type
+func (s *Service) GetNotificationByActorType(ctx context.Context, recipientID, actorID int64, notifType string) (*models.Notification, error) {
+	return s.Repo.GetNotificationByActorType(ctx, recipientID, actorID, notifType)
+}
+
+// ExpireNotificationsByType marks all unread, non-expired notifications of a type as expired
+func (s *Service) ExpireNotificationsByType(ctx context.Context, recipientID int64, notifType string) error {
+	return s.Repo.ExpireNotificationsByType(ctx, recipientID, notifType)
+}

@@ -29,6 +29,20 @@ export function unfollowUser(targetUserId) {
   });
 }
 
+export function acceptFollowRequest(targetUserId) {
+  return apiFetch("/api/v1/user/follow/accept", {
+    method: "POST",
+    body: { target_user_id: targetUserId },
+  });
+}
+
+export function declineFollowRequest(targetUserId) {
+  return apiFetch("/api/v1/user/follow/decline", {
+    method: "POST",
+    body: { target_user_id: targetUserId },
+  });
+}
+
 export function getFollowers(userId) {
   return apiFetch(`/api/v1/user/followers?id=${userId}`, { method: "GET" });
 }

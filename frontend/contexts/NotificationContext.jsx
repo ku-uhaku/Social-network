@@ -49,7 +49,12 @@ export function NotificationProvider({ children }) {
 
     const unsubNew = subscribe(ws_new_notification, (payload) => {
       if (!payload) return;
-      setNotifications((prev) => [payload, ...prev]);
+      setNotifications((prev) => {
+        // deduplicate in case of notifications with same id
+        // TODO: this is stupid
+        if (prev.some((n) => n.id === payload.id)) return prev;
+        return [payload, ...prev];
+      });
       setUnreadCount((prev) => prev + 1);
     });
 

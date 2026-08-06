@@ -33,14 +33,28 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, validationErrs)
 		return
 	}
-	// 4. Update profiles inside persistence layer
+
+	// 4. If switching from private to public, auto-accept all pending follow requests
+	//    and expire their follow_request notifications.
+	if payload.IsPublic == 1 && user.IsPublic == 0 {
+		if _, err := h.Service.AcceptAllPendingFollows(r.Context(), user.ID); err != nil {
+			helper.Error(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if err := h.Service.ExpireNotificationsByType(r.Context(), user.ID, models.NotificationFollowRequest); err != nil {
+			helper.Error(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
+	// 5. Update profiles inside persistence layer
 	updatedUser, err := h.Service.UpdateProfile(r.Context(), user.ID, payload)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// 5. Return success data
+	// 6. Return success data
 	helper.Success(w, http.StatusOK, "Profile updated successfully", updatedUser)
 }
 
@@ -130,6 +144,30 @@ func (h *Handler) FollowUser(w http.ResponseWriter, r *http.Request) {
 	msg := "Successfully followed user"
 	if status == "pending" {
 		msg = "Follow request sent successfully"
+		// Avoid duplicate follow_request notifications from spam/retries.
+		existing, _ := h.Service.GetNotificationByActorType(
+			r.Context(), payload.TargetUserID, user.ID, models.NotificationFollowRequest,
+		)
+		if existing == nil || existing.IsExpired == 1 {
+			actorID := user.ID
+			_, err := h.DispatchNotification(r.Context(), payload.TargetUserID, &models.Notification{
+				RecipientID: payload.TargetUserID,
+				ActorID:     &actorID,
+				Type:        models.NotificationFollowRequest,
+				Title:       "New follow request",
+				Message:     user.Username + " wants to follow you",
+				Actions: models.JSONText{
+					"buttons": []interface{}{
+						map[string]interface{}{"action": "accept", "label": "Accept"},
+						map[string]interface{}{"action": "decline", "label": "Decline"},
+					},
+				},
+			})
+			if err != nil {
+				helper.Error(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+		}
 	}
 	helper.Success(w, http.StatusOK, msg, map[string]string{"status": status})
 }
@@ -181,6 +219,12 @@ func (h *Handler) respondToFollowRequest(w http.ResponseWriter, r *http.Request,
 
 	if err := h.Service.HandleFollowRequest(r.Context(), user.ID, payload.TargetUserID, accept); err != nil {
 		helper.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// Expire all follow_request notifications for this requester
+	if err := h.Service.ExpireNotificationsByType(r.Context(), user.ID, models.NotificationFollowRequest); err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 

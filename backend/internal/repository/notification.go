@@ -109,6 +109,29 @@ func (r *Repository) GetNotification(ctx context.Context, recipientID, notificat
 	return r.scanNotification(r.DB.Database.QueryRowContext(ctx, query, notificationID, recipientID))
 }
 
+// GetNotificationByActorType finds a notification by recipient + actor + type
+func (r *Repository) GetNotificationByActorType(ctx context.Context, recipientID, actorID int64, notifType string) (*models.Notification, error) {
+	query := `
+		SELECT ` + notificationSelectColumns + `
+		FROM notifications n
+		LEFT JOIN users u ON u.id = n.actor_id
+		WHERE n.recipient_id = $1 AND n.actor_id = $2 AND n.type = $3
+		ORDER BY n.created_at DESC, n.id DESC
+		LIMIT 1
+	`
+	return r.scanNotification(r.DB.Database.QueryRowContext(ctx, query, recipientID, actorID, notifType))
+}
+
+// ExpireNotificationsByType marks all unread, non-expired notifications of a type as expired
+func (r *Repository) ExpireNotificationsByType(ctx context.Context, recipientID int64, notifType string) error {
+	query := `
+		UPDATE notifications SET is_expired = 1
+		WHERE recipient_id = $1 AND type = $2 AND is_read = 0 AND is_expired = 0
+	`
+	_, err := r.DB.Database.ExecContext(ctx, query, recipientID, notifType)
+	return err
+}
+
 type rowScanner interface {
 	Scan(dest ...interface{}) error
 }

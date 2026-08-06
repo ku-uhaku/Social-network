@@ -18,9 +18,10 @@
   box-shadow: 0 0 12px rgba(0, 240, 255, 0.15);
 }
 
-.notificationBell {
-  font-size: 20px;
-  line-height: 1;
+.notificationBellImg {
+  width: 36px;
+  height: 36px;
+  display: block;
   filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.6));
 }
 
@@ -85,10 +86,20 @@
 
 .notificationPanelTitle {
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 14px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--bone);
+}
+
+.notificationPanelBell {
+  width: 20px;
+  height: 20px;
+  display: block;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.6));
 }
 
 .notificationMarkAllRead {

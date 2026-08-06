@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import "@/css/error.css";
 
 export default function ErrorDisplay({ message, onRetry, homeHref = "/" }) {
@@ -17,9 +18,7 @@ export default function ErrorDisplay({ message, onRetry, homeHref = "/" }) {
               Try again
             </button>
           )}
-          <a className="link" href={homeHref}>
-            Go home
-          </a>
+          <Link className="link" href={homeHref}>Go Home</Link>
         </div>
       </div>
        <img className="separator separator_right" src="/images/card_separator.png" alt="" />

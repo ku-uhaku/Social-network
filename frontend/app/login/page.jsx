@@ -1,5 +1,6 @@
 "use client";
 
+import Link from 'next/link';
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -83,7 +84,7 @@ function LoginForm() {
 
         <div className="footer">
           {"Don't have an account? "}
-          <a className="link" href="/register">Register</a>
+          <Link className="link" href="/register">Register</Link>
         </div>
       </form>
       <img className="separator separator_right" src="/images/card_separator.png" alt="" />

@@ -15,6 +15,8 @@ const MAIN_WALLPAPER = "/images/main_wallpaper.gif";
 const MAIN_MUSIC = "/audio/main_music.mp3";
 const SEPARATOR = "/images/header_separator.png";
 const ICON_SETTINGS = "/images/icon_settings.png";
+const ICON_NOTIFICATION_ON = "/images/notification_on.png";
+const ICON_NOTIFICATION_OFF = "/images/notification_off.png";
 
 export default function MainLayout({ children }) {
   const { user, loading, logout } = useAuth();
@@ -69,7 +71,11 @@ export default function MainLayout({ children }) {
             title="Notifications"
             onClick={() => setNotificationsOpen(!notificationsOpen)}
           >
-            <span className="notificationBell">🔔</span>
+            <img
+              className="notificationBellImg"
+              src={unreadCount > 0 ? ICON_NOTIFICATION_ON : ICON_NOTIFICATION_OFF}
+              alt="Notifications"
+            />
             {unreadCount > 0 && <span className="notificationBadge">{unreadCount}</span>}
           </button>
           <button

@@ -2,6 +2,7 @@
 
 import { resolveMediaSrc } from "@/lib/utils";
 import { useNotifications } from "@/contexts/NotificationContext";
+import { acceptFollowRequest, declineFollowRequest } from "@/lib/api/user";
 
 function timeAgo(dateString) {
   const date = new Date(dateString);
@@ -20,9 +21,21 @@ export default function NotificationItem({ notification }) {
   const avatarSrc = resolveMediaSrc(notification.actor_avatar);
   const actions = notification.actions || {};
 
-  const handleAction = (action) => {
-    if (action === "accept" || action === "decline") {
-      setMarkRead(notification.id); // expire
+  const handleAction = async (action) => {
+    if (action === "accept") {
+      try {
+        await acceptFollowRequest(notification.actor_id);
+        await setMarkRead(notification.id); // expire
+      } catch {
+        // ignore
+      }
+    } else if (action === "decline") {
+      try {
+        await declineFollowRequest(notification.actor_id);
+        await setMarkRead(notification.id); // expire
+      } catch {
+        // ignore
+      }
     }
   };
 

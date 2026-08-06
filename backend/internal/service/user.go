@@ -19,6 +19,11 @@ func (s *Service) UpdateProfile(ctx context.Context, userID int64, payload model
 	return s.Repo.UpdateUserProfile(ctx, userID, payload)
 }
 
+// AcceptAllPendingFollows accepts all pending follow requests for a user
+func (s *Service) AcceptAllPendingFollows(ctx context.Context, targetUserID int64) ([]int64, error) {
+	return s.Repo.AcceptAllPendingFollows(ctx, targetUserID)
+}
+
 // GetUserProfile fetches a user profile by username, enriched with follow stats
 // and the requesting viewer's relationship to the target user.
 func (s *Service) GetUserProfile(ctx context.Context, viewerID int64, username string) (*models.UserProfileView, error) {
@@ -105,10 +110,21 @@ func (s *Service) UnfollowUser(ctx context.Context, followerID, targetID int64) 
 	return s.Repo.RemoveFollowRelation(ctx, followerID, targetID)
 }
 
-// HandleFollowRequest accepts or declines an incoming request (called by target user)
+// HandleFollowRequest accepts or declines an incoming request (called by target user).
+// if already accepted, returns nil; if no row exists, returns nil.
 func (s *Service) HandleFollowRequest(ctx context.Context, targetUserID, requesterID int64, accept bool) error {
 	status, err := s.Repo.GetFollowRelation(ctx, requesterID, targetUserID)
-	if err != nil || status != "pending" {
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+
+	if status == "accepted" {
+		return nil
+	}
+	if status != "pending" {
 		return ErrFollowReqNotFound
 	}
 
