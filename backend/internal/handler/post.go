@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"database/sql"
 	"errors"
 	"net/http"
 	"strconv"
@@ -111,6 +112,10 @@ func (h *Handler) GetPost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, service.ErrAccessDenied) {
 			helper.Error(w, http.StatusForbidden, err.Error())
+			return
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			helper.Error(w, http.StatusNotFound, "Post not found")
 			return
 		}
 		helper.Error(w, http.StatusInternalServerError, err.Error())

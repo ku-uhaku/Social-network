@@ -1,19 +1,21 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, notFound } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPost, getComments } from "@/lib/api/posts";
 import PostCard from "@/components/posts/PostCard";
 import CommentCard from "@/components/posts/CommentCard";
 import CommentCreate from "@/components/posts/CommentCreate";
 
-// TODO: redirect to not-found if id is not number or post doesn't exist
-//       same for other pages that take a param (profile/[])
 export default function PostDetailPage({ params }) {
   const { postId } = use(params); // params require await
   const router = useRouter();
   const { user, loading } = useAuth();
+
+  if (isNaN(Number(postId))) {
+    notFound(); // invalid id
+  }
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [loadingPost, setLoadingPost] = useState(true);
@@ -33,6 +35,9 @@ export default function PostDetailPage({ params }) {
         const response = await getPost(postId);
         setPost(response?.data || null);
       } catch (err) {
+        if (err?.message === "Post not found") {
+          notFound();
+        }
         setError(err?.message || "Could not load post.");
       } finally {
         setLoadingPost(false);
@@ -76,7 +81,7 @@ export default function PostDetailPage({ params }) {
   }
 
   if (!post) {
-    return <div className="postsPlaceholder">Post not found.</div>;
+    notFound();
   }
 
   return (

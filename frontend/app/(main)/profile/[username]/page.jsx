@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, notFound } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { getUserProfile, getUserPosts, updateProfilePrivacy, followUser, unfollowUser } from "@/lib/api/user";
 import PostCard from "@/components/posts/PostCard";
@@ -17,7 +17,6 @@ export default function ProfilePage() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [postsLoading, setPostsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [toggleLoading, setToggleLoading] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [modalType, setModalType] = useState(null); // 'followers' | 'following' | null
@@ -29,8 +28,8 @@ export default function ProfilePage() {
     try {
       const response = await getUserProfile(username);
       setProfile(response?.data || response);
-    } catch (err) {
-      setError(err?.message || "Could not load profile.");
+    } catch {
+      notFound();
     }
   }, [username]);
 
@@ -51,7 +50,6 @@ export default function ProfilePage() {
   useEffect(() => {
     let cancelled = false;
     async function init() {
-      setError("");
       try {
         await Promise.all([fetchProfile(), fetchPosts()]);
       } finally {
@@ -104,12 +102,8 @@ export default function ProfilePage() {
     );
   }
 
-  if (error || !profile) {
-    return (
-      <section className="profilePage">
-        <div className="profileError">{error || "User not found."}</div>
-      </section>
-    );
+  if (!profile) {
+    notFound();
   }
 
   const followButtonLabel = (() => {

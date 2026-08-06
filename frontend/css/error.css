@@ -29,6 +29,14 @@
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   text-align: center;
+
+  display:flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.card-content{
+  
 }
 
 .title {
@@ -87,9 +95,14 @@
   position: relative;
   z-index: 1;
   display: block;
-  width: 180px;
+  width: 110px;
 }
 
 .separator_right{
   transform: scaleX(-1);
+}
+
+.image{
+  max-width:150px;
+  max-height: 150px;
 }

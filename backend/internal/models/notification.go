@@ -15,7 +15,6 @@ const (
 )
 
 // JSONText stores arbitrary JSON in a TEXT column, marshaling NULL/empty to null
-//todo: is this needed
 type JSONText map[string]interface{}
 
 func (j JSONText) Value() (driver.Value, error) {

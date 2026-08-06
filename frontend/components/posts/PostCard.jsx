@@ -26,6 +26,7 @@ export default function PostCard({ post, isFeed = true }) {
       </div>
 
       <h2 className="postTitle">{post.title}</h2>
+      <div className="postTitleSeparator" />
 
       {imageSrc && (
         <img className="postCardImage" src={imageSrc} alt="image" />

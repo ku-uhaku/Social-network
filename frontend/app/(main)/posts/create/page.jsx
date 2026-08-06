@@ -87,7 +87,7 @@ export default function CreatePostPage() {
                 onChange={(event) => setPrivacy(event.target.value)}
               >
                 <option value="public">Public</option>
-                <option value="almost_private">Almost Private</option>
+                <option value="almost private">Almost Private</option>
                 <option value="private">Private</option>
               </select>
             </div>
