@@ -12,9 +12,9 @@ type Post struct {
 	Content       string       `json:"content"`
 	Privacy       string       `json:"privacy"` // 'public', 'almost private', 'private'
 	ImageURL      *string      `json:"image_url,omitempty"`
-	CommentsCount int          `json:"comments_count"`
-	CreatedAt     time.Time    `json:"created_at"`
-	VisibleTo     []int64      `json:"visible_to,omitempty"` // New field to track viewers for private posts
+	CommentsCount int            `json:"comments_count"`
+	CreatedAt     time.Time      `json:"created_at"`
+	Viewers       []UserMetadata `json:"viewers,omitempty"` // Full viewer metadata for private posts
 }
 
 // CreatePostPayload represents data for creating a post

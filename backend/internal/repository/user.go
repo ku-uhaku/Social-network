@@ -164,7 +164,7 @@ func (r *Repository) GetUserPosts(ctx context.Context, targetUserID int64, viewe
 			$2 = $1 OR
 			p.privacy = 'public' OR
 			(f.follower_id IS NOT NULL AND p.privacy = 'almost private') OR
-			(f.follower_id IS NOT NULL AND pv.user_id IS NOT NULL AND p.privacy = 'private')
+			(pv.user_id IS NOT NULL AND p.privacy = 'private')
 		)
 		ORDER BY p.created_at DESC, p.id DESC
 	`

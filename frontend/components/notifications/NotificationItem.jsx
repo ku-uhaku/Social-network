@@ -1,6 +1,6 @@
 "use client";
 
-import { resolveMediaSrc } from "@/lib/utils";
+import Avatar from "@/components/shared/Avatar";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { acceptFollowRequest, declineFollowRequest } from "@/lib/api/user";
 
@@ -18,7 +18,6 @@ function timeAgo(dateString) {
 
 export default function NotificationItem({ notification }) {
   const { markRead, expireNotification } = useNotifications();
-  const avatarSrc = resolveMediaSrc(notification.actor_avatar);
   const actions = notification.actions || {};
 
   const handleAction = async (action) => {
@@ -34,11 +33,11 @@ export default function NotificationItem({ notification }) {
   return (
     <div className={`notificationItem ${notification.is_read ? "" : "unread"} ${notification.is_expired ? "expired" : ""}`}>
       <div className="notificationItemHeader">
-        {avatarSrc ? (
-          <img className="notificationAvatar" src={avatarSrc} alt={notification.actor_username || "user"} />
-        ) : (
-          <span className="notificationAvatarFallback">{notification.actor_username || "?"}</span>
-        )}
+        <Avatar
+          avatar={notification.actor_avatar}
+          username={notification.actor_username || "user"}
+          size={36}
+        />
         <div className="notificationMeta">
           <strong className="notificationTitle">{notification.title}</strong>
           <span className="notificationTime">{timeAgo(notification.created_at)}</span>

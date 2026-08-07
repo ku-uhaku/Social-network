@@ -114,7 +114,7 @@ func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64, limi
 			p.user_id = $1 OR
 			(p.group_id IS NOT NULL AND gm.user_id IS NOT NULL) OR
 			(p.group_id IS NULL AND f.follower_id IS NOT NULL AND p.privacy IN ('public', 'almost private')) OR
-			(p.group_id IS NULL AND f.follower_id IS NOT NULL AND pv.user_id IS NOT NULL AND p.privacy = 'private')
+			(p.group_id IS NULL AND pv.user_id IS NOT NULL AND p.privacy = 'private')
 		ORDER BY p.created_at DESC, p.id DESC
 	`
 	args := []interface{}{currentUserID}
@@ -234,4 +234,32 @@ func (r *Repository) IsPostViewer(ctx context.Context, postID int64, userID int6
 		return false, fmt.Errorf("failed to check viewer status: %w", err)
 	}
 	return found > 0, nil
+}
+
+// GetPostViewers fetches the users a private post was explicitly shared with
+func (r *Repository) GetPostViewers(ctx context.Context, postID int64) ([]models.UserMetadata, error) {
+	query := `
+		SELECT u.id, u.username, u.first_name, u.last_name, u.avatar
+		FROM post_viewers pv
+		JOIN users u ON u.id = pv.user_id
+		WHERE pv.post_id = $1
+		ORDER BY u.username ASC
+	`
+	rows, err := r.DB.Database.QueryContext(ctx, query, postID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var viewers []models.UserMetadata
+	for rows.Next() {
+		var v models.UserMetadata
+		if err := rows.Scan(
+			&v.ID, &v.Username, &v.FirstName, &v.LastName, &v.Avatar,
+		); err != nil {
+			return nil, err
+		}
+		viewers = append(viewers, v)
+	}
+	return viewers, nil
 }

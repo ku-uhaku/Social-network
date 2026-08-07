@@ -122,13 +122,6 @@
   gap: 10px;
 }
 
-.followerAvatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
 .followerName {
   font-size: 14px;
   color: var(--muted);
@@ -137,4 +130,16 @@
 .errorText {
   color: #ff7a7a;
   font-size: 12px;
+}
+
+.postViewersSection {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.postViewersTitle {
+  color: var(--muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
 }

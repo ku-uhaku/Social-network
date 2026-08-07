@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { createPost } from "@/lib/api/posts";
 import { getFollowers } from "@/lib/api/user";
 import ImageUploadButton from "@/components/shared/ImageUploadButton";
+import FollowerSelect from "@/components/posts/FollowerSelect";
 import { useAuth } from "@/contexts/AuthContext";
-import { resolveMediaSrc } from "@/lib/utils";
 import "@/css/createPost.css";
 
 export default function CreatePostPage() {
@@ -142,46 +142,21 @@ export default function CreatePostPage() {
           {/* Follower selection for private posts */}
           {privacy === "private" && (
             <div className="field">
-              <label>Select Viewers (who can see this private post)</label>
-              {loadingFollowers ? (
-                <div>Loading followers...</div>
-              ) : followers.length > 0 ? (
-                <div className="followersChecklist">
-                  {followers.map((follower) => (
-                    <label key={follower.id} className="checkboxLabel">
-                      <input
-                        type="checkbox"
-                        checked={selectedViewers.includes(follower.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedViewers([...selectedViewers, follower.id]);
-                          } else {
-                            setSelectedViewers(
-                              selectedViewers.filter((id) => id !== follower.id)
-                            );
-                          }
-                        }}
-                      />
-                      <span className="checkboxCustom"></span>
-                      <div className="followerInfo">
-                        {follower.avatar && (
-                          <img
-                            src={resolveMediaSrc(follower.avatar)}
-                            alt={follower.username}
-                            className="followerAvatar"
-                          />
-                        )}
-                        <span className="followerName">
-                          {follower.first_name} {follower.last_name} (@
-                          {follower.username})
-                        </span>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              ) : (
-                <div>No followers found</div>
-              )}
+              <label>Select Viewers</label>
+              <FollowerSelect
+                followers={followers}
+                loading={loadingFollowers}
+                selectedViewers={selectedViewers}
+                onToggleViewer={(id, checked) => {
+                  if (checked) {
+                    setSelectedViewers([...selectedViewers, id]);
+                  } else {
+                    setSelectedViewers(
+                      selectedViewers.filter((viewerID) => viewerID !== id)
+                    );
+                  }
+                }}
+              />
               {selectedViewers.length === 0 && (
                 <div className="errorText">
                   At least 1 person

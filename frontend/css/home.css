@@ -55,6 +55,7 @@
   display: grid;
   place-items: center;
   background: var(--border);
+  cursor: pointer;
 }
 
 .avatar-image__img {
