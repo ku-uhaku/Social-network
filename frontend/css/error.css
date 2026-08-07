@@ -35,10 +35,6 @@
   gap: 20px;
 }
 
-.card-content{
-  
-}
-
 .title {
   font-size: 1.375rem;
   font-weight: 600;
@@ -96,10 +92,6 @@
   z-index: 1;
   display: block;
   width: 110px;
-}
-
-.separator_right{
-  transform: scaleX(-1);
 }
 
 .image{

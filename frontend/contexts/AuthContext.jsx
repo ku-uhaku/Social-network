@@ -5,11 +5,11 @@ import * as authApi from "@/lib/api/auth";
 
 const AuthContext = createContext(null);
 
+const parseUserResponse = (response) => response?.data ?? response?.user ?? null;
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const parseUserResponse = (response) => response?.data ?? response?.user ?? null;
 
   const refresh = useCallback(async () => {
     try {
@@ -17,14 +17,25 @@ export function AuthProvider({ children }) {
       setUser(parseUserResponse(data));
     } catch {
       setUser(null);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    let cancelled = false;
+    authApi.me()
+      .then((data) => {
+        if (!cancelled) setUser(parseUserResponse(data));
+      })
+      .catch(() => {
+        if (!cancelled) setUser(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const login = useCallback(async (identifier, password) => {
     const data = await authApi.login({ identifier, password });
@@ -33,9 +44,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const register = useCallback(async (formData) => {
-    const data = await authApi.register(formData);
-    setUser(parseUserResponse(data));
-    return data;
+    return authApi.register(formData);
   }, []);
 
   const logout = useCallback(async () => {
@@ -44,7 +53,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, refresh }}> 
+    <AuthContext.Provider value={{ user, loading, login, register, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

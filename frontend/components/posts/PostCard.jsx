@@ -5,7 +5,8 @@ import Avatar from "@/components/shared/Avatar";
 const trimLength = 180;
 
 export default function PostCard({ post, isFeed = true }) {
-  const snippet = isFeed && post.content.length > trimLength ? `${post.content.slice(0, trimLength).trim()}...` : post.content;
+  const content = post.content || "";
+  const snippet = isFeed && content.length > trimLength ? `${content.slice(0, trimLength).trim()}...` : content;
   const createdAt = new Date(post.created_at).toLocaleDateString();
   const imageSrc = resolveMediaSrc(post.image_url);
   const author = post.user || {};

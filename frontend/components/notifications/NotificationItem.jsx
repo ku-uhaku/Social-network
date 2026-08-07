@@ -17,25 +17,17 @@ function timeAgo(dateString) {
 }
 
 export default function NotificationItem({ notification }) {
-  const { markRead, setMarkRead } = useNotifications();
+  const { markRead, expireNotification } = useNotifications();
   const avatarSrc = resolveMediaSrc(notification.actor_avatar);
   const actions = notification.actions || {};
 
   const handleAction = async (action) => {
-    if (action === "accept") {
-      try {
-        await acceptFollowRequest(notification.actor_id);
-        await setMarkRead(notification.id); // expire
-      } catch {
-        // ignore
-      }
-    } else if (action === "decline") {
-      try {
-        await declineFollowRequest(notification.actor_id);
-        await setMarkRead(notification.id); // expire
-      } catch {
-        // ignore
-      }
+    const api = action === "accept" ? acceptFollowRequest : declineFollowRequest;
+    try {
+      await api(notification.actor_id);
+      await expireNotification(notification.id); // expire
+    } catch {
+      // ignore
     }
   };
 

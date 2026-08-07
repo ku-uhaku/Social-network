@@ -24,7 +24,7 @@ export default function ErrorDisplay({ message, onRetry, homeHref = "/" }) {
         </div>
         <img className="image" src="/images/err_image.png" alt="" />
       </div>
-       <img className="separator separator_right" src="/images/card_separator.png" alt="" />
+      <img className="separator separator_right" src="/images/card_separator.png" alt="" />
     </div>
   );
 }

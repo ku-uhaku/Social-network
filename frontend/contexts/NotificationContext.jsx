@@ -1,16 +1,11 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import * as notificationsApi from "@/lib/api/notifications";
 
 const NotificationContext = createContext(null);
-
-// match backend
-const ws_new_notification = "new_notification";
-const ws_notification_expired = "notification_expired";
-const ws_notification_read = "notification_read";
 
 export function NotificationProvider({ children }) {
   const { user } = useAuth();
@@ -18,36 +13,53 @@ export function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [prevUserId, setPrevUserId] = useState(user?.id);
 
-  const loadNotifications = async () => {
-    if (!user) return;
-    try {
-      const data = await notificationsApi.getNotifications();
-      const list = data?.data?.notifications ?? data?.notifications ?? [];
-      const count = data?.data?.unread_count ?? data?.unread_count ?? 0;
-      setNotifications(list);
-      setUnreadCount(count);
-    } catch {
-      // keep existing state on failure
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Reset state when the logged-in user changes (covers logout).
+  if (user?.id !== prevUserId) {
+    setPrevUserId(user?.id);
+    setNotifications([]);
+    setUnreadCount(0);
+    setLoading(true);
+  }
+
+  const markOne = useCallback((id, patch) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, ...patch } : n)));
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+  }, []);
+
+  const markAllReadLocal = useCallback(() => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: 1 })));
+    setUnreadCount(0);
+  }, []);
 
   useEffect(() => {
-    if (user) {
-      loadNotifications();
-    } else {
-      setNotifications([]);
-      setUnreadCount(0);
-      setLoading(true);
-    }
+    if (!user) return;
+
+    let cancelled = false;
+    notificationsApi.getNotifications()
+      .then((data) => {
+        if (cancelled) return;
+        setNotifications(data?.data?.notifications ?? data?.notifications ?? []);
+        setUnreadCount(data?.data?.unread_count ?? data?.unread_count ?? 0);
+      })
+      .catch(() => {
+        // keep existing state on failure
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
+
+  // match backend
   useEffect(() => {
     if (!user) return;
 
-    const unsubNew = subscribe(ws_new_notification, (payload) => {
+    const unsubNew = subscribe("new_notification", (payload) => {
       if (!payload) return;
       setNotifications((prev) => {
         // deduplicate in case of notifications with same id
@@ -58,25 +70,15 @@ export function NotificationProvider({ children }) {
       setUnreadCount((prev) => prev + 1);
     });
 
-    const unsubExpired = subscribe(ws_notification_expired, (payload) => {
-      if (!payload?.notification_id) return;
-      const id = payload.notification_id;
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, is_expired: 1 } : n))
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+    const unsubExpired = subscribe("notification_expired", (payload) => {
+      if (payload?.notification_id) markOne(payload.notification_id, { is_expired: 1 });
     });
 
-    const unsubRead = subscribe(ws_notification_read, (payload) => {
+    const unsubRead = subscribe("notification_read", (payload) => {
       if (payload?.all) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, is_read: 1 })));
-        setUnreadCount(0);
+        markAllReadLocal();
       } else if (payload?.notification_id) {
-        const id = payload.notification_id;
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === id ? { ...n, is_read: 1 } : n))
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
+        markOne(payload.notification_id, { is_read: 1 });
       }
     });
 
@@ -85,15 +87,12 @@ export function NotificationProvider({ children }) {
       unsubExpired();
       unsubRead();
     };
-  }, [user, subscribe]);
+  }, [user, subscribe, markOne, markAllReadLocal]);
 
   const markRead = async (notificationId) => {
     try {
       await notificationsApi.markNotificationRead(notificationId);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, is_read: 1 } : n))
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+      markOne(notificationId, { is_read: 1 });
     } catch {
       // ignore
     }
@@ -102,20 +101,16 @@ export function NotificationProvider({ children }) {
   const markAllRead = async () => {
     try {
       await notificationsApi.markAllNotificationsRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: 1 })));
-      setUnreadCount(0);
+      markAllReadLocal();
     } catch {
       // ignore
     }
   };
 
-  const setMarkRead = async (notificationId) => {
+  const expireNotification = async (notificationId) => {
     try {
       await notificationsApi.expireNotification(notificationId);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, is_expired: 1 } : n))
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+      markOne(notificationId, { is_expired: 1 });
     } catch {
       // ignore
     }
@@ -123,7 +118,7 @@ export function NotificationProvider({ children }) {
 
   return (
     <NotificationContext.Provider
-      value={{ notifications, unreadCount, loading, markRead, markAllRead, setMarkRead, refresh: loadNotifications }}
+      value={{ notifications, unreadCount, loading, markRead, markAllRead, expireNotification }}
     >
       {children}
     </NotificationContext.Provider>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getFeed } from "@/lib/api/posts";
 import PostCard from "@/components/posts/PostCard";
@@ -18,14 +18,17 @@ export default function HomePage() {
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState("");
 
+  const applyFeed = useCallback((data, append) => {
+    setPosts((prev) => (append ? [...prev, ...(data.posts || [])] : data.posts || []));
+    setNextCursor(data.next_cursor || null);
+    setHasMore(Boolean(data.has_more));
+  }, []);
+
   useEffect(() => {
     async function loadFeed() {
       try {
         const response = await getFeed({ limit: PAGE_LIMIT });
-        const data = response?.data || {};
-        setPosts(data.posts || []);
-        setNextCursor(data.next_cursor || null);
-        setHasMore(Boolean(data.has_more));
+        applyFeed(response?.data || {}, false);
       } catch (err) {
         setError(err?.message || "Could not load feed.");
       } finally {
@@ -34,17 +37,14 @@ export default function HomePage() {
     }
 
     loadFeed();
-  }, []);
+  }, [applyFeed]);
 
   async function loadMore() {
     if (loadingMore || !nextCursor) return;
     setLoadingMore(true);
     try {
       const response = await getFeed({ limit: PAGE_LIMIT, cursor: nextCursor });
-      const data = response?.data || {};
-      setPosts((prev) => [...prev, ...(data.posts || [])]);
-      setNextCursor(data.next_cursor || null);
-      setHasMore(Boolean(data.has_more));
+      applyFeed(response?.data || {}, true);
     } catch (err) {
       setError(err?.message || "Could not load more posts.");
     } finally {

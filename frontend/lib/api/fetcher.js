@@ -22,7 +22,8 @@ export async function apiFetch(path, options = {}) {
   }
 
   if (!res.ok) {
-    throw new Error((data && data.message) || res.statusText);
+    const details = Array.isArray(data?.errors) ? `: ${data.errors.join(", ")}` : "";
+    throw new Error(`${data?.message || res.statusText}${details}`);
   }
 
   return data;

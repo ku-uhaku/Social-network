@@ -23,7 +23,7 @@ export default function SplashScreen() {
   // transition handled in css
   return (
     <div className={`splashScreen ${visible ? "" : "hidden"}`}>
-      <img className="splashLogo" src={"/images/main_logo.png"} alt="Social Network" />
+      <img className="splashLogo" src="/images/main_logo.png" alt="Social Network" />
     </div>
   );
 }

@@ -9,7 +9,6 @@ const AUTH_MUSIC = "/audio/auth_music.mp3";
 export default function AuthBackground({ children }) {
   const { setMusic } = useAudio();
 
-  // TODO: why is setMusic always inside useEffect?
   useEffect(() => {
     setMusic(AUTH_MUSIC);
   }, [setMusic]);

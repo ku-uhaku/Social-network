@@ -79,13 +79,22 @@ export default function ProfilePage() {
     if (!profile || followLoading) return;
     setFollowLoading(true);
     try {
-      if (profile.follow_status === "accepted" || profile.follow_status === "pending") {
+      const wasAccepted = profile.follow_status === "accepted";
+      if (wasAccepted || profile.follow_status === "pending") {
         await unfollowUser(profile.id);
-        setProfile((prev) => ({ ...prev, follow_status: "none", followers_count: Math.max(0, prev.followers_count - 1) }));
+        setProfile((prev) => ({
+          ...prev,
+          follow_status: "none",
+          followers_count: wasAccepted ? Math.max(0, prev.followers_count - 1) : prev.followers_count,
+        }));
       } else {
         const response = await followUser(profile.id);
         const newStatus = response?.data?.status || "accepted";
-        setProfile((prev) => ({ ...prev, follow_status: newStatus, followers_count: newStatus === "accepted" ? prev.followers_count + 1 : prev.followers_count }));
+        setProfile((prev) => ({
+          ...prev,
+          follow_status: newStatus,
+          followers_count: newStatus === "accepted" ? prev.followers_count + 1 : prev.followers_count,
+        }));
       }
     } catch {
       // ignore
@@ -173,7 +182,7 @@ export default function ProfilePage() {
         )}
       </div>
 
-      <img className="postCommentSeparator" src={"/images/post_comment_separator.png"} alt="" />
+      <img className="postCommentSeparator" src="/images/post_comment_separator.png" alt="" />
 
       <div className="profilePosts">
         <h2 className="profilePostsTitle">Posts by {username}</h2>

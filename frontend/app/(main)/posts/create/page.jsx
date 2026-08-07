@@ -22,25 +22,22 @@ export default function CreatePostPage() {
   const [selectedViewers, setSelectedViewers] = useState([]);
   const [loadingFollowers, setLoadingFollowers] = useState(false);
 
-  // Fetch current user's followers when privacy is private
+  // Fetch current user followers when privacy is private
   useEffect(() => {
-    if (privacy === "private" && currentUser?.id) {
-      setLoadingFollowers(true);
-      getFollowers(currentUser.id)
-        .then((response) => {
-          setFollowers(response.data || []);
-        })
-        .catch((err) => {
-          console.error("Failed to fetch followers:", err);
-          setError("Failed to load followers list");
-        })
-        .finally(() => {
-          setLoadingFollowers(false);
-        });
-    } else {
-      setSelectedViewers([]);
-      setFollowers([]);
-    }
+    if (privacy !== "private" || !currentUser?.id) return;
+
+    let cancelled = false;
+    getFollowers(currentUser.id)
+      .then((response) => {
+        if (!cancelled) setFollowers(response.data || []);
+      })
+      .catch(() => setError("Failed to load followers list"))
+      .finally(() => {
+        if (!cancelled) setLoadingFollowers(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [privacy, currentUser?.id]);
 
   async function handleSubmit(event) {
@@ -56,33 +53,18 @@ export default function CreatePostPage() {
         return;
       }
 
-      const payload = image
-        ? (() => {
-            const formData = new FormData();
-            formData.append("title", title.trim());
-            formData.append("content", content.trim());
-            formData.append("privacy", privacy);
-            formData.append("image", image);
+      // Always send multipart form data: the backend parses plain and image
+      // posts the same way, and visible_to is sent as repeated fields.
+      const formData = new FormData();
+      formData.append("title", title.trim());
+      formData.append("content", content.trim());
+      formData.append("privacy", privacy);
+      if (privacy === "private") {
+        selectedViewers.forEach((id) => formData.append("visible_to", id));
+      }
+      if (image) formData.append("image", image);
 
-            // Add selected viewers for private posts
-            if (privacy === "private" && selectedViewers.length > 0) {
-              selectedViewers.forEach((viewerId) => {
-                formData.append("visible_to", viewerId);
-              });
-            }
-
-            return formData;
-          })()
-        : {
-            title: title.trim(),
-            content: content.trim(),
-            privacy,
-            ...(privacy === "private" && selectedViewers.length > 0 && {
-              visible_to: selectedViewers,
-            }),
-          };
-
-      const response = await createPost(payload);
+      const response = await createPost(formData);
       const post = response?.data;
       if (post?.id) {
         router.push(`/`);
@@ -95,6 +77,7 @@ export default function CreatePostPage() {
       setSubmitting(false);
     }
   }
+
 
   return (
     <section className="postsContainer">
@@ -131,7 +114,15 @@ export default function CreatePostPage() {
               <select
                 id="privacy"
                 value={privacy}
-                onChange={(event) => setPrivacy(event.target.value)}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  setPrivacy(next);
+                  setLoadingFollowers(next === "private");
+                  if (next !== "private") {
+                    setSelectedViewers([]);
+                    setFollowers([]);
+                  }
+                }}
               >
                 <option value="public">Public</option>
                 <option value="almost private">Almost Private</option>
@@ -146,6 +137,7 @@ export default function CreatePostPage() {
               />
             </div>
           </div>
+
 
           {/* Follower selection for private posts */}
           {privacy === "private" && (

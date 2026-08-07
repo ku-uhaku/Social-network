@@ -6,28 +6,25 @@ const AudioCtx = createContext(null);
 
 export function AudioProvider({ children }) {
   const musicRef = useRef(null);
-  const musicSrcRef = useRef(null);
   const mutedRef = useRef(false);
-  const sfxMutedRef = useRef(false);
 
   const [musicSrc, setMusicSrc] = useState(null);
   const [isMusicMuted, setIsMusicMuted] = useState(false);
   const [isSfxMuted, setIsSfxMuted] = useState(false);
 
   useEffect(() => {
-    musicSrcRef.current = musicSrc;
     mutedRef.current = isMusicMuted;
-    sfxMutedRef.current = isSfxMuted;
-  }, [musicSrc, isMusicMuted, isSfxMuted]);
+  }, [isMusicMuted]);
 
   useEffect(() => {
     const music = new Audio();
     music.loop = true;
     musicRef.current = music;
 
-    const unlock = () => { // sound is muted by default until page is clicked
+    // sound is muted by default until page is clicked
+    const unlock = () => {
       const el = musicRef.current;
-      if (el && musicSrcRef.current) {
+      if (el && el.src) {
         el.muted = mutedRef.current;
         el.play().catch(() => {});
       }
@@ -46,19 +43,17 @@ export function AudioProvider({ children }) {
 
   useEffect(() => {
     const music = musicRef.current;
-    if (!music || !musicSrc) return;
-    music.src = musicSrc;
-    music.load();
+    if (!music) return;
     music.muted = isMusicMuted;
-    music.play().catch(() => {});
+    if (musicSrc) {
+      music.src = musicSrc;
+      music.load();
+      music.play().catch(() => {});
+    }
   }, [musicSrc, isMusicMuted]);
 
-  useEffect(() => {
-    if (musicRef.current) musicRef.current.muted = isMusicMuted;
-  }, [isMusicMuted]);
-
   function playSfx(src) {
-    if (sfxMutedRef.current || !src) return;
+    if (isSfxMuted || !src) return;
     const sfx = new Audio(src);
     sfx.play().catch(() => {});
   }

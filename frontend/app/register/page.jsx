@@ -48,7 +48,7 @@ function RegisterForm() {
     setValues((v) => ({ ...v, [name]: value }));
   }
 
-  async function handleSubmit(e) { // TODO: after register user is directed to home page with backend err: Authentication required: missing token
+  async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     setSubmitting(true);

@@ -4,13 +4,6 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getWebSocketUrl } from "@/lib/sockets";
 
-function getCookie(name) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(";").shift();
-  return "";
-}
-
 const WebSocketContext = createContext(null);
 
 const reconnect_delay = 1000;
@@ -21,9 +14,15 @@ export function WebSocketProvider({ children }) {
   const wsRef = useRef(null);
   const reconnectTimerRef = useRef(null);
   const listenersRef = useRef(new Map()); // type -> Set<callback>
+  const userRef = useRef(user);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   const connect = () => {
-    if (!user || wsRef.current) return;
+    if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+    if (!userRef.current || wsRef.current) return;
 
     const ws = new WebSocket(getWebSocketUrl());
     wsRef.current = ws;
@@ -40,9 +39,7 @@ export function WebSocketProvider({ children }) {
         return;
       }
       const callbacks = listenersRef.current.get(data.type);
-      if (callbacks) {
-        callbacks.forEach((cb) => cb(data.payload, data));
-      }
+      callbacks?.forEach((cb) => cb(data.payload, data));
     };
 
     ws.onclose = () => {
@@ -57,7 +54,7 @@ export function WebSocketProvider({ children }) {
   };
 
   const scheduleReconnect = () => {
-    if (!user) return;
+    if (!userRef.current) return;
     reconnectTimerRef.current = setTimeout(connect, reconnect_delay);
   };
 
@@ -75,9 +72,7 @@ export function WebSocketProvider({ children }) {
   const send = (type, payload) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    // pass token with every request
-    const token = getCookie("session_token") || "";
-    ws.send(JSON.stringify({ type, payload, token }));
+    ws.send(JSON.stringify({ type, payload }));
   };
 
   const subscribe = (type, callback) => {

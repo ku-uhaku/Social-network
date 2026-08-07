@@ -67,7 +67,7 @@ export default function PostDetailPage({ params }) {
     setPost((prev) => (prev ? { ...prev, comments_count: prev.comments_count + 1 } : prev));
   }
 
-  if (loading || (!user && !loading)) {
+  if (loading || !user) {
     return <div className="postsPlaceholder">Checking authentication…</div>;
   }
 
@@ -76,7 +76,7 @@ export default function PostDetailPage({ params }) {
   }
 
   if (error) {
-    // TODO: make inline error into a component since it's used in many places (search postsError)
+    // TODO: make inline error into a component since it is used in many places (search postsError)
     return <div className="postsError">{error}</div>;
   }
 
@@ -89,7 +89,7 @@ export default function PostDetailPage({ params }) {
       <div className="postDetails">
         <PostCard post={post} isFeed={false} />
 
-        <img className="postCommentSeparator" src={"/images/post_comment_separator.png"} alt="" />
+        <img className="postCommentSeparator" src="/images/post_comment_separator.png" alt="" />
 
         <div className="commentsSection">
           <h2 className="commentsTitle">Comments ({post.comments_count})</h2>
