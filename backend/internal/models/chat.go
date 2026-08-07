@@ -28,3 +28,10 @@ type SendMessagePayload struct {
 	GroupID    *int64 `json:"group_id,omitempty"`    // For Group
 	Content    string `json:"content"`
 }
+
+type ConversationMetadata struct {
+	UserID        int64      `json:"user_id"`
+	Username      string     `json:"username"`
+	Avatar        *string    `json:"avatar"`
+	LastMessageAt *time.Time `json:"last_message_at,omitempty"`
+}

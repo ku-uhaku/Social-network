@@ -281,6 +281,25 @@ func (r *Repository) GetFollowRelation(ctx context.Context, followerID, targetID
 	return status, nil
 }
 
+// CanChat reports whether two users share an accepted follow relation in
+// either direction (a chat eligibility check, not a login state).
+func (r *Repository) CanChat(ctx context.Context, userA, userB int64) (bool, error) {
+	query := `
+		SELECT EXISTS(
+			SELECT 1 FROM follows
+			WHERE status = 'accepted'
+			  AND ((follower_id = $1 AND following_id = $2)
+				OR (follower_id = $2 AND following_id = $1))
+		)
+	`
+	var connected bool
+	err := r.DB.Database.QueryRowContext(ctx, query, userA, userB).Scan(&connected)
+	if err != nil {
+		return false, err
+	}
+	return connected, nil
+}
+
 // GetFollowers retrieves all users following a target user (accepted status only)
 func (r *Repository) GetFollowers(ctx context.Context, targetUserID int64) ([]models.UserFollowView, error) {
 	query := `

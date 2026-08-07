@@ -62,7 +62,7 @@ func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	// Inbound Reader Loop (Reads incoming frames from client)
-	go h.handleIncomingWSMessages(r.Context(), client)
+	go h.handleIncomingWSMessages(context.Background(), client)
 }
 
 func (h *Handler) handleIncomingWSMessages(ctx context.Context, client *ws.Client) {

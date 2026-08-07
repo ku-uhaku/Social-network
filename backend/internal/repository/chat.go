@@ -38,16 +38,15 @@ func (r *Repository) SaveGroupMessage(ctx context.Context, senderID, groupID int
 	return &msg, nil
 }
 
-// GetDirectHistory retrieves paginated DM history between two users
-func (r *Repository) GetDirectHistory(ctx context.Context, userA, userB int64, limit, offset int) ([]models.DirectMessage, error) {
+// GetDirectHistory retrieves the full DM history between two users, chronological
+func (r *Repository) GetDirectHistory(ctx context.Context, userA, userB int64) ([]models.DirectMessage, error) {
 	query := `
 		SELECT id, sender_id, receiver_id, content, created_at
 		FROM direct_messages
 		WHERE (sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)
-		ORDER BY created_at DESC
-		LIMIT $3 OFFSET $4
+		ORDER BY created_at ASC, id ASC
 	`
-	rows, err := r.DB.Database.QueryContext(ctx, query, userA, userB, limit, offset)
+	rows, err := r.DB.Database.QueryContext(ctx, query, userA, userB)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +60,45 @@ func (r *Repository) GetDirectHistory(ctx context.Context, userA, userB int64, l
 		}
 		msgs = append(msgs, m)
 	}
-	return msgs, nil
+	return msgs, rows.Err()
+}
+
+// return every user that can be chatted with
+func (r *Repository) ListConversations(ctx context.Context, viewerID int64) ([]models.ConversationMetadata, error) {
+	query := `
+		SELECT u.id, u.username, u.avatar, dm.created_at
+		FROM users u
+		LEFT JOIN direct_messages dm ON dm.id = (
+			SELECT dm2.id FROM direct_messages dm2
+			WHERE (dm2.sender_id = $1 AND dm2.receiver_id = u.id)
+			   OR (dm2.sender_id = u.id AND dm2.receiver_id = $1)
+			ORDER BY dm2.created_at DESC, dm2.id DESC
+			LIMIT 1
+		)
+		WHERE u.id != $1
+		  AND EXISTS (
+			SELECT 1 FROM follows f
+			WHERE f.status = 'accepted'
+			  AND ((f.follower_id = $1 AND f.following_id = u.id)
+				OR (f.follower_id = u.id AND f.following_id = $1))
+		  )
+		ORDER BY (dm.created_at IS NULL) ASC, dm.created_at DESC, u.username ASC
+	`
+	rows, err := r.DB.Database.QueryContext(ctx, query, viewerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	conversations := []models.ConversationMetadata{}
+	for rows.Next() {
+		var c models.ConversationMetadata
+		if err := rows.Scan(&c.UserID, &c.Username, &c.Avatar, &c.LastMessageAt); err != nil {
+			return nil, err
+		}
+		conversations = append(conversations, c)
+	}
+	return conversations, rows.Err()
 }
 
 // GetGroupHistory retrieves paginated chat history for a group
