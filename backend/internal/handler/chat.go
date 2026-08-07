@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -10,7 +11,7 @@ import (
 	"kuu/internal/service"
 )
 
-// GetDirectHistory GET /api/v1/chat/direct?user_id=123
+// GetDirectHistory GET /api/v1/chat/direct?user_id=123&before_id=456&limit=30
 func (h *Handler) GetDirectHistory(w http.ResponseWriter, r *http.Request) {
 	user, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
@@ -18,14 +19,23 @@ func (h *Handler) GetDirectHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targetUserIDStr := r.URL.Query().Get("user_id")
-	targetUserID, err := strconv.ParseInt(targetUserIDStr, 10, 64)
+	targetUserID, err := strconv.ParseInt(r.URL.Query().Get("user_id"), 10, 64)
 	if err != nil || targetUserID <= 0 {
 		helper.Error(w, http.StatusBadRequest, "Invalid user_id parameter")
 		return
 	}
 
-	messages, err := h.Service.GetDirectHistory(r.Context(), user.ID, targetUserID)
+	beforeID, _ := strconv.ParseInt(r.URL.Query().Get("before_id"), 10, 64)
+	if beforeID < 0 {
+		beforeID = 0
+	}
+
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit <= 0 || limit > 50 {
+		limit = 30
+	}
+
+	page, err := h.Service.GetDirectHistory(r.Context(), user.ID, targetUserID, beforeID, limit)
 	if err != nil {
 		status := http.StatusInternalServerError
 		if errors.Is(err, service.ErrChatSelf) || errors.Is(err, service.ErrChatNoConnection) {
@@ -35,7 +45,31 @@ func (h *Handler) GetDirectHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	helper.Success(w, http.StatusOK, "Direct message history retrieved", messages)
+	helper.Success(w, http.StatusOK, "Direct message history retrieved", page)
+}
+
+// MarkChatRead POST /api/v1/chat/read { user_id }
+func (h *Handler) MarkChatRead(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var req struct {
+		UserID int64 `json:"user_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.UserID <= 0 {
+		helper.Error(w, http.StatusBadRequest, "Invalid user_id")
+		return
+	}
+
+	if err := h.Service.MarkChatRead(r.Context(), user.ID, req.UserID); err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Conversation marked as read", nil)
 }
 
 // GetConversations GET /api/v1/chat/conversations
@@ -63,8 +97,7 @@ func (h *Handler) GetGroupHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupIDStr := r.URL.Query().Get("group_id")
-	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	groupID, err := strconv.ParseInt(r.URL.Query().Get("group_id"), 10, 64)
 	if err != nil || groupID <= 0 {
 		helper.Error(w, http.StatusBadRequest, "Invalid group_id parameter")
 		return

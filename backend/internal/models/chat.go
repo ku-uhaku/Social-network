@@ -34,4 +34,11 @@ type ConversationMetadata struct {
 	Username      string     `json:"username"`
 	Avatar        *string    `json:"avatar"`
 	LastMessageAt *time.Time `json:"last_message_at,omitempty"`
+	UnreadCount   int        `json:"unread_count"`
+}
+
+// DirectHistoryPage is a paginated slice of direct-message history.
+type DirectHistoryPage struct {
+	Messages []DirectMessage `json:"messages"`
+	HasMore  bool            `json:"has_more"`
 }

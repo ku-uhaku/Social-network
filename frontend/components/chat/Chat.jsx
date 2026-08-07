@@ -3,11 +3,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
-import { getConversations, getDirectHistory } from "@/lib/api/chat";
+import { getConversations, getDirectHistory, markChatRead } from "@/lib/api/chat";
 import Avatar from "@/components/shared/Avatar";
+import EmojiPicker from "./EmojiPicker";
 import "@/css/chat.css";
 
-const empty_single_chat = { messages: [], loaded: false, unread: 0 };
+const empty_single_chat = {
+  messages: [],
+  loaded: false,
+  unread: 0,
+  hasMore: false,
+  oldestId: null,
+  loadingOlder: false,
+};
 
 function useChat() {
   const { user } = useAuth();
@@ -16,7 +24,7 @@ function useChat() {
   const [open, setOpen] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState(null);
-  const [contacts, setContacts] = useState({}); // { [id]: { messages, loaded, unread } }
+  const [contacts, setContacts] = useState({}); // { [id]: { messages, loaded, unread, hasMore, oldestId } }
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -30,19 +38,32 @@ function useChat() {
     });
   }, [contacts]);
 
-  // load conversation list
+  // load conversation list + seed persistent unread counts
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     getConversations()
-      .then((res) => !cancelled && setConversations(Array.isArray(res?.data) ? res.data : []))
+      .then((res) => {
+        if (cancelled) return;
+        const list = Array.isArray(res?.data) ? res.data : [];
+        setConversations(list);
+        setContacts((prev) => {
+          let next = prev;
+          for (const c of list) {
+            if (!next[c.user_id]) {
+              next = { ...next, [c.user_id]: { ...empty_single_chat, unread: c.unread_count || 0 } };
+            }
+          }
+          return next;
+        });
+      })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
   }, [user]);
 
-  // dm
+  // realtime dm
   useEffect(() => {
     if (!user) return;
     const unsub = subscribe("new_direct_message", (msg) => {
@@ -62,6 +83,8 @@ function useChat() {
           },
         };
       });
+
+      if (isViewing) markChatRead(otherId).catch(() => {});
     });
     return unsub;
   }, [user, subscribe, open, activeId]);
@@ -80,26 +103,57 @@ function useChat() {
     () => (activeId ? conversations.find((c) => c.user_id === activeId) : null),
     [activeId, conversations]
   );
-  const threadMessages = getThread(activeId).messages;
+
+  const activeThread = getThread(activeId);
+  const threadMessages = activeThread.messages;
 
   const openChat = useCallback(
     async (contactId) => {
       setActiveId(contactId);
+      markChatRead(contactId).catch(() => {});
       patchThread(contactId, { unread: 0 });
       if (getThread(contactId).loaded) return;
 
       setLoading(true);
       try {
         const res = await getDirectHistory(contactId);
-        const history = Array.isArray(res?.data) ? res.data : [];
+        const data = res?.data || {};
+        const history = Array.isArray(data.messages) ? data.messages : [];
         patchThread(contactId, (thread) => {
           const missing = history.filter((m) => !thread.messages.some((cm) => cm.id === m.id));
-          return { messages: [...missing, ...thread.messages], loaded: true };
+          return {
+            messages: [...missing, ...thread.messages],
+            loaded: true,
+            hasMore: Boolean(data.has_more),
+            oldestId: history.length ? history[0].id : thread.oldestId,
+          };
         });
       } catch {
         patchThread(contactId, { loaded: false });
       } finally {
         setLoading(false);
+      }
+    },
+    [patchThread]
+  );
+
+  const loadOlder = useCallback(
+    async (contactId) => {
+      const thread = getThread(contactId);
+      if (!thread.loaded || !thread.hasMore || thread.loadingOlder) return;
+      patchThread(contactId, { loadingOlder: true });
+      try {
+        const res = await getDirectHistory(contactId, { beforeId: thread.oldestId });
+        const data = res?.data || {};
+        const older = Array.isArray(data.messages) ? data.messages : [];
+        patchThread(contactId, (t) => ({
+          messages: [...older, ...t.messages],
+          hasMore: Boolean(data.has_more),
+          oldestId: older.length ? older[0].id : t.oldestId,
+          loadingOlder: false,
+        }));
+      } catch {
+        patchThread(contactId, { loadingOlder: false });
       }
     },
     [patchThread]
@@ -123,6 +177,7 @@ function useChat() {
     if (e.target === e.currentTarget) setOpen(false);
   };
 
+  // TODO: rename some of these
   return {
     user,
     open,
@@ -132,12 +187,15 @@ function useChat() {
     setActiveId,
     activeContact,
     threadMessages,
+    threadHasMore: activeThread.hasMore,
+    threadLoadingOlder: activeThread.loadingOlder,
     unread,
     totalUnread,
     draft,
     setDraft,
     loading,
     openChat,
+    loadOlder,
     sendMessage,
     handleKeyDown,
     handleBackdrop,
@@ -171,10 +229,13 @@ export default function ChatDock() {
                 messages={chat.threadMessages}
                 draft={chat.draft}
                 loading={chat.loading}
+                hasMore={chat.threadHasMore}
+                loadingOlder={chat.threadLoadingOlder}
                 meId={chat.user?.id}
                 onDraftChange={chat.setDraft}
                 onSend={chat.sendMessage}
                 onKeyDown={chat.handleKeyDown}
+                onLoadOlder={() => chat.loadOlder(chat.activeId)}
                 onBack={() => chat.setActiveId(null)}
                 onClose={() => chat.setOpen(false)}
               />
@@ -195,6 +256,9 @@ export default function ChatDock() {
 }
 
 function Contacts({ conversations, unread, loading, onOpen, onClose }) {
+  // NOTE: unfollowing a user doesn't hide contact UI, this isn't a bug
+  //       contacts are not real time. Messages will not work
+
   return (
     <div className="chatPanel">
       <div className="chatPanelHeader">
@@ -240,14 +304,18 @@ function SingleChat({
   messages,
   draft,
   loading,
+  hasMore,
+  loadingOlder,
   meId,
   onDraftChange,
   onSend,
   onKeyDown,
+  onLoadOlder,
   onBack,
   onClose,
 }) {
   const listEndRef = useRef(null);
+  const [emojiOpen, setEmojiOpen] = useState(false);
 
   // keep newest
   useEffect(() => {
@@ -271,6 +339,16 @@ function SingleChat({
 
       <div className="chatMessages">
         {loading && <p className="chatEmpty">Loading...</p>}
+        {!loading && hasMore && (
+          <button
+            type="button"
+            className="chatLoadOlder"
+            onClick={onLoadOlder}
+            disabled={loadingOlder}
+          >
+            {loadingOlder ? "Loading..." : "Load previous"}
+          </button>
+        )}
         {!loading && messages.length === 0 && (
           <p className="chatEmpty">No messages yet. Say hello!</p>
         )}
@@ -286,12 +364,22 @@ function SingleChat({
         <div ref={listEndRef} />
       </div>
 
+      {emojiOpen && <EmojiPicker onPick={(e) => onDraftChange(draft + e)} />}
+
       <div className="chatComposer">
+        <button
+          type="button"
+          className={`chatEmojiToggle ${emojiOpen ? "active" : ""}`}
+          onClick={() => setEmojiOpen(!emojiOpen)}
+          title="Emoji"
+        >
+          {"\u263A"}
+        </button>
         <textarea
           className="chatInput"
           rows={1}
           value={draft}
-          placeholder={`Message @${contact.username}...`}
+          placeholder={`Type...`}
           onChange={(e) => onDraftChange(e.target.value)}
           onKeyDown={onKeyDown}
         />
@@ -305,12 +393,12 @@ function SingleChat({
 
 function formatTime(dateString) {
   const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())){
+  if (Number.isNaN(date.getTime())) {
     return "";
   }
 
   const time = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  if (date.toDateString() === new Date().toDateString()){
+  if (date.toDateString() === new Date().toDateString()) {
     // same time
     return time;
   }

@@ -322,3 +322,75 @@
   box-shadow: 0 0 10px rgba(0, 240, 255, 0.15);
 }
 
+
+/* ---- Emoji picker ---- */
+.chatEmojiTray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.chatEmoji {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.chatEmoji:hover {
+  border-color: var(--soul-dim);
+}
+
+.chatEmojiToggle {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--bone);
+  font-size: 16px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.chatEmojiToggle:hover,
+.chatEmojiToggle.active {
+  border-color: var(--soul-dim);
+}
+
+/* ---- Load older ---- */
+.chatLoadOlder {
+  align-self: center;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.chatLoadOlder:hover:not(:disabled) {
+  border-color: var(--soul-dim);
+  color: var(--soul);
+}
+
+.chatLoadOlder:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

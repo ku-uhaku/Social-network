@@ -23,7 +23,6 @@ func (s *Service) SaveDirectMessage(ctx context.Context, senderID, receiverID in
 		return nil, ErrChatSelf
 	}
 
-	// Verify the receiver actually exists
 	if _, err := s.Repo.GetUserByID(ctx, receiverID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("receiver does not exist")
@@ -51,7 +50,6 @@ func (s *Service) SaveDirectMessage(ctx context.Context, senderID, receiverID in
 }
 
 func (s *Service) SaveGroupMessage(ctx context.Context, senderID, groupID int64, content string) (*models.GroupMessage, error) {
-	// Verify user is a group member
 	status, err := s.Repo.GetMemberStatus(ctx, groupID, senderID)
 	if err != nil || status != "accepted" {
 		return nil, errors.New("unauthorized group access")
@@ -59,9 +57,10 @@ func (s *Service) SaveGroupMessage(ctx context.Context, senderID, groupID int64,
 	return s.Repo.SaveGroupMessage(ctx, senderID, groupID, content)
 }
 
-// GetDirectHistory authorizes the conversation before returning its full
-// history: users may only view chats with someone they follow or who follows them.
-func (s *Service) GetDirectHistory(ctx context.Context, userA, userB int64) ([]models.DirectMessage, error) {
+// GetDirectHistory authorizes the conversation, returns a page of messages via
+// cursor pagination (beforeID) and marks the conversation as read when the newest
+// page is requested.
+func (s *Service) GetDirectHistory(ctx context.Context, userA, userB, beforeID int64, limit int) (*models.DirectHistoryPage, error) {
 	if userA == userB {
 		return nil, ErrChatSelf
 	}
@@ -74,7 +73,26 @@ func (s *Service) GetDirectHistory(ctx context.Context, userA, userB int64) ([]m
 		return nil, ErrChatNoConnection
 	}
 
-	return s.Repo.GetDirectHistory(ctx, userA, userB)
+	msgs, hasMore, err := s.Repo.GetDirectHistory(ctx, userA, userB, beforeID, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	if beforeID == 0 {
+		if err := s.Repo.MarkChatRead(ctx, userA, userB); err != nil {
+			return nil, err
+		}
+	}
+
+	return &models.DirectHistoryPage{Messages: msgs, HasMore: hasMore}, nil
+}
+
+// MarkChatRead marks a conversation as read up to its latest message.
+func (s *Service) MarkChatRead(ctx context.Context, userA, userB int64) error {
+	if userA == userB {
+		return ErrChatSelf
+	}
+	return s.Repo.MarkChatRead(ctx, userA, userB)
 }
 
 // GetConversations lists all chat-able users for the viewer with their latest DM.

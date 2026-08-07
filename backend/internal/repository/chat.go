@@ -9,10 +9,10 @@ import (
 // SaveDirectMessage persists a 1-on-1 message
 func (r *Repository) SaveDirectMessage(ctx context.Context, senderID, receiverID int64, content string) (*models.DirectMessage, error) {
 	query := `
-		INSERT INTO direct_messages (sender_id, receiver_id, content)
-		VALUES ($1, $2, $3)
-		RETURNING id, sender_id, receiver_id, content, created_at
-	`
+INSERT INTO direct_messages (sender_id, receiver_id, content)
+VALUES ($1, $2, $3)
+RETURNING id, sender_id, receiver_id, content, created_at
+`
 	var msg models.DirectMessage
 	err := r.DB.Database.QueryRowContext(ctx, query, senderID, receiverID, content).
 		Scan(&msg.ID, &msg.SenderID, &msg.ReceiverID, &msg.Content, &msg.CreatedAt)
@@ -25,10 +25,10 @@ func (r *Repository) SaveDirectMessage(ctx context.Context, senderID, receiverID
 // SaveGroupMessage persists a group message
 func (r *Repository) SaveGroupMessage(ctx context.Context, senderID, groupID int64, content string) (*models.GroupMessage, error) {
 	query := `
-		INSERT INTO group_messages (group_id, sender_id, content)
-		VALUES ($1, $2, $3)
-		RETURNING id, group_id, sender_id, content, created_at
-	`
+INSERT INTO group_messages (group_id, sender_id, content)
+VALUES ($1, $2, $3)
+RETURNING id, group_id, sender_id, content, created_at
+`
 	var msg models.GroupMessage
 	err := r.DB.Database.QueryRowContext(ctx, query, groupID, senderID, content).
 		Scan(&msg.ID, &msg.GroupID, &msg.SenderID, &msg.Content, &msg.CreatedAt)
@@ -38,17 +38,29 @@ func (r *Repository) SaveGroupMessage(ctx context.Context, senderID, groupID int
 	return &msg, nil
 }
 
-// GetDirectHistory retrieves the full DM history between two users, chronological
-func (r *Repository) GetDirectHistory(ctx context.Context, userA, userB int64) ([]models.DirectMessage, error) {
-	query := `
-		SELECT id, sender_id, receiver_id, content, created_at
-		FROM direct_messages
-		WHERE (sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)
-		ORDER BY created_at ASC, id ASC
-	`
-	rows, err := r.DB.Database.QueryContext(ctx, query, userA, userB)
+// GetDirectHistory returns a page of DMs between two users. beforeID == 0 gives
+// the newest page; otherwise it returns the page of messages older than beforeID.
+// Messages come back chronological with a flag telling whether older ones exist.
+func (r *Repository) GetDirectHistory(ctx context.Context, userA, userB, beforeID int64, limit int) ([]models.DirectMessage, bool, error) {
+	base := `
+SELECT id, sender_id, receiver_id, content, created_at
+FROM direct_messages
+WHERE ((sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1))
+`
+
+	var query string
+	var args []interface{}
+	if beforeID > 0 {
+		query = base + ` AND id < $3 ORDER BY id DESC LIMIT $4`
+		args = []interface{}{userA, userB, beforeID, limit + 1}
+	} else {
+		query = base + ` ORDER BY id DESC LIMIT $3`
+		args = []interface{}{userA, userB, limit + 1}
+	}
+
+	rows, err := r.DB.Database.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	defer rows.Close()
 
@@ -56,34 +68,75 @@ func (r *Repository) GetDirectHistory(ctx context.Context, userA, userB int64) (
 	for rows.Next() {
 		var m models.DirectMessage
 		if err := rows.Scan(&m.ID, &m.SenderID, &m.ReceiverID, &m.Content, &m.CreatedAt); err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		msgs = append(msgs, m)
 	}
-	return msgs, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, false, err
+	}
+
+	hasMore := len(msgs) > limit
+	if hasMore {
+		msgs = msgs[:limit]
+	}
+
+	// rows come back newest-first; flip them to chronological order
+	for i, j := 0, len(msgs)-1; i < j; i, j = i+1, j-1 {
+		msgs[i], msgs[j] = msgs[j], msgs[i]
+	}
+
+	return msgs, hasMore, nil
 }
 
-// return every user that can be chatted with
+// MarkChatRead records that the viewer has read the conversation up to its latest message.
+func (r *Repository) MarkChatRead(ctx context.Context, viewerID, otherUserID int64) error {
+	query := `
+INSERT INTO chat_reads (user_id, other_user_id, last_read_message_id)
+VALUES ($1, $2, COALESCE((
+SELECT MAX(id) FROM direct_messages
+WHERE (sender_id = $1 AND receiver_id = $2)
+   OR (sender_id = $2 AND receiver_id = $1)
+), 0))
+ON CONFLICT(user_id, other_user_id) DO UPDATE SET
+last_read_message_id = excluded.last_read_message_id,
+updated_at = CURRENT_TIMESTAMP
+`
+	_, err := r.DB.Database.ExecContext(ctx, query, viewerID, otherUserID)
+	return err
+}
+
+// ListConversations returns every chat-able user for viewerID (accepted follow in
+// either direction) with the timestamp of their latest DM and their unread message
+// count, ordered by most recent message first and alphabetically for conversations
+// with no messages yet.
 func (r *Repository) ListConversations(ctx context.Context, viewerID int64) ([]models.ConversationMetadata, error) {
 	query := `
-		SELECT u.id, u.username, u.avatar, dm.created_at
-		FROM users u
-		LEFT JOIN direct_messages dm ON dm.id = (
-			SELECT dm2.id FROM direct_messages dm2
-			WHERE (dm2.sender_id = $1 AND dm2.receiver_id = u.id)
-			   OR (dm2.sender_id = u.id AND dm2.receiver_id = $1)
-			ORDER BY dm2.created_at DESC, dm2.id DESC
-			LIMIT 1
-		)
-		WHERE u.id != $1
-		  AND EXISTS (
-			SELECT 1 FROM follows f
-			WHERE f.status = 'accepted'
-			  AND ((f.follower_id = $1 AND f.following_id = u.id)
-				OR (f.follower_id = u.id AND f.following_id = $1))
-		  )
-		ORDER BY (dm.created_at IS NULL) ASC, dm.created_at DESC, u.username ASC
-	`
+SELECT u.id, u.username, u.avatar, dm.created_at,
+       (SELECT COUNT(*)
+        FROM direct_messages du
+        WHERE ((du.sender_id = $1 AND du.receiver_id = u.id)
+            OR (du.sender_id = u.id AND du.receiver_id = $1))
+          AND du.sender_id = u.id
+          AND du.id > COALESCE(cr.last_read_message_id, 0))
+FROM users u
+LEFT JOIN direct_messages dm ON dm.id = (
+SELECT dm2.id FROM direct_messages dm2
+WHERE (dm2.sender_id = $1 AND dm2.receiver_id = u.id)
+   OR (dm2.sender_id = u.id AND dm2.receiver_id = $1)
+ORDER BY dm2.created_at DESC, dm2.id DESC
+LIMIT 1
+)
+LEFT JOIN chat_reads cr ON cr.user_id = $1 AND cr.other_user_id = u.id
+WHERE u.id != $1
+  AND EXISTS (
+SELECT 1 FROM follows f
+WHERE f.status = 'accepted'
+  AND ((f.follower_id = $1 AND f.following_id = u.id)
+OR (f.follower_id = u.id AND f.following_id = $1))
+  )
+ORDER BY (dm.created_at IS NULL) ASC, dm.created_at DESC, u.username ASC
+`
 	rows, err := r.DB.Database.QueryContext(ctx, query, viewerID)
 	if err != nil {
 		return nil, err
@@ -93,7 +146,7 @@ func (r *Repository) ListConversations(ctx context.Context, viewerID int64) ([]m
 	conversations := []models.ConversationMetadata{}
 	for rows.Next() {
 		var c models.ConversationMetadata
-		if err := rows.Scan(&c.UserID, &c.Username, &c.Avatar, &c.LastMessageAt); err != nil {
+		if err := rows.Scan(&c.UserID, &c.Username, &c.Avatar, &c.LastMessageAt, &c.UnreadCount); err != nil {
 			return nil, err
 		}
 		conversations = append(conversations, c)
@@ -104,13 +157,13 @@ func (r *Repository) ListConversations(ctx context.Context, viewerID int64) ([]m
 // GetGroupHistory retrieves paginated chat history for a group
 func (r *Repository) GetGroupHistory(ctx context.Context, groupID int64, limit, offset int) ([]models.GroupMessage, error) {
 	query := `
-		SELECT gm.id, gm.group_id, gm.sender_id, u.username, u.avatar, gm.content, gm.created_at
-		FROM group_messages gm
-		JOIN users u ON u.id = gm.sender_id
-		WHERE gm.group_id = $1
-		ORDER BY gm.created_at DESC
-		LIMIT $2 OFFSET $3
-	`
+SELECT gm.id, gm.group_id, gm.sender_id, u.username, u.avatar, gm.content, gm.created_at
+FROM group_messages gm
+JOIN users u ON u.id = gm.sender_id
+WHERE gm.group_id = $1
+ORDER BY gm.created_at DESC
+LIMIT $2 OFFSET $3
+`
 	rows, err := r.DB.Database.QueryContext(ctx, query, groupID, limit, offset)
 	if err != nil {
 		return nil, err
