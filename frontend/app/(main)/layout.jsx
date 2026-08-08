@@ -10,7 +10,7 @@ import { useNotifications } from "@/contexts/NotificationContext";
 import Avatar from "@/components/shared/Avatar";
 import CharmToggle from "@/components/shared/CharmToggle";
 import NotificationList from "@/components/notifications/NotificationList";
-import ChatDock from "@/components/chat/Chat";
+import Chat from "@/components/chat/Chat";
 
 const MAIN_WALLPAPER = "/images/main_wallpaper.png";
 const MAIN_MUSIC = "/audio/main_music.mp3";
@@ -97,7 +97,7 @@ export default function MainLayout({ children }) {
 
       <img className="headerSeparator" src={SEPARATOR} alt="" />
 
-      <ChatDock />
+      <Chat />
 
       <NotificationList open={notificationsOpen} />
       <Settings open={settingsOpen} />

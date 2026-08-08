@@ -6,6 +6,7 @@ import { useWebSocket } from "@/contexts/WebSocketContext";
 import { getConversations, getDirectHistory, markChatRead } from "@/lib/api/chat";
 import Avatar from "@/components/shared/Avatar";
 import EmojiPicker from "./EmojiPicker";
+import SideBar from "./SideBar";
 import "@/css/chat.css";
 
 const empty_single_chat = {
@@ -202,24 +203,12 @@ function useChat() {
   };
 }
 
-// TODO: move to it's own component since it will also have groups
-export default function ChatDock() {
+export default function Chat() {
   const chat = useChat();
 
   return (
     <>
-      <aside className="chatDock">
-        <button
-          type="button"
-          className={`chatDockButton ${chat.open ? "active" : ""}`}
-          title="Chat"
-          onClick={() => chat.setOpen(!chat.open)}
-        >
-          <img className="chatDockIcon" src="/images/icon_chat.png" alt="Chat" />
-          {chat.totalUnread > 0 && <span className="chatDockBadge">{chat.totalUnread}</span>}
-        </button>
-        {/* Groups button will be added here in phase 2 */}
-      </aside>
+      <SideBar chat={chat} />
 
       {chat.open && (
         <div className="chatModalOverlay" onClick={chat.handleBackdrop}>
