@@ -7,7 +7,7 @@ import { getPost, getComments } from "@/lib/api/posts";
 import PostCard from "@/components/posts/PostCard";
 import CommentCard from "@/components/posts/CommentCard";
 import CommentCreate from "@/components/posts/CommentCreate";
-import FollowerSelect from "@/components/posts/FollowerSelect";
+import UsersSelect from "@/components/shared/UsersSelect";
 
 export default function PostDetailPage({ params }) {
   const { postId } = use(params); // params require await
@@ -93,7 +93,7 @@ export default function PostDetailPage({ params }) {
         {post.privacy === "private" && post.viewers?.length > 0 && (
           <div className="postViewersSection">
             <h3 className="postViewersTitle">Visible only to:</h3>
-            <FollowerSelect followers={post.viewers} selectable={false} />
+            <UsersSelect users={post.viewers} selectable={false} />
           </div>
         )}
 

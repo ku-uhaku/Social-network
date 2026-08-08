@@ -3,29 +3,29 @@
 import Avatar from "@/components/shared/Avatar";
 import "@/css/createPost.css";
 
-export default function FollowerSelect({
-  followers = [],
+export default function UsersSelect({
+  users = [],
   loading = false,
-  selectedViewers = [],
-  onToggleViewer = () => {},
+  selected = [],
+  onToggle = () => {},
   selectable = true,
 }) {
   if (loading) {
-    return <div>Loading followers...</div>;
+    return <div>Loading users...</div>;
   }
 
-  if (followers.length === 0) {
-    return <div>No followers found</div>;
+  if (users.length === 0) {
+    return <div>No users found</div>;
   }
 
   return (
     <div className="followersChecklist">
-      {followers.map((follower) => {
-        const checked = selectedViewers.includes(follower.id);
+      {users.map((user) => {
+        const checked = selected.includes(user.id);
         const handleChange = (event) =>
-          onToggleViewer(follower.id, event.target.checked);
+          onToggle(user.id, event.target.checked);
         return (
-          <label key={follower.id} className="checkboxLabel">
+          <label key={user.id} className="checkboxLabel">
             {selectable && (
               <>
                 <input
@@ -37,15 +37,15 @@ export default function FollowerSelect({
               </>
             )}
             <div className="followerInfo">
-              {follower.avatar && (
+              {user.avatar && (
                 <Avatar
-                  avatar={follower.avatar}
-                  username={follower.username}
+                  avatar={user.avatar}
+                  username={user.username}
                   size={32}
                 />
               )}
               <span className="followerName">
-                {follower.first_name} {follower.last_name} (@{follower.username})
+                {user.first_name} {user.last_name} (@{user.username})
               </span>
             </div>
           </label>

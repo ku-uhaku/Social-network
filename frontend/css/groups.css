@@ -1,0 +1,174 @@
+.groupForm {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border-radius: 18px;
+  background: rgba(10, 13, 18, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.groupForm .field {
+  display: grid;
+  gap: 10px;
+}
+
+.groupForm label {
+  color: var(--muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+
+.groupForm input,
+.groupForm textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: rgba(10, 13, 18, 0.7);
+  color: var(--bone);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-family: inherit;
+}
+
+.groupForm input:focus,
+.groupForm textarea:focus {
+  outline: none;
+  border-color: var(--soul);
+}
+
+.groupForm textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.groupList {
+  display: grid;
+  gap: 16px;
+}
+
+.groupCard {
+  display: block;
+  padding: 20px;
+  border-radius: 16px;
+  background: rgba(10, 13, 18, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s;
+}
+
+.groupCard:hover {
+  border-color: var(--soul-dim);
+}
+
+.groupCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.groupCardTitle {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.groupCardDescription {
+  margin: 0 0 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.groupCardMeta {
+  color: var(--muted);
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 20px;
+  margin-bottom: 24px;
+  border-radius: 18px;
+  background: rgba(10, 13, 18, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.groupHeaderInfo {
+  display: grid;
+  gap: 8px;
+}
+
+.groupHeaderInfo .feedTitle {
+  margin: 0;
+}
+
+.groupHeaderDescription {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.groupHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.groupPendingLabel {
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.groupInviteOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.groupInvitePanel {
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 18px;
+  background: rgba(6, 8, 12, 0.97);
+  border: 1px solid var(--border);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02) inset,
+    0 16px 34px rgba(0, 0, 0, 0.55);
+}
+
+.groupInviteTitle {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.groupInviteList {
+  display: grid;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.groupInviteActions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createPost } from "@/lib/api/posts";
 import { getFollowers } from "@/lib/api/user";
 import ImageUploadButton from "@/components/shared/ImageUploadButton";
-import FollowerSelect from "@/components/posts/FollowerSelect";
+import UsersSelect from "@/components/shared/UsersSelect";
 import { useAuth } from "@/contexts/AuthContext";
 import "@/css/createPost.css";
 
@@ -53,12 +53,13 @@ export default function CreatePostPage() {
         return;
       }
 
-      // Always send multipart form data: the backend parses plain and image
-      // posts the same way, and visible_to is sent as repeated fields.
       const formData = new FormData();
       formData.append("title", title.trim());
       formData.append("content", content.trim());
       formData.append("privacy", privacy);
+      const params = new URLSearchParams(window.location.search);
+      const groupId = params.get("group_id") ? Number(params.get("group_id")) : null;
+      if (groupId) formData.append("group_id", groupId);
       if (privacy === "private") {
         selectedViewers.forEach((id) => formData.append("visible_to", id));
       }
@@ -67,7 +68,7 @@ export default function CreatePostPage() {
       const response = await createPost(formData);
       const post = response?.data;
       if (post?.id) {
-        router.push(`/`);
+        router.push(groupId ? `/group/${groupId}` : `/`);
       } else {
         setError("Unexpected response from the server.");
       }
@@ -143,11 +144,11 @@ export default function CreatePostPage() {
           {privacy === "private" && (
             <div className="field">
               <label>Select Viewers</label>
-              <FollowerSelect
-                followers={followers}
+              <UsersSelect
+                users={followers}
                 loading={loadingFollowers}
-                selectedViewers={selectedViewers}
-                onToggleViewer={(id, checked) => {
+                selected={selectedViewers}
+                onToggle={(id, checked) => {
                   if (checked) {
                     setSelectedViewers([...selectedViewers, id]);
                   } else {

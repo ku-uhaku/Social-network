@@ -84,7 +84,7 @@
   font-size: 0.95rem;
 }
 
-/* Follower selection for private posts */
+/* User selection checklist (UsersSelect) */
 .followersChecklist {
   max-height: 200px;
   overflow-y: auto;

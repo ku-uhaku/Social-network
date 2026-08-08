@@ -9,6 +9,7 @@ import "@/css/home.css";
 import "@/css/auth.css";
 import "@/css/profile.css";
 import "@/css/notifications.css";
+import "@/css/groups.css";
 
 export default function RootLayout({ children }) {
   return (
