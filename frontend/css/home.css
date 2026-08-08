@@ -179,6 +179,27 @@
   text-transform: uppercase;
 }
 
+.particlesControls {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.particlesControls .charmToggle:last-child {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.particlesControls .charmToggle:last-child .charmToggleSwitch {
+  width: 18px;
+  height: 9px;
+}
+
+.particlesControls .charmToggle:last-child.on .charmToggleSwitch {
+  filter: drop-shadow(0 0 6px var(--brass-dim));
+}
+
 /* ---- CharmToggle ---- */
 .charmToggle {
   position: relative;

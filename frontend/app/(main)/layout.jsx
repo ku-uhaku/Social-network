@@ -114,7 +114,7 @@ export default function MainLayout({ children }) {
 
 function Settings({ open }) {
   const { setMusic, isMusicMuted, toggleMusicMuted, isSfxMuted, toggleSfxMuted } = useAudio();
-  const { isParticlesEnabled, toggleParticles } = useParticles();
+  const { isParticlesEnabled, toggleParticles, isCrazy, toggleCrazy } = useParticles();
 
   useEffect(() => {
     setMusic(MAIN_MUSIC);
@@ -132,7 +132,10 @@ function Settings({ open }) {
       </div>
       <div className="settingsRow">
         <span className="toggleLabel">Particles</span>
-        <CharmToggle checked={isParticlesEnabled} onChange={toggleParticles} title="Particles" />
+        <div className="particlesControls">
+          <CharmToggle checked={isParticlesEnabled} onChange={toggleParticles} title="Particles" />
+          <CharmToggle checked={isCrazy} onChange={toggleCrazy} title="???" />
+        </div>
       </div>
     </section>
   );

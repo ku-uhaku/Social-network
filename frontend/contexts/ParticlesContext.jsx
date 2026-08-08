@@ -10,12 +10,20 @@ const PARTICLE_SPRITES = [
 ];
 const MAX_PARTICLES = 100;
 const PARTICLE_LIFETIME = 1000;
+const MIN_SIZE = 30;
+const MAX_SIZE = 60;
+
+const CRAZY_MAX_PARTICLES = 500;
+const CRAZY_MIN_SIZE = 200;
+const CRAZY_MAX_SIZE = 500;
 
 const ParticlesCtx = createContext(null);
 
 export function ParticlesProvider({ children }) {
   const [isParticlesEnabled, setIsParticlesEnabled] = useState(true);
   const enabledRef = useRef(isParticlesEnabled);
+  const [isCrazy, setIsCrazy] = useState(false);
+  const crazyRef = useRef(isCrazy);
 
   const overlayRef = useRef(null);
   const cursorRef = useRef(null);
@@ -23,6 +31,10 @@ export function ParticlesProvider({ children }) {
   useEffect(() => {
     enabledRef.current = isParticlesEnabled;
   }, [isParticlesEnabled]);
+
+  useEffect(() => {
+    crazyRef.current = isCrazy;
+  }, [isCrazy]);
 
   useEffect(() => {
     document.body.classList.add("customCursor");
@@ -37,7 +49,8 @@ export function ParticlesProvider({ children }) {
     function spawnParticle(x, y) {
       if (!enabledRef.current) return;
 
-      if (particles.length >= MAX_PARTICLES) {
+      const maxParticles = crazyRef.current ? CRAZY_MAX_PARTICLES : MAX_PARTICLES;
+      if (particles.length >= maxParticles) {
         const oldest = particles.shift();
         oldest.remove();
       }
@@ -45,7 +58,9 @@ export function ParticlesProvider({ children }) {
       const img = document.createElement("img");
       img.className = "cursorParticle";
       img.src = PARTICLE_SPRITES[Math.floor(Math.random() * PARTICLE_SPRITES.length)];
-      const size = 30 + Math.random() * 60;
+      const size = crazyRef.current
+        ? CRAZY_MIN_SIZE + Math.random() * (CRAZY_MAX_SIZE - CRAZY_MIN_SIZE)
+        : MIN_SIZE + Math.random() * MAX_SIZE;
       img.style.width = `${size}px`;
       img.style.height = `${size}px`;
 
@@ -69,7 +84,7 @@ export function ParticlesProvider({ children }) {
       const dx = e.clientX - lastX;
       const dy = e.clientY - lastY;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance > 6) {
+      if (distance > (crazyRef.current ? 0.2 : 6)) {
         spawnParticle(e.clientX, e.clientY);
         lastX = e.clientX;
         lastY = e.clientY;
@@ -91,6 +106,8 @@ export function ParticlesProvider({ children }) {
       value={{
         isParticlesEnabled,
         toggleParticles: () => setIsParticlesEnabled((e) => !e),
+        isCrazy,
+        toggleCrazy: () => setIsCrazy((c) => !c),
       }}
     >
       {children}
