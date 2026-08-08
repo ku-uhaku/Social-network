@@ -57,9 +57,6 @@ export default function HomePage() {
       <div className="feedHeader">
         <div>
           <h1 className="feedTitle">Home feed</h1>
-          <p className="feedSubtitle">
-            {user ? `Welcome back, ${user.username}.` : "Your latest posts appear below."}
-          </p>
         </div>
         <Link href="/posts/create" className="createPostLink">
           <NailButton>Create post</NailButton>

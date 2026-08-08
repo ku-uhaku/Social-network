@@ -10,6 +10,7 @@
   --soul-dim: rgba(0, 240, 255, 0.5);
   --brass: #f5d087;
   --brass-dim: rgba(245, 208, 135, 0.5);
+  --header-height: 88px;
   --font-normal: "Trajan Pro Regular", "Trajan Pro", Georgia, "Times New Roman", serif;
   --font-bold: "Trajan Pro Bold", "Trajan Pro", Georgia, "Times New Roman", serif;
 }

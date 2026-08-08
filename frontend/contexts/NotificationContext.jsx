@@ -13,9 +13,8 @@ export function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [prevUserId, setPrevUserId] = useState(user?.id);
-
   // Reset state when the logged-in user changes (covers logout).
+  const [prevUserId, setPrevUserId] = useState(user?.id);
   if (user?.id !== prevUserId) {
     setPrevUserId(user?.id);
     setNotifications([]);
@@ -31,6 +30,12 @@ export function NotificationProvider({ children }) {
   const markAllReadLocal = useCallback(() => {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: 1 })));
     setUnreadCount(0);
+  }, []);
+
+  const runAction = useCallback((apiCall, onSuccess) => {
+    apiCall().then(onSuccess).catch(() => {
+      // ignore — local state stays as-is on failure
+    });
   }, []);
 
   useEffect(() => {
@@ -54,7 +59,6 @@ export function NotificationProvider({ children }) {
     };
   }, [user]);
 
-
   // match backend
   useEffect(() => {
     if (!user) return;
@@ -63,7 +67,6 @@ export function NotificationProvider({ children }) {
       if (!payload) return;
       setNotifications((prev) => {
         // deduplicate in case of notifications with same id
-        // TODO: this is stupid
         if (prev.some((n) => n.id === payload.id)) return prev;
         return [payload, ...prev];
       });
@@ -89,32 +92,14 @@ export function NotificationProvider({ children }) {
     };
   }, [user, subscribe, markOne, markAllReadLocal]);
 
-  const markRead = async (notificationId) => {
-    try {
-      await notificationsApi.markNotificationRead(notificationId);
-      markOne(notificationId, { is_read: 1 });
-    } catch {
-      // ignore
-    }
-  };
+  const markRead = (id) =>
+    runAction(() => notificationsApi.markNotificationRead(id), () => markOne(id, { is_read: 1 }));
 
-  const markAllRead = async () => {
-    try {
-      await notificationsApi.markAllNotificationsRead();
-      markAllReadLocal();
-    } catch {
-      // ignore
-    }
-  };
+  const markAllRead = () =>
+    runAction(() => notificationsApi.markAllNotificationsRead(), markAllReadLocal);
 
-  const expireNotification = async (notificationId) => {
-    try {
-      await notificationsApi.expireNotification(notificationId);
-      markOne(notificationId, { is_expired: 1 });
-    } catch {
-      // ignore
-    }
-  };
+  const expireNotification = (id) =>
+    runAction(() => notificationsApi.expireNotification(id), () => markOne(id, { is_expired: 1 }));
 
   return (
     <NotificationContext.Provider

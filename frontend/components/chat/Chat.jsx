@@ -202,6 +202,7 @@ function useChat() {
   };
 }
 
+// TODO: move to it's own component since it will also have groups
 export default function ChatDock() {
   const chat = useChat();
 

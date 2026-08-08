@@ -59,6 +59,13 @@
   font-size: 0.9rem;
 }
 
+.profileSeparator {
+	width: 60%;
+	height: auto;
+	display: block;
+	pointer-events: none;
+}
+
 .profileDetails {
   width: 100%;
   display: flex;

@@ -144,6 +144,8 @@ export default function ProfilePage() {
         <p className="profileFullName">{profile.first_name} {profile.last_name}</p>
         <p className="profileEmail">{profile.email}</p>
 
+        <img className="profileSeparator" src="/images/profile_separator.png" alt="" />
+
         <div className="profileDetails">
           <div className="profileDetail"><strong>Gender:</strong> {profile.gender}</div>
           <div className="profileDetail"><strong>Date of Birth:</strong> {profile.date_of_birth}</div>

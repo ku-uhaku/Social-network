@@ -24,10 +24,12 @@ export default function PostCard({ post, isFeed = true }) {
             </div>
           </div>
         </div>
+
+        <img className="postCardHeaderDecoration" src="/images/post_corner_decoration.png" alt="" />
       </div>
 
       <h2 className="postTitle">{post.title}</h2>
-      <div className="postTitleSeparator" />
+      <img className="postTitleSeparator" src="/images/post_title_separator.png" alt="" />
 
       {imageSrc && (
         <img className="postCardImage" src={imageSrc} alt="image" />

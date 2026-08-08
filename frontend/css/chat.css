@@ -2,7 +2,7 @@
 .chatDock {
   position: fixed;
   left: 0;
-  top: 0;
+  top: var(--header-height, 88px);
   bottom: 0;
   z-index: 30;
   width: 64px;
@@ -62,7 +62,10 @@
 /* ---- Chat modal ---- */
 .chatModalOverlay {
   position: fixed;
-  inset: 0;
+  top: var(--header-height, 88px);
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 40;
   background: rgba(0, 0, 0, 0.55);
   display: flex;

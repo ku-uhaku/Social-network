@@ -12,7 +12,7 @@ import CharmToggle from "@/components/shared/CharmToggle";
 import NotificationList from "@/components/notifications/NotificationList";
 import ChatDock from "@/components/chat/Chat";
 
-const MAIN_WALLPAPER = "/images/main_wallpaper.gif";
+const MAIN_WALLPAPER = "/images/main_wallpaper.png";
 const MAIN_MUSIC = "/audio/main_music.mp3";
 const SEPARATOR = "/images/header_separator.png";
 const ICON_SETTINGS = "/images/icon_settings.png";
@@ -33,7 +33,9 @@ export default function MainLayout({ children }) {
 
   // Keep height in sync so the settings
   // panel can anchor itself
-  useEffect(() => {
+  useEffect(() => { // TODO: this whole function stinks
+    if (loading || !user) return;
+
     const header = headerRef.current;
     if (!header) return;
 
@@ -45,7 +47,7 @@ export default function MainLayout({ children }) {
     const observer = new ResizeObserver(updateHeight);
     observer.observe(header);
     return () => observer.disconnect();
-  }, []);
+  }, [loading, user]);
 
   if (loading || !user) return null;
 
