@@ -145,3 +145,7 @@ func (s *Service) GetFollowing(ctx context.Context, userID int64) ([]models.User
 func (s *Service) GetPendingRequests(ctx context.Context, userID int64) ([]models.UserFollowView, error) {
 	return s.Repo.GetPendingFollowRequests(ctx, userID)
 }
+
+func (s *Service) GetAllUsers(ctx context.Context) ([]models.UserFollowView, error) {
+	return s.Repo.GetAllUsers(ctx)
+}

@@ -235,6 +235,17 @@ func (h *Handler) respondToFollowRequest(w http.ResponseWriter, r *http.Request,
 	helper.Success(w, http.StatusOK, msg, nil)
 }
 
+// GetAllUsers GET /api/v1/user/all
+func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	users, err := h.Service.GetAllUsers(r.Context())
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Users retrieved successfully", users)
+}
+
 // GetFollowers GET /api/v1/user/followers?id=123
 func (h *Handler) GetFollowers(w http.ResponseWriter, r *http.Request) {
 	userIDStr := r.URL.Query().Get("id")

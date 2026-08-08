@@ -151,6 +151,53 @@ func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64, limi
 	return posts, hasMore, nil
 }
 
+// GetGroupFeedPosts retrieves posts belonging to a single group.
+// Caller must verify the requesting user is an accepted group member.
+// Paginated by cursor (last post id) and limit.
+func (r *Repository) GetGroupFeedPosts(ctx context.Context, groupID int64, limit int, cursor *int64) ([]models.Post, bool, error) {
+	query := `
+		SELECT p.id, p.user_id, p.group_id, p.title, p.content, p.privacy, p.image_url, p.created_at,
+			(SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comments_count,
+			u.id, u.username, u.first_name, u.last_name, u.avatar
+		FROM posts p
+		JOIN users u ON u.id = p.user_id
+		WHERE p.group_id = $1
+	`
+	args := []interface{}{groupID}
+	if cursor != nil {
+		query += ` AND p.id < $2`
+		args = append(args, *cursor)
+	}
+	query += ` ORDER BY p.created_at DESC, p.id DESC`
+	query += fmt.Sprintf(` LIMIT $%d`, len(args)+1)
+	args = append(args, limit+1)
+
+	rows, err := r.DB.Database.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, false, err
+	}
+	defer rows.Close()
+
+	var posts []models.Post
+	for rows.Next() {
+		var p models.Post
+		if err := rows.Scan(
+			&p.ID, &p.UserID, &p.GroupID, &p.Title, &p.Content, &p.Privacy, &p.ImageURL, &p.CreatedAt,
+			&p.CommentsCount,
+			&p.User.ID, &p.User.Username, &p.User.FirstName, &p.User.LastName, &p.User.Avatar,
+		); err != nil {
+			return nil, false, err
+		}
+		posts = append(posts, p)
+	}
+
+	hasMore := len(posts) > limit
+	if hasMore {
+		posts = posts[:limit]
+	}
+	return posts, hasMore, nil
+}
+
 // CreateComment inserts a new post comment
 func (r *Repository) CreateComment(ctx context.Context, userID int64, payload models.CreateCommentPayload) (*models.Comment, error) {
 	query := `

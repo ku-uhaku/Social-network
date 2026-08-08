@@ -25,6 +25,15 @@ func ParseCreatePostPayload(r *http.Request) (models.CreatePostPayload, error) {
 		payload.Content = strings.TrimSpace(r.FormValue("content"))
 		payload.Privacy = strings.TrimSpace(r.FormValue("privacy"))
 
+		// Parse group_id when posting inside a group
+		if groupIDStr := r.FormValue("group_id"); groupIDStr != "" {
+			groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+			if err != nil {
+				return payload, fmt.Errorf("invalid group_id")
+			}
+			payload.GroupID = &groupID
+		}
+
 		// Parse visible_to from multipart form
 		if visibleToValues := r.Form["visible_to"]; len(visibleToValues) > 0 {
 			visibleTo := make([]int64, 0, len(visibleToValues))

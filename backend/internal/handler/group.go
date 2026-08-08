@@ -43,7 +43,15 @@ func (h *Handler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetGroup handles GET /api/v1/groups/detail?id=123
+// Returns { group, membership } where membership is the requesting user's
+// status in the group ('accepted', 'pending', or 'none').
 func (h *Handler) GetGroup(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Authentication context missing")
+		return
+	}
+
 	groupIDStr := r.URL.Query().Get("id")
 	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
 	if err != nil || groupID <= 0 {
@@ -61,7 +69,16 @@ func (h *Handler) GetGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	helper.Success(w, http.StatusOK, "Group retrieved successfully", group)
+	membership, err := h.Service.GetMembershipStatus(r.Context(), groupID, user.ID)
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Group retrieved successfully", map[string]interface{}{
+		"group":      group,
+		"membership": membership,
+	})
 }
 
 // GetAllGroups handles GET /api/v1/groups
@@ -171,7 +188,7 @@ func (h *Handler) InviteMembers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.Service.InviteUsers(r.Context(), user.ID, payload); err != nil {
-		if errors.Is(err, service.ErrNotGroupCreator) {
+		if errors.Is(err, service.ErrNotMember) {
 			helper.Error(w, http.StatusForbidden, err.Error())
 			return
 		}
@@ -259,6 +276,68 @@ func (h *Handler) LeaveGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	helper.Success(w, http.StatusOK, "Successfully left the group", nil)
+}
+
+// GetGroupFeed GET /api/v1/groups/feed?id=123&limit=10&cursor=456
+// Returns { posts, next_cursor, has_more } like the home feed.
+func (h *Handler) GetGroupFeed(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	groupIDStr := r.URL.Query().Get("id")
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil || groupID <= 0 {
+		helper.Error(w, http.StatusBadRequest, "Invalid or missing group ID parameter")
+		return
+	}
+
+	limit := 10
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		parsed, err := strconv.Atoi(limitStr)
+		if err != nil || parsed < 1 {
+			helper.Error(w, http.StatusBadRequest, "Invalid limit parameter")
+			return
+		}
+		limit = parsed
+		if limit > 50 {
+			limit = 50
+		}
+	}
+
+	var cursor *int64
+	if cursorStr := r.URL.Query().Get("cursor"); cursorStr != "" {
+		parsed, err := strconv.ParseInt(cursorStr, 10, 64)
+		if err != nil || parsed < 1 {
+			helper.Error(w, http.StatusBadRequest, "Invalid cursor parameter")
+			return
+		}
+		cursor = &parsed
+	}
+
+	posts, hasMore, err := h.Service.GetGroupFeed(r.Context(), user.ID, groupID, limit, cursor)
+	if err != nil {
+		if errors.Is(err, service.ErrAccessDenied) {
+			helper.Error(w, http.StatusForbidden, err.Error())
+			return
+		}
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	var nextCursor *int64
+	if hasMore && len(posts) > 0 {
+		lastID := posts[len(posts)-1].ID
+		nextCursor = &lastID
+	}
+
+	helper.Success(w, http.StatusOK, "Group feed retrieved successfully", map[string]interface{}{
+		"posts":       posts,
+		"next_cursor": nextCursor,
+		"has_more":    hasMore,
+	})
 }
 
 // GetMyInvitations GET /api/v1/groups/invitations

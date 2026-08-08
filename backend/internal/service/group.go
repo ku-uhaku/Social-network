@@ -13,6 +13,7 @@ var (
 	ErrUnauthorized    = errors.New("you are not authorized to perform this action on this group")
 	ErrAlreadyMember   = errors.New("user is already a member or has a pending request")
 	ErrNotGroupCreator = errors.New("only group creator can perform this action")
+	ErrNotMember       = errors.New("you must be an accepted member of the group to perform this action")
 	ErrGroupIsPrivate  = errors.New("cannot directly join a private group; request required")
 	ErrNoPendingInvite = errors.New("no pending invitation found")
 )
@@ -70,14 +71,12 @@ func (s *Service) DeleteGroup(ctx context.Context, userID int64, groupID int64) 
 	return s.Repo.DeleteGroup(ctx, groupID)
 }
 
-// InviteUsers ensures requester is group creator then issues batch invitations
+// InviteUsers ensures requester is an accepted member then issues batch invitations.
+// Any member of the group may invite other users.
 func (s *Service) InviteUsers(ctx context.Context, requesterID int64, payload models.InviteMembersPayload) error {
-	group, err := s.Repo.GetGroupByID(ctx, payload.GroupID)
-	if err != nil {
-		return err
-	}
-	if group.CreatorID != requesterID {
-		return ErrNotGroupCreator
+	status, err := s.Repo.GetMemberStatus(ctx, payload.GroupID, requesterID)
+	if err != nil || status != "accepted" {
+		return ErrNotMember
 	}
 
 	return s.Repo.InviteUsersBatch(ctx, payload.GroupID, payload.TargetUserIDs)
@@ -139,4 +138,27 @@ func (s *Service) LeaveGroup(ctx context.Context, userID int64, groupID int64) e
 
 func (s *Service) GetPendingInvitations(ctx context.Context, userID int64) ([]models.GroupInvitationView, error) {
 	return s.Repo.GetUserPendingInvitations(ctx, userID)
+}
+
+// GetMembershipStatus returns the current user's membership status in a group.
+// Values: 'accepted', 'pending', or 'none' when no row exists.
+func (s *Service) GetMembershipStatus(ctx context.Context, groupID int64, userID int64) (string, error) {
+	status, err := s.Repo.GetMemberStatus(ctx, groupID, userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "none", nil
+		}
+		return "", err
+	}
+	return status, nil
+}
+
+// GetGroupFeed returns the posts of a single group. Non-members get ErrAccessDenied.
+func (s *Service) GetGroupFeed(ctx context.Context, userID int64, groupID int64, limit int, cursor *int64) ([]models.Post, bool, error) {
+	status, err := s.Repo.GetMemberStatus(ctx, groupID, userID)
+	if err != nil || status != "accepted" {
+		return nil, false, ErrAccessDenied
+	}
+
+	return s.Repo.GetGroupFeedPosts(ctx, groupID, limit, cursor)
 }
