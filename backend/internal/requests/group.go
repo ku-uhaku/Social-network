@@ -3,6 +3,7 @@ package requests
 import (
 	"errors"
 	"strings"
+	"time"
 
 	"kuu/internal/models"
 )
@@ -64,6 +65,50 @@ func ValidateGroupAction(payload models.GroupActionPayload) []error {
 	var errs []error
 	if payload.GroupID <= 0 {
 		errs = append(errs, errors.New("group_id is required"))
+	}
+	return errs
+}
+
+// ValidateJoinRequestAction checks creator handling of a join request
+func ValidateJoinRequestAction(payload models.GroupActionPayload) []error {
+	var errs []error
+	if payload.GroupID <= 0 {
+		errs = append(errs, errors.New("group_id is required"))
+	}
+	if payload.TargetUserID <= 0 {
+		errs = append(errs, errors.New("target_user_id is required"))
+	}
+	return errs
+}
+
+// ValidateCreateGroupEvent checks required fields and a future event time
+func ValidateCreateGroupEvent(payload models.CreateGroupEventPayload) []error {
+	var errs []error
+	if payload.GroupID <= 0 {
+		errs = append(errs, errors.New("group_id is required"))
+	}
+	if strings.TrimSpace(payload.Title) == "" {
+		errs = append(errs, errors.New("title is required"))
+	}
+	if strings.TrimSpace(payload.Description) == "" {
+		errs = append(errs, errors.New("description is required"))
+	}
+	if payload.EventTime.IsZero() {
+		errs = append(errs, errors.New("event_time is required"))
+	} else if payload.EventTime.Before(time.Now()) {
+		errs = append(errs, errors.New("event_time must be in the future"))
+	}
+	return errs
+}
+
+// ValidateEventResponse checks an event response choice
+func ValidateEventResponse(payload models.EventResponsePayload) []error {
+	var errs []error
+	if payload.EventID <= 0 {
+		errs = append(errs, errors.New("event_id is required"))
+	}
+	if payload.Status != "going" && payload.Status != "not_going" {
+		errs = append(errs, errors.New("status must be 'going' or 'not_going'"))
 	}
 	return errs
 }

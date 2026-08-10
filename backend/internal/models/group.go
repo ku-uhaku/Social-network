@@ -52,3 +52,37 @@ type UpdateGroupPayload struct {
 	Description string `json:"description"`
 	IsPublic    *int   `json:"is_public"`
 }
+
+// GroupEvent represents a scheduled group event
+type GroupEvent struct {
+	ID          int64     `json:"id"`
+	GroupID     int64     `json:"group_id"`
+	CreatorID   int64     `json:"creator_id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	EventTime   time.Time `json:"event_time"`
+	Status      string    `json:"status"` // 'upcoming', 'cancelled', 'expired'
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+// GroupEventWithCounts augments an event with response tallies and the caller's choice
+type GroupEventWithCounts struct {
+	GroupEvent
+	GoingCount    int64  `json:"going_count"`
+	NotGoingCount int64  `json:"not_going_count"`
+	MyStatus      string `json:"my_status"` // 'going', 'not_going', or '' when unset
+}
+
+// CreateGroupEventPayload defines incoming payload for creating a group event
+type CreateGroupEventPayload struct {
+	GroupID     int64     `json:"group_id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	EventTime   time.Time `json:"event_time"`
+}
+
+// EventResponsePayload defines the response option for an event
+type EventResponsePayload struct {
+	EventID int64  `json:"event_id"`
+	Status  string `json:"status"` // 'going' | 'not_going'
+}

@@ -36,6 +36,7 @@ var allowedImageTypes = map[string]string{
 	"image/gif":  ".gif",
 }
 
+// TODO: third argument is always "media", nuke it
 func SaveUploadedImage(file multipart.File, header *multipart.FileHeader, mediaDir string) (string, error) {
 	if file == nil || header == nil || header.Size == 0 {
 		return "", fmt.Errorf("uploaded file is empty")

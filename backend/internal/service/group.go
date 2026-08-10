@@ -16,6 +16,8 @@ var (
 	ErrNotMember       = errors.New("you must be an accepted member of the group to perform this action")
 	ErrGroupIsPrivate  = errors.New("cannot directly join a private group; request required")
 	ErrNoPendingInvite = errors.New("no pending invitation found")
+	ErrEventNotFound   = errors.New("event not found")
+	ErrEventExpired    = errors.New("event is no longer upcoming")
 )
 
 func (s *Service) CreateGroup(ctx context.Context, creatorID int64, payload models.CreateGroupPayload) (*models.Group, error) {
@@ -161,4 +163,53 @@ func (s *Service) GetGroupFeed(ctx context.Context, userID int64, groupID int64,
 	}
 
 	return s.Repo.GetGroupFeedPosts(ctx, groupID, limit, cursor)
+}
+
+// CreateGroupEvent allows any accepted member to create an event
+func (s *Service) CreateGroupEvent(ctx context.Context, userID int64, payload models.CreateGroupEventPayload) (*models.GroupEvent, error) {
+	status, err := s.Repo.GetMemberStatus(ctx, payload.GroupID, userID)
+	if err != nil || status != "accepted" {
+		return nil, ErrNotMember
+	}
+	return s.Repo.CreateGroupEvent(ctx, payload.GroupID, userID, payload)
+}
+
+// GetGroupEvents lists events for a group (members only)
+func (s *Service) GetGroupEvents(ctx context.Context, userID, groupID int64) ([]models.GroupEventWithCounts, error) {
+	status, err := s.Repo.GetMemberStatus(ctx, groupID, userID)
+	if err != nil || status != "accepted" {
+		return nil, ErrAccessDenied
+	}
+	return s.Repo.GetGroupEvents(ctx, groupID, userID)
+}
+
+// CancelGroupEvent allows only the creator to cancel an upcoming event
+func (s *Service) CancelGroupEvent(ctx context.Context, userID, eventID int64) error {
+	event, err := s.Repo.GetEventByID(ctx, eventID)
+	if err != nil {
+		return ErrEventNotFound
+	}
+	if event.CreatorID != userID {
+		return ErrNotGroupCreator
+	}
+	if event.Status != "upcoming" {
+		return ErrEventExpired
+	}
+	return s.Repo.CancelGroupEvent(ctx, eventID)
+}
+
+// SetEventResponse lets a member choose going/not_going for an upcoming event
+func (s *Service) SetEventResponse(ctx context.Context, userID, eventID int64, status string) error {
+	event, err := s.Repo.GetEventByID(ctx, eventID)
+	if err != nil {
+		return ErrEventNotFound
+	}
+	memberStatus, err := s.Repo.GetMemberStatus(ctx, event.GroupID, userID)
+	if err != nil || memberStatus != "accepted" {
+		return ErrNotMember
+	}
+	if event.Status != "upcoming" {
+		return ErrEventExpired
+	}
+	return s.Repo.SetEventResponse(ctx, eventID, userID, status)
 }

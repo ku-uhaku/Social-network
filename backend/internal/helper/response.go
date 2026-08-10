@@ -16,6 +16,14 @@ func WriteJSON(w http.ResponseWriter, status int, success bool, message string, 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
+	if errSlice, ok := errs.([]error); ok {
+		messages := make([]string, len(errSlice))
+		for i, e := range errSlice {
+			messages[i] = e.Error()
+		}
+		errs = messages
+	}
+
 	resp := JSONResponse{
 		Success: success,
 		Message: message,

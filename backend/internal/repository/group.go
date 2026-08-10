@@ -258,3 +258,113 @@ func (r *Repository) GetUserPendingInvitations(ctx context.Context, userID int64
 	}
 	return invites, nil
 }
+
+// CreateGroupEvent inserts a new group event
+func (r *Repository) CreateGroupEvent(ctx context.Context, groupID, creatorID int64, payload models.CreateGroupEventPayload) (*models.GroupEvent, error) {
+	var e models.GroupEvent
+	query := `
+		INSERT INTO group_events (group_id, creator_id, title, description, event_time, status)
+		VALUES ($1, $2, $3, $4, $5, 'upcoming')
+		RETURNING id, group_id, creator_id, title, description, event_time, status, created_at
+	`
+	err := r.DB.Database.QueryRowContext(ctx, query,
+		groupID, creatorID,
+		strings.TrimSpace(payload.Title),
+		strings.TrimSpace(payload.Description),
+		payload.EventTime.UTC(),
+	).Scan(&e.ID, &e.GroupID, &e.CreatorID, &e.Title, &e.Description, &e.EventTime, &e.Status, &e.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &e, nil
+}
+
+// GetEventByID fetches a single group event
+func (r *Repository) GetEventByID(ctx context.Context, eventID int64) (*models.GroupEvent, error) {
+	var e models.GroupEvent
+	query := `
+		SELECT id, group_id, creator_id, title, description, event_time, status, created_at
+		FROM group_events
+		WHERE id = $1
+		LIMIT 1
+	`
+	err := r.DB.Database.QueryRowContext(ctx, query, eventID).Scan(
+		&e.ID, &e.GroupID, &e.CreatorID, &e.Title, &e.Description, &e.EventTime, &e.Status, &e.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &e, nil
+}
+
+// GetGroupEvents marks past upcoming events as expired, then lists all events for a
+// group with response tallies and the requesting user's choice.
+func (r *Repository) GetGroupEvents(ctx context.Context, groupID, userID int64) ([]models.GroupEventWithCounts, error) {
+	if _, err := r.DB.Database.ExecContext(ctx, `
+		UPDATE group_events SET status = 'expired'
+		WHERE group_id = $1 AND status = 'upcoming' AND event_time <= datetime('now')
+	`, groupID); err != nil {
+		return nil, err
+	}
+
+	query := `
+		SELECT e.id, e.group_id, e.creator_id, e.title, e.description, e.event_time, e.status, e.created_at,
+			COALESCE(SUM(CASE WHEN r.status = 'going' THEN 1 ELSE 0 END), 0),
+			COALESCE(SUM(CASE WHEN r.status = 'not_going' THEN 1 ELSE 0 END), 0),
+			COALESCE(MAX(myr.status), '')
+		FROM group_events e
+		LEFT JOIN event_responses r ON r.event_id = e.id
+		LEFT JOIN event_responses myr ON myr.event_id = e.id AND myr.user_id = ?
+		WHERE e.group_id = ?
+		GROUP BY e.id
+		ORDER BY e.event_time ASC, e.id ASC
+	`
+	rows, err := r.DB.Database.QueryContext(ctx, query, userID, groupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var events []models.GroupEventWithCounts
+	for rows.Next() {
+		var ev models.GroupEventWithCounts
+		if err := rows.Scan(
+			&ev.ID, &ev.GroupID, &ev.CreatorID, &ev.Title, &ev.Description, &ev.EventTime, &ev.Status, &ev.CreatedAt,
+			&ev.GoingCount, &ev.NotGoingCount, &ev.MyStatus,
+		); err != nil {
+			return nil, err
+		}
+		events = append(events, ev)
+	}
+	return events, nil
+}
+
+// CancelGroupEvent marks an upcoming event as cancelled
+func (r *Repository) CancelGroupEvent(ctx context.Context, eventID int64) error {
+	res, err := r.DB.Database.ExecContext(ctx, `
+		UPDATE group_events SET status = 'cancelled'
+		WHERE id = $1 AND status = 'upcoming'
+	`, eventID)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+// SetEventResponse upserts a user's going/not_going choice for an event
+func (r *Repository) SetEventResponse(ctx context.Context, eventID, userID int64, status string) error {
+	query := `
+		INSERT INTO event_responses (event_id, user_id, status)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (event_id, user_id) DO UPDATE SET status = EXCLUDED.status
+	`
+	_, err := r.DB.Database.ExecContext(ctx, query, eventID, userID, status)
+	return err
+}

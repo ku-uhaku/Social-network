@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -196,6 +197,36 @@ func (h *Handler) InviteMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Notify each invited user
+	group, err := h.Service.GetGroupByID(r.Context(), payload.GroupID)
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	actorID := user.ID
+	for _, targetID := range payload.TargetUserIDs {
+		if targetID == user.ID {
+			continue
+		}
+		if _, err := h.DispatchNotification(r.Context(), targetID, &models.Notification{
+			RecipientID: targetID,
+			ActorID:     &actorID,
+			Type:        models.NotificationGroupInvitation,
+			Title:       "Group invitation",
+			Message:     user.Username + " invited you to join " + group.Title,
+			Payload:     models.JSONText{"group_id": group.ID},
+			Actions: models.JSONText{
+				"buttons": []interface{}{
+					map[string]interface{}{"action": "accept", "label": "Accept"},
+					map[string]interface{}{"action": "decline", "label": "Decline"},
+				},
+			},
+		}); err != nil {
+			helper.Error(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
 	helper.Success(w, http.StatusOK, "Invitations sent successfully", nil)
 }
 
@@ -227,6 +258,12 @@ func (h *Handler) respondInvite(w http.ResponseWriter, r *http.Request, accept b
 		return
 	}
 
+	// Expire the group_invitation notification once acted upon
+	if err := h.Service.ExpireNotificationsByType(r.Context(), user.ID, models.NotificationGroupInvitation); err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	msg := "Invitation declined"
 	if accept {
 		msg = "Invitation accepted successfully"
@@ -251,6 +288,38 @@ func (h *Handler) JoinGroup(w http.ResponseWriter, r *http.Request) {
 	if err := h.Service.JoinGroup(r.Context(), user.ID, payload.GroupID); err != nil {
 		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
+	}
+
+	// If a pending join request was created (private group), notify the creator
+	membership, err := h.Service.GetMembershipStatus(r.Context(), payload.GroupID, user.ID)
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if membership == "pending" {
+		group, err := h.Service.GetGroupByID(r.Context(), payload.GroupID)
+		if err != nil {
+			helper.Error(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		actorID := user.ID
+		if _, err := h.DispatchNotification(r.Context(), group.CreatorID, &models.Notification{
+			RecipientID: group.CreatorID,
+			ActorID:     &actorID,
+			Type:        models.NotificationGroupJoinRequest,
+			Title:       "Group join request",
+			Message:     user.Username + " requested to join " + group.Title,
+			Payload:     models.JSONText{"group_id": group.ID, "target_user_id": user.ID},
+			Actions: models.JSONText{
+				"buttons": []interface{}{
+					map[string]interface{}{"action": "accept", "label": "Accept"},
+					map[string]interface{}{"action": "decline", "label": "Decline"},
+				},
+			},
+		}); err != nil {
+			helper.Error(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 
 	helper.Success(w, http.StatusOK, "Join request processed", nil)
@@ -355,4 +424,214 @@ func (h *Handler) GetMyInvitations(w http.ResponseWriter, r *http.Request) {
 	}
 
 	helper.Success(w, http.StatusOK, "Pending invitations retrieved", invites)
+}
+
+// GetGroupEvents GET /api/v1/groups/events?id=123 (members only)
+func (h *Handler) GetGroupEvents(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	groupIDStr := r.URL.Query().Get("id")
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil || groupID <= 0 {
+		helper.Error(w, http.StatusBadRequest, "Invalid or missing group ID parameter")
+		return
+	}
+
+	events, err := h.Service.GetGroupEvents(r.Context(), user.ID, groupID)
+	if err != nil {
+		if errors.Is(err, service.ErrAccessDenied) {
+			helper.Error(w, http.StatusForbidden, err.Error())
+			return
+		}
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Group events retrieved", events)
+}
+
+// CreateGroupEvent POST /api/v1/groups/events (members only)
+func (h *Handler) CreateGroupEvent(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var payload models.CreateGroupEventPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+		return
+	}
+
+	if errs := requests.ValidateCreateGroupEvent(payload); len(errs) > 0 {
+		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, errs)
+		return
+	}
+
+	event, err := h.Service.CreateGroupEvent(r.Context(), user.ID, payload)
+	if err != nil {
+		if errors.Is(err, service.ErrNotMember) {
+			helper.Error(w, http.StatusForbidden, err.Error())
+			return
+		}
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Notify other group members about the new event
+	if group, err := h.Service.GetGroupByID(r.Context(), payload.GroupID); err == nil {
+		if err := h.notifyEventCreated(r.Context(), user.ID, group, event); err != nil {
+			helper.Error(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
+	helper.Success(w, http.StatusCreated, "Group event created", event)
+}
+
+// notifyEventCreated dispatches group_event_created notifications to other members
+func (h *Handler) notifyEventCreated(ctx context.Context, actorID int64, group *models.Group, event *models.GroupEvent) error {
+	memberIDs, err := h.Service.GetGroupMemberIDs(ctx, group.ID)
+	if err != nil {
+		return err
+	}
+	actor := actorID
+	for _, memberID := range memberIDs {
+		if memberID == actorID {
+			continue
+		}
+		if _, err := h.DispatchNotification(ctx, memberID, &models.Notification{
+			RecipientID: memberID,
+			ActorID:     &actor,
+			Type:        models.NotificationGroupEvent,
+			Title:       "New group event",
+			Message:     "A new event was created in " + group.Title + ": " + event.Title,
+			Payload:     models.JSONText{"group_id": group.ID, "event_id": event.ID},
+			Actions: models.JSONText{
+				"buttons": []interface{}{
+					map[string]interface{}{"action": "view", "label": "View event"},
+				},
+			},
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// CancelGroupEvent POST /api/v1/groups/events/cancel (creator only)
+func (h *Handler) CancelGroupEvent(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var payload struct {
+		EventID int64 `json:"event_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+		return
+	}
+	if payload.EventID <= 0 {
+		helper.Error(w, http.StatusBadRequest, "event_id is required")
+		return
+	}
+
+	if err := h.Service.CancelGroupEvent(r.Context(), user.ID, payload.EventID); err != nil {
+		switch {
+		case errors.Is(err, service.ErrEventNotFound):
+			helper.Error(w, http.StatusNotFound, err.Error())
+		case errors.Is(err, service.ErrNotGroupCreator):
+			helper.Error(w, http.StatusForbidden, err.Error())
+		case errors.Is(err, service.ErrEventExpired):
+			helper.Error(w, http.StatusBadRequest, err.Error())
+		default:
+			helper.Error(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Group event cancelled", nil)
+}
+
+// SetEventResponse POST /api/v1/groups/events/respond (members only)
+func (h *Handler) SetEventResponse(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var payload models.EventResponsePayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+		return
+	}
+	if errs := requests.ValidateEventResponse(payload); len(errs) > 0 {
+		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, errs)
+		return
+	}
+
+	if err := h.Service.SetEventResponse(r.Context(), user.ID, payload.EventID, payload.Status); err != nil {
+		switch {
+		case errors.Is(err, service.ErrEventNotFound):
+			helper.Error(w, http.StatusNotFound, err.Error())
+		case errors.Is(err, service.ErrNotMember):
+			helper.Error(w, http.StatusForbidden, err.Error())
+		case errors.Is(err, service.ErrEventExpired):
+			helper.Error(w, http.StatusBadRequest, err.Error())
+		default:
+			helper.Error(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Event response recorded", nil)
+}
+
+// HandleJoinRequestAction POST /api/v1/groups/join/accept|decline (creator only)
+func (h *Handler) HandleJoinRequestAction(w http.ResponseWriter, r *http.Request, accept bool) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var payload models.GroupActionPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+		return
+	}
+	if errs := requests.ValidateJoinRequestAction(payload); len(errs) > 0 {
+		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, errs)
+		return
+	}
+
+	if err := h.Service.HandleJoinRequest(r.Context(), user.ID, payload.GroupID, payload.TargetUserID, accept); err != nil {
+		if errors.Is(err, service.ErrNotGroupCreator) {
+			helper.Error(w, http.StatusForbidden, err.Error())
+			return
+		}
+		helper.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// Expire the join request notification once acted upon
+	if err := h.Service.ExpireNotificationsByType(r.Context(), user.ID, models.NotificationGroupJoinRequest); err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	msg := "Join request declined"
+	if accept {
+		msg = "Join request accepted"
+	}
+	helper.Success(w, http.StatusOK, msg, nil)
 }
