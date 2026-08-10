@@ -1,8 +1,15 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import Avatar from "@/components/shared/Avatar";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { acceptFollowRequest, declineFollowRequest } from "@/lib/api/user";
+import {
+  acceptGroupInvitation,
+  declineGroupInvitation,
+  acceptJoinRequest,
+  declineJoinRequest,
+} from "@/lib/api/groups";
 
 function timeAgo(dateString) {
   const date = new Date(dateString);
@@ -17,14 +24,37 @@ function timeAgo(dateString) {
 }
 
 export default function NotificationItem({ notification }) {
+  const router = useRouter();
   const { markRead, expireNotification } = useNotifications();
   const actions = notification.actions || {};
 
   const handleAction = async (action) => {
-    const api = action === "accept" ? acceptFollowRequest : declineFollowRequest;
+    const typeActions = {
+      follow_request: {
+        accept: (n) => acceptFollowRequest(n.actor_id),
+        decline: (n) => declineFollowRequest(n.actor_id),
+      },
+      group_invitation: {
+        accept: (n) => acceptGroupInvitation(n.payload?.group_id),
+        decline: (n) => declineGroupInvitation(n.payload?.group_id),
+      },
+      group_join_request: {
+        accept: (n) => acceptJoinRequest(n.payload?.group_id, n.actor_id),
+        decline: (n) => declineJoinRequest(n.payload?.group_id, n.actor_id),
+      },
+      group_event_created: {
+        view: (n) => router.push(`/group/${n.payload?.group_id}/events`),
+      },
+    };
+    const handler = typeActions[notification.type]?.[action];
+    if (!handler) return;
     try {
-      await api(notification.actor_id);
-      await expireNotification(notification.id); // expire
+      await handler(notification);
+      if (notification.type === "group_event_created") {
+        await markRead(notification.id);
+      } else {
+        await expireNotification(notification.id); // expire
+      }
     } catch {
       // ignore
     }

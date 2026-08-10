@@ -141,6 +141,9 @@ export default function GroupDetailPage({ params }) {
               <Link href={`/posts/create?group_id=${groupId}`}>
                 <NailButton>Create post</NailButton>
               </Link>
+              <Link href={`/group/${groupId}/events`}>
+                <NailButton>Events</NailButton>
+              </Link>
               <NailButton onClick={() => setInviteOpen(!inviteOpen)}>
                 {inviteOpen ? "Close invite" : "Invite"}
               </NailButton>
@@ -158,6 +161,8 @@ export default function GroupDetailPage({ params }) {
 
       {actionError && <div className="postsError">{actionError}</div>}
 
+      {/* TODO: don't show users that are already in the group */}
+      {/* TODO: add UI to see who's in the group */}
       {inviteOpen && membership === "accepted" && (
         <InviteModal
           groupId={groupId}

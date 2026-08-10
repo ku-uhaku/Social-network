@@ -1,10 +1,21 @@
 "use client";
 
+import { useEffect } from "react";
 import { useNotifications } from "@/contexts/NotificationContext";
 import NotificationItem from "@/components/notifications/NotificationItem";
 
 export default function NotificationList({ open }) {
-  const { notifications, loading } = useNotifications();
+  const { notifications, markRead, loading } = useNotifications();
+
+  // Event notifications are informational only — auto-consume them on open
+  useEffect(() => {
+    if (!open) return;
+    notifications.forEach((n) => {
+      if (n.type === "group_event_created" && !n.is_read) {
+        markRead(n.id);
+      }
+    });
+  }, [open, notifications, markRead]);
 
   return (
     <section className={`notificationPanel ${open ? "open" : ""}`}>

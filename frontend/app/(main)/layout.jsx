@@ -107,8 +107,7 @@ export default function MainLayout({ children }) {
       <img className="footerSeparator" src={SEPARATOR} alt="" />
 
       <footer className="homeFooter">
-        <span>Social Network by <span className="credits">Mbelhouss</span> and <span className="credits">Mbarrah</span>.</span>
-        <span>Git gud!</span>
+        <span>Social Network by <span className="credits">Mbelhouss</span> and <span className="credits">Mbarrah</span>. Git gud!</span>
       </footer>
     </main>
   );

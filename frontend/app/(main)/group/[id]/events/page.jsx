@@ -1,0 +1,140 @@
+"use client";
+import { use, useEffect, useState } from "react";
+import { notFound } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { getGroup, getGroupEvents, createGroupEvent, cancelGroupEvent, setEventResponse } from "@/lib/api/groups";
+import NailButton from "@/components/shared/NailButton";
+import "@/css/groups.css";
+
+export default function GroupEventsPage({ params }) {
+  const { id } = use(params);
+  const { user: currentUser } = useAuth();
+  const groupId = Number(id);
+  if (isNaN(groupId)) notFound();
+
+  const [group, setGroup] = useState(null);
+  const [membership, setMembership] = useState("none");
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [dateTime, setDateTime] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const g = await getGroup(groupId);
+        if (cancelled) return;
+        setGroup(g?.data?.group || null);
+        setMembership(g?.data?.membership || "none");
+        // backend enforces member-only access
+        const ev = await getGroupEvents(groupId);
+        if (!cancelled) setEvents(ev?.data || []);
+      } catch (err) {
+        if (err?.message === "Group not found") notFound();
+        if (err?.message === "you do not have permission to access or post to this context") {
+          setMembership("none");
+        } else if (!cancelled) {
+          setError(err?.message || "Could not load events.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [groupId]);
+
+  function reloadEvents() {
+    getGroupEvents(groupId).then((ev) => setEvents(ev?.data || []));
+  }
+
+  async function handleCreate(e) {
+    e.preventDefault();
+    setError("");
+    if (!dateTime) { setError("Choose a date and time for the event."); return; }
+    setSubmitting(true);
+    try {
+      await createGroupEvent({ group_id: groupId, title, description, event_time: new Date(dateTime).toISOString() });
+      setTitle(""); setDescription(""); setDateTime(""); setFormOpen(false);
+      reloadEvents();
+    } catch (err) { setError(err?.message || "Could not create event."); }
+    finally { setSubmitting(false); }
+  }
+
+  async function handleChoice(eventId, status) {
+    try { await setEventResponse(eventId, status); reloadEvents(); }
+    catch (err) { setError(err?.message || "Could not update your response."); }
+  }
+
+  async function handleCancel(eventId) {
+    try { await cancelGroupEvent(eventId); reloadEvents(); }
+    catch (err) { setError(err?.message || "Could not cancel event."); }
+  }
+
+  if (loading) return <div className="postsPlaceholder">Loading events…</div>;
+  if (error) return <div className="postsError">{error}</div>;
+  if (!group) notFound();
+
+  const member = membership === "accepted";
+
+  return (
+    <section className="postsContainer">
+      <div className="groupHeader">
+        <h1 className="feedTitle">{group.title} — Events</h1>
+        {member && (
+          <button className="eventMakeButton" type="button" onClick={() => setFormOpen(!formOpen)}>
+            {formOpen ? "Close form" : "Create event"}
+          </button>
+        )}
+      </div>
+
+      {!member ? (
+        <div className="postsPlaceholder">Join this group to see its events.</div>
+      ) : (
+        <>
+          {formOpen && (
+            <form className="groupForm" onSubmit={handleCreate}>
+              <label>Title <input value={title} onChange={(e) => setTitle(e.target.value)} required /></label>
+              <label>Description <textarea value={description} onChange={(e) => setDescription(e.target.value)} required /></label>
+              <label>Date / Time <input type="datetime-local" value={dateTime} onChange={(e) => setDateTime(e.target.value)} required /></label>
+              <NailButton type="submit" disabled={submitting}>{submitting ? "Creating..." : "Create event"}</NailButton>
+            </form>
+          )}
+
+          {events.length === 0 ? (
+            <div className="postsPlaceholder">No events yet.</div>
+          ) : (
+            <div className="eventList">
+              {events.map((ev) => {
+                const isOver = ev.status !== "upcoming";
+                const isCreator = ev.creator_id === currentUser?.id;
+                return (
+                  // TODO: show who created the event
+                  <div key={ev.id} className={`eventCard ${isOver ? "eventExpired" : ""}`}>
+                    <div className="eventCardHeader">
+                      <h2 className="eventCardTitle">{ev.title}</h2>
+                      <span className="eventStatus">{ev.status}</span>
+                    </div>
+                    <p className="eventCardDescription">{ev.description}</p>
+                    <div className="eventCardTime">{new Date(ev.event_time).toLocaleString()}</div>
+                    {!isOver && (
+                      <div className="eventChoices">
+                        <button type="button" className={`eventChoice ${ev.my_status === "going" ? "active" : ""}`} onClick={() => handleChoice(ev.id, "going")}>Going ({ev.going_count})</button>
+                        <button type="button" className={`eventChoice ${ev.my_status === "not_going" ? "active" : ""}`} onClick={() => handleChoice(ev.id, "not_going")}>Not going ({ev.not_going_count})</button>
+                        {isCreator && <button type="button" className="eventCancelButton" onClick={() => handleCancel(ev.id)}>Cancel event</button>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  );
+}

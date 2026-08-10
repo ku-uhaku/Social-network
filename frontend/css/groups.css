@@ -172,3 +172,143 @@
   gap: 10px;
   justify-content: flex-end;
 }
+
+/* ---- Group events ---- */
+.eventList {
+  display: grid;
+  gap: 16px;
+}
+
+.eventCard {
+  padding: 20px;
+  border-radius: 16px;
+  background: rgba(10, 13, 18, 0.7);
+  border: 1px solid var(--border);
+  display: grid;
+  gap: 10px;
+  transition: border-color 0.2s;
+}
+
+.eventCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.eventCardTitle {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.eventStatus {
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.eventCardDescription {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.eventCardTime {
+  color: var(--bone);
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.eventExpired {
+  opacity: 0.45;
+}
+
+.eventExpired .eventStatus {
+  color: var(--muted);
+  border-color: var(--border);
+}
+
+.eventChoices {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.eventChoice {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--bone);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.eventChoice:hover {
+  border-color: var(--soul-dim);
+  color: var(--soul);
+}
+
+.eventChoice.active {
+  border-color: var(--soul);
+  color: var(--soul);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.15);
+}
+
+.eventCancelButton {
+  margin-left: auto;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.eventCancelButton:hover {
+  border-color: var(--brass-dim);
+  color: var(--brass);
+}
+
+.eventMakeButton {
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--bone);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.eventMakeButton:hover {
+  border-color: var(--soul);
+  color: var(--soul);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.15);
+}
+
+.groupForm label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
