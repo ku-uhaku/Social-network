@@ -1,7 +1,7 @@
 import { apiFetch } from "./fetcher";
 
-export function getNotifications({ limit = 20, offset = 0 } = {}) {
-  return apiFetch(`/api/v1/notifications?limit=${limit}&offset=${offset}`, { method: "GET" });
+export function getNotifications({ limit = 20, lastId = 0 } = {}) {
+  return apiFetch(`/api/v1/notifications?limit=${limit}&last_id=${lastId}`, { method: "GET" });
 }
 
 export function markNotificationRead(notificationId) {

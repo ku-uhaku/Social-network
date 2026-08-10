@@ -12,9 +12,11 @@ func (s *Service) CreateNotification(ctx context.Context, n *models.Notification
 	return s.Repo.CreateNotification(ctx, n)
 }
 
-// GetUserNotifications returns a paginated stack with the unread count
-func (s *Service) GetUserNotifications(ctx context.Context, recipientID int64, limit, offset int) (*models.NotificationListResponse, error) {
-	notifications, err := s.Repo.GetUserNotifications(ctx, recipientID, limit, offset)
+// GetUserNotifications returns a paginated stack with the unread count.
+// lastID acts as a cursor: 0 loads the newest page, otherwise only
+// notifications with a lower id are returned.
+func (s *Service) GetUserNotifications(ctx context.Context, recipientID int64, limit int, lastID int64) (*models.NotificationListResponse, error) {
+	notifications, hasMore, err := s.Repo.GetUserNotifications(ctx, recipientID, limit, lastID)
 	if err != nil {
 		return nil, err
 	}
@@ -25,6 +27,7 @@ func (s *Service) GetUserNotifications(ctx context.Context, recipientID int64, l
 	return &models.NotificationListResponse{
 		Notifications: notifications,
 		UnreadCount:  unreadCount,
+		HasMore:      hasMore,
 	}, nil
 }
 

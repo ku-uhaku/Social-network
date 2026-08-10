@@ -30,14 +30,16 @@ func GetParamInt64(r *http.Request, key string) (int64, error) {
 
 const maxImageUploadSize = 20 << 20 // 20 MB
 
+// MediaDir is where uploaded images are stored and served from.
+const MediaDir = "media"
+
 var allowedImageTypes = map[string]string{
 	"image/png":  ".png",
 	"image/jpeg": ".jpg",
 	"image/gif":  ".gif",
 }
 
-// TODO: third argument is always "media", nuke it
-func SaveUploadedImage(file multipart.File, header *multipart.FileHeader, mediaDir string) (string, error) {
+func SaveUploadedImage(file multipart.File, header *multipart.FileHeader) (string, error) {
 	if file == nil || header == nil || header.Size == 0 {
 		return "", fmt.Errorf("uploaded file is empty")
 	}
@@ -65,11 +67,11 @@ func SaveUploadedImage(file multipart.File, header *multipart.FileHeader, mediaD
 	hash := sha256.Sum256(fileBytes)
 	filename := hex.EncodeToString(hash[:]) + ext
 
-	if err := os.MkdirAll(mediaDir, 0o755); err != nil {
+	if err := os.MkdirAll(MediaDir, 0o755); err != nil {
 		return "", fmt.Errorf("failed to prepare media directory: %w", err)
 	}
 
-	path := filepath.Join(mediaDir, filename)
+	path := filepath.Join(MediaDir, filename)
 	if err := os.WriteFile(path, fileBytes, 0o644); err != nil {
 		return "", fmt.Errorf("failed to save uploaded file: %w", err)
 	}

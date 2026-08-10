@@ -32,6 +32,12 @@ func registerGroupRoutes(mux *http.ServeMux, h *handler.Handler, m *middleware.M
 		m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.GetGroupFeed))),
 	)
 
+	// Fetch a group's accepted members (/api/v1/groups/members?id=123)
+	mux.Handle(
+		"/api/v1/groups/members",
+		m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.GetGroupMembers))),
+	)
+
 	// Update an existing group (/api/v1/groups/update?id=123)
 	mux.Handle(
 		"/api/v1/groups/update",

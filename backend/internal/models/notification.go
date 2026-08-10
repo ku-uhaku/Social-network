@@ -70,7 +70,8 @@ type Notification struct {
 // NotificationListResponse wraps a page of notifications with the unread count
 type NotificationListResponse struct {
 	Notifications []Notification `json:"notifications"`
-	UnreadCount  int64        `json:"unread_count"`
+	UnreadCount  int64          `json:"unread_count"`
+	HasMore      bool           `json:"has_more"`
 }
 
 // MarkNotificationReadPayload marks a single notification or all as read

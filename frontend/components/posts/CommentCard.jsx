@@ -1,12 +1,12 @@
 "use client";
 
-import { resolveMediaSrc } from "@/lib/utils";
+import { resolveMediaSrc, formatDate } from "@/lib/utils";
 import Avatar from "@/components/shared/Avatar";
 
 export default function CommentCard({ comment }) {
   const author = comment.user || {};
   const name = author.username || "Unknown";
-  const createdAt = new Date(comment.created_at).toLocaleDateString();
+  const createdAt = formatDate(comment.created_at);
   const imageSrc = resolveMediaSrc(comment.image_url);
 
   return (

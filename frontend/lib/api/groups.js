@@ -20,6 +20,10 @@ export function getGroupFeed(groupId, { limit, cursor } = {}) {
   return apiFetch(`/api/v1/groups/feed?${params.toString()}`, { method: "GET" });
 }
 
+export function getGroupMembers(groupId) {
+  return apiFetch(`/api/v1/groups/members?id=${encodeURIComponent(groupId)}`, { method: "GET" });
+}
+
 export function joinGroup(groupId) {
   return apiFetch("/api/v1/groups/join", { method: "POST", body: { group_id: groupId } });
 }

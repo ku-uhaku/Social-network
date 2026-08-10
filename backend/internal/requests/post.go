@@ -50,7 +50,7 @@ func ParseCreatePostPayload(r *http.Request) (models.CreatePostPayload, error) {
 		if file, header, err := r.FormFile("image"); err == nil {
 			defer file.Close()
 			if header != nil && header.Size > 0 {
-				imageName, err := helper.SaveUploadedImage(file, header, "media")
+				imageName, err := helper.SaveUploadedImage(file, header)
 				if err != nil {
 					return payload, fmt.Errorf("failed to save post image: %w", err)
 				}
@@ -107,7 +107,7 @@ func ParseCreateCommentPayload(r *http.Request) (models.CreateCommentPayload, er
 		if file, header, err := r.FormFile("image"); err == nil {
 			defer file.Close()
 			if header != nil && header.Size > 0 {
-				imageName, err := helper.SaveUploadedImage(file, header, "media")
+				imageName, err := helper.SaveUploadedImage(file, header)
 				if err != nil {
 					return payload, fmt.Errorf("failed to save comment image: %w", err)
 				}

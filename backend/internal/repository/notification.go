@@ -30,19 +30,21 @@ func (r *Repository) CreateNotification(ctx context.Context, n *models.Notificat
 	return r.GetNotification(ctx, n.RecipientID, id)
 }
 
-// GetUserNotifications returns a paginated stack for a recipient, newest first
-func (r *Repository) GetUserNotifications(ctx context.Context, recipientID int64, limit, offset int) ([]models.Notification, error) {
+// GetUserNotifications returns a page of notifications for a recipient, newest
+// first, using lastID as a cursor (0 = newest page). Fetches limit+1 rows to
+// report whether a further page exists.
+func (r *Repository) GetUserNotifications(ctx context.Context, recipientID int64, limit int, lastID int64) ([]models.Notification, bool, error) {
 	query := `
 		SELECT ` + notificationSelectColumns + `
 		FROM notifications n
 		LEFT JOIN users u ON u.id = n.actor_id
-		WHERE n.recipient_id = $1
-		ORDER BY n.created_at DESC, n.id DESC
-		LIMIT $2 OFFSET $3
+		WHERE n.recipient_id = $1 AND ($2 = 0 OR n.id < $2)
+		ORDER BY n.id DESC
+		LIMIT $3
 	`
-	rows, err := r.DB.Database.QueryContext(ctx, query, recipientID, limit, offset)
+	rows, err := r.DB.Database.QueryContext(ctx, query, recipientID, lastID, limit+1)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	defer rows.Close()
 
@@ -50,11 +52,17 @@ func (r *Repository) GetUserNotifications(ctx context.Context, recipientID int64
 	for rows.Next() {
 		n, err := r.scanNotification(rows)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		notifications = append(notifications, *n)
 	}
-	return notifications, nil
+
+	hasMore := false
+	if len(notifications) > limit {
+		hasMore = true
+		notifications = notifications[:limit]
+	}
+	return notifications, hasMore, nil
 }
 
 // GetUnreadCount returns the number of unread, non-expired notifications

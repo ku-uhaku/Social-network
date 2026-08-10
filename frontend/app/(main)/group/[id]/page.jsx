@@ -3,10 +3,11 @@
 import { use, useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getGroup, getGroupFeed, joinGroup, leaveGroup, inviteUsers, getAllUsers } from "@/lib/api/groups";
+import { getGroup, getGroupFeed, joinGroup, leaveGroup, inviteUsers, getAllUsers, getGroupMembers } from "@/lib/api/groups";
 import PostCard from "@/components/posts/PostCard";
 import NailButton from "@/components/shared/NailButton";
 import UsersSelect from "@/components/shared/UsersSelect";
+import Avatar from "@/components/shared/Avatar";
 import "@/css/groups.css";
 
 const pageLimit = 10;
@@ -24,6 +25,7 @@ export default function GroupDetailPage({ params }) {
   const [hasMore, setHasMore] = useState(false);
   const [actionError, setActionError] = useState("");
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [membersOpen, setMembersOpen] = useState(false);
 
   const groupId = Number(id);
   if (isNaN(groupId)) {
@@ -144,6 +146,7 @@ export default function GroupDetailPage({ params }) {
               <Link href={`/group/${groupId}/events`}>
                 <NailButton>Events</NailButton>
               </Link>
+              <NailButton onClick={() => setMembersOpen(true)}>Members</NailButton>
               <NailButton onClick={() => setInviteOpen(!inviteOpen)}>
                 {inviteOpen ? "Close invite" : "Invite"}
               </NailButton>
@@ -161,13 +164,18 @@ export default function GroupDetailPage({ params }) {
 
       {actionError && <div className="postsError">{actionError}</div>}
 
-      {/* TODO: don't show users that are already in the group */}
-      {/* TODO: add UI to see who's in the group */}
       {inviteOpen && membership === "accepted" && (
         <InviteModal
           groupId={groupId}
           onClose={() => setInviteOpen(false)}
           onInvited={() => setActionError("")}
+        />
+      )}
+
+      {membersOpen && membership === "accepted" && (
+        <MembersModal
+          groupId={groupId}
+          onClose={() => setMembersOpen(false)}
         />
       )}
 
@@ -215,8 +223,15 @@ function InviteModal({ groupId, onClose, onInvited }) {
     let cancelled = false;
     (async () => {
       try {
-        const response = await getAllUsers();
-        if (!cancelled) setUsers(response?.data || []);
+        const [usersRes, membersRes] = await Promise.all([
+          getAllUsers(),
+          getGroupMembers(groupId),
+        ]);
+        if (cancelled) return;
+        const allUsers = usersRes?.data || [];
+        const memberIds = new Set((membersRes?.data || []).map((m) => m.id));
+        // Skip users that are already members of the group
+        setUsers(allUsers.filter((u) => !memberIds.has(u.id)));
       } catch (err) {
         if (!cancelled) setError(err?.message || "Could not load users.");
       } finally {
@@ -226,7 +241,7 @@ function InviteModal({ groupId, onClose, onInvited }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [groupId]);
 
   function toggleUser(userId, checked) {
     setSelected((prev) =>
@@ -275,6 +290,64 @@ function InviteModal({ groupId, onClose, onInvited }) {
           <NailButton onClick={onClose}>Cancel</NailButton>
         </div>
       </form>
+    </div>
+  );
+}
+
+function MembersModal({ groupId, onClose }) {
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    getGroupMembers(groupId)
+      .then((res) => {
+        if (!cancelled) setMembers(res?.data || []);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err?.message || "Could not load members.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [groupId]);
+
+  return (
+    <div className="groupInviteOverlay">
+      <div className="groupInvitePanel">
+        <h2 className="groupInviteTitle">Members</h2>
+        {error && <div className="postsError">{error}</div>}
+
+        {loading ? (
+          <div className="postsPlaceholder">Loading members…</div>
+        ) : members.length === 0 ? (
+          <div className="postsPlaceholder">No members yet.</div>
+        ) : (
+          <div className="groupMemberList">
+            {members.map((m) => (
+              <Link
+                key={m.id}
+                href={`/profile/${m.username}`}
+                className="groupMemberItem"
+                onClick={onClose}
+              >
+                <Avatar avatar={m.avatar} username={m.username} size={32} />
+                <span className="followerName">
+                  {m.first_name} {m.last_name} (@{m.username})
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        <div className="groupInviteActions">
+          <NailButton onClick={onClose}>Close</NailButton>
+        </div>
+      </div>
     </div>
   );
 }

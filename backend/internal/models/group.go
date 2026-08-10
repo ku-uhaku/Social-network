@@ -71,6 +71,10 @@ type GroupEventWithCounts struct {
 	GoingCount    int64  `json:"going_count"`
 	NotGoingCount int64  `json:"not_going_count"`
 	MyStatus      string `json:"my_status"` // 'going', 'not_going', or '' when unset
+
+	// Joined creator info for display
+	CreatorUsername *string `json:"creator_username,omitempty"`
+	CreatorAvatar   *string `json:"creator_avatar,omitempty"`
 }
 
 // CreateGroupEventPayload defines incoming payload for creating a group event

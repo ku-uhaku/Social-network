@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { resolveMediaSrc } from "@/lib/utils";
+import { resolveMediaSrc, formatDate } from "@/lib/utils";
 import Avatar from "@/components/shared/Avatar";
 
 const trimLength = 180;
@@ -7,7 +7,7 @@ const trimLength = 180;
 export default function PostCard({ post, isFeed = true }) {
   const content = post.content || "";
   const snippet = isFeed && content.length > trimLength ? `${content.slice(0, trimLength).trim()}...` : content;
-  const createdAt = new Date(post.created_at).toLocaleDateString();
+  const createdAt = formatDate(post.created_at);
   const imageSrc = resolveMediaSrc(post.image_url);
   const author = post.user || {};
   const authorName = author.username || "Unknown";

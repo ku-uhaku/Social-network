@@ -93,6 +93,41 @@ func (h *Handler) GetAllGroups(w http.ResponseWriter, r *http.Request) {
 	helper.Success(w, http.StatusOK, "Groups retrieved successfully", groups)
 }
 
+// GetGroupMembers GET /api/v1/groups/members?id=123 (accepted members only)
+func (h *Handler) GetGroupMembers(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	groupIDStr := r.URL.Query().Get("id")
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil || groupID <= 0 {
+		helper.Error(w, http.StatusBadRequest, "Invalid or missing group ID parameter")
+		return
+	}
+
+	// Only accepted members may see the member list
+	membership, err := h.Service.GetMembershipStatus(r.Context(), groupID, user.ID)
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if membership != "accepted" {
+		helper.Error(w, http.StatusForbidden, service.ErrNotMember.Error())
+		return
+	}
+
+	members, err := h.Service.GetGroupMembers(r.Context(), groupID)
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helper.Success(w, http.StatusOK, "Group members retrieved", members)
+}
+
 // UpdateGroup handles PUT /api/v1/groups?id=123
 func (h *Handler) UpdateGroup(w http.ResponseWriter, r *http.Request) {
 	user, ok := middleware.GetUserFromContext(r.Context())

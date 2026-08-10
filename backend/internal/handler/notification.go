@@ -13,7 +13,7 @@ import (
 	ws "kuu/internal/websocket"
 )
 
-// NotificationList GET /api/v1/notifications?limit=20&offset=0
+// NotificationList GET /api/v1/notifications?limit=20&last_id=0
 func (h *Handler) NotificationList(w http.ResponseWriter, r *http.Request) {
 	user, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
@@ -21,17 +21,16 @@ func (h *Handler) NotificationList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//TODO; change this later to use id instead of offset
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	if limit <= 0 || limit > 50 {
 		limit = 20
 	}
-	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	if offset < 0 {
-		offset = 0
+	lastID, _ := strconv.ParseInt(r.URL.Query().Get("last_id"), 10, 64)
+	if lastID < 0 {
+		lastID = 0
 	}
 
-	resp, err := h.Service.GetUserNotifications(r.Context(), user.ID, limit, offset)
+	resp, err := h.Service.GetUserNotifications(r.Context(), user.ID, limit, lastID)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return

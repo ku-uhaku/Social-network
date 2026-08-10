@@ -155,6 +155,11 @@ func (s *Service) GetMembershipStatus(ctx context.Context, groupID int64, userID
 	return status, nil
 }
 
+// GetGroupMembers returns all accepted members of a group
+func (s *Service) GetGroupMembers(ctx context.Context, groupID int64) ([]models.UserFollowView, error) {
+	return s.Repo.GetGroupMembers(ctx, groupID)
+}
+
 // GetGroupFeed returns the posts of a single group. Non-members get ErrAccessDenied.
 func (s *Service) GetGroupFeed(ctx context.Context, userID int64, groupID int64, limit int, cursor *int64) ([]models.Post, bool, error) {
 	status, err := s.Repo.GetMemberStatus(ctx, groupID, userID)

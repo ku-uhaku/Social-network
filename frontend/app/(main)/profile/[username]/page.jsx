@@ -8,6 +8,7 @@ import PostCard from "@/components/posts/PostCard";
 import Avatar from "@/components/shared/Avatar";
 import CharmToggle from "@/components/shared/CharmToggle";
 import FollowListModal from "@/components/profile/FollowListModal";
+import { formatDate } from "@/lib/utils";
 
 export default function ProfilePage() {
   const { username } = useParams();
@@ -152,7 +153,7 @@ export default function ProfilePage() {
           {profile.about_me && (
             <div className="profileDetail"><strong>About me:</strong> {profile.about_me}</div>
           )}
-          <div className="profileDetail"><strong>Joined:</strong> {new Date(profile.created_at).toLocaleDateString()}</div>
+          <div className="profileDetail"><strong>Joined:</strong> {formatDate(profile.created_at)}</div>
         </div>
 
         <div className="profileStats">

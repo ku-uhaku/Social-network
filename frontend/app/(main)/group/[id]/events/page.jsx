@@ -113,12 +113,14 @@ export default function GroupEventsPage({ params }) {
                 const isOver = ev.status !== "upcoming";
                 const isCreator = ev.creator_id === currentUser?.id;
                 return (
-                  // TODO: show who created the event
                   <div key={ev.id} className={`eventCard ${isOver ? "eventExpired" : ""}`}>
                     <div className="eventCardHeader">
                       <h2 className="eventCardTitle">{ev.title}</h2>
                       <span className="eventStatus">{ev.status}</span>
                     </div>
+                    {ev.creator_username && (
+                      <div className="eventCardCreator">Created by {ev.creator_username}</div>
+                    )}
                     <p className="eventCardDescription">{ev.description}</p>
                     <div className="eventCardTime">{new Date(ev.event_time).toLocaleString()}</div>
                     {!isOver && (

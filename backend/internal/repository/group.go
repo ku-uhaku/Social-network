@@ -234,6 +234,32 @@ func (r *Repository) GetMemberStatus(ctx context.Context, groupID int64, userID 
 	return status, nil
 }
 
+// GetGroupMembers returns all accepted members of a group with lightweight metadata
+func (r *Repository) GetGroupMembers(ctx context.Context, groupID int64) ([]models.UserFollowView, error) {
+	query := `
+		SELECT u.id, u.username, u.first_name, u.last_name, u.avatar
+		FROM group_members gm
+		JOIN users u ON u.id = gm.user_id
+		WHERE gm.group_id = $1 AND gm.status = 'accepted'
+		ORDER BY u.username ASC
+	`
+	rows, err := r.DB.Database.QueryContext(ctx, query, groupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	members := []models.UserFollowView{}
+	for rows.Next() {
+		var u models.UserFollowView
+		if err := rows.Scan(&u.ID, &u.Username, &u.FirstName, &u.LastName, &u.Avatar); err != nil {
+			return nil, err
+		}
+		members = append(members, u)
+	}
+	return members, nil
+}
+
 // GetUserPendingInvitations returns all group invitations sent to a user
 func (r *Repository) GetUserPendingInvitations(ctx context.Context, userID int64) ([]models.GroupInvitationView, error) {
 	query := `
@@ -311,10 +337,12 @@ func (r *Repository) GetGroupEvents(ctx context.Context, groupID, userID int64) 
 		SELECT e.id, e.group_id, e.creator_id, e.title, e.description, e.event_time, e.status, e.created_at,
 			COALESCE(SUM(CASE WHEN r.status = 'going' THEN 1 ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN r.status = 'not_going' THEN 1 ELSE 0 END), 0),
-			COALESCE(MAX(myr.status), '')
+			COALESCE(MAX(myr.status), ''),
+			COALESCE(cu.username, ''), cu.avatar
 		FROM group_events e
 		LEFT JOIN event_responses r ON r.event_id = e.id
 		LEFT JOIN event_responses myr ON myr.event_id = e.id AND myr.user_id = ?
+		LEFT JOIN users cu ON cu.id = e.creator_id
 		WHERE e.group_id = ?
 		GROUP BY e.id
 		ORDER BY e.event_time ASC, e.id ASC
@@ -331,8 +359,12 @@ func (r *Repository) GetGroupEvents(ctx context.Context, groupID, userID int64) 
 		if err := rows.Scan(
 			&ev.ID, &ev.GroupID, &ev.CreatorID, &ev.Title, &ev.Description, &ev.EventTime, &ev.Status, &ev.CreatedAt,
 			&ev.GoingCount, &ev.NotGoingCount, &ev.MyStatus,
+			&ev.CreatorUsername, &ev.CreatorAvatar,
 		); err != nil {
 			return nil, err
+		}
+		if ev.CreatorUsername != nil && *ev.CreatorUsername == "" {
+			ev.CreatorUsername = nil
 		}
 		events = append(events, ev)
 	}
