@@ -6,20 +6,22 @@ import (
 )
 
 type Hub struct {
-	Clients     map[*Client]bool
-	OnlineUsers map[int64]int // Tracks UserID -> Number of open tabs
-	Register    chan *Client
-	Unregister  chan *Client
-	Broadcast   chan Event
+	Clients               map[*Client]bool
+	OnlineUsers           map[int64]int // Tracks UserID -> Number of open tabs
+	Register              chan *Client
+	Unregister            chan *Client
+	Broadcast             chan Event
+	onlineSnapshotRequest chan chan []int64
 }
 
 func New() *Hub {
 	return &Hub{
-		Clients:     make(map[*Client]bool),
-		OnlineUsers: make(map[int64]int),
-		Register:    make(chan *Client),
-		Unregister:  make(chan *Client),
-		Broadcast:   make(chan Event),
+		Clients:               make(map[*Client]bool),
+		OnlineUsers:           make(map[int64]int),
+		Register:              make(chan *Client),
+		Unregister:            make(chan *Client),
+		Broadcast:             make(chan Event),
+		onlineSnapshotRequest: make(chan chan []int64),
 	}
 }
 
@@ -35,6 +37,13 @@ func (h *Hub) Run() {
 
 		case event := <-h.Broadcast:
 			h.routeEvent(event)
+
+		case respCh := <-h.onlineSnapshotRequest:
+			users := make([]int64, 0, len(h.OnlineUsers))
+			for userID := range h.OnlineUsers {
+				users = append(users, userID)
+			}
+			respCh <- users
 		}
 	}
 }

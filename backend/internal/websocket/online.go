@@ -69,11 +69,9 @@ func (h *Hub) BroadcastUserStatus(eventType string, userID int64) {
 	}()
 }
 
-// GetOnlineUsers snapshot utility helper
+// GetOnlineUsers snapshot utility helper (request/response through Hub loop)
 func (h *Hub) GetOnlineUsers() []int64 {
-	users := make([]int64, 0, len(h.OnlineUsers))
-	for userID := range h.OnlineUsers {
-		users = append(users, userID)
-	}
-	return users
+	respCh := make(chan []int64, 1)
+	h.onlineSnapshotRequest <- respCh
+	return <-respCh
 }
