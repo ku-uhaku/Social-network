@@ -2,7 +2,7 @@ package websocket
 
 import "github.com/gorilla/websocket"
 
-// Event type constants — call sites use these instead of magic strings
+// Event type constants call sites use these instead of magic strings
 const (
 	EventNewDirectMessage   = "new_direct_message"
 	EventNewGroupMessage    = "new_group_message"

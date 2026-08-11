@@ -37,10 +37,39 @@
   width:200px;
 }
 
-.headerControls {
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.headerRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.headerRightRow {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.headerControlWrap {
+  position: relative;
+}
+
+.headerDividerV {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border);
+}
+
+.headerDividerH {
+  height: 1px;
+  align-self: stretch;
+  background: var(--border);
 }
 
 .userInfo {
@@ -79,36 +108,6 @@
   color: var(--brass);
 }
 
-.settingsButton,
-.logoutButton {
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--bone);
-  padding: 10px 16px;
-  border-radius: 999px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.settingsButton {
-  display: grid;
-  place-items: center;
-  padding: 8px;
-}
-
-.settingsIcon {
-  width: 36px;
-  height: 36px;
-  display: block;
-}
-
-.logoutButton {
-  background: rgba(255, 255, 255, 0.04);
-}
-
 .headerSeparator,
 .footerSeparator {
   position: relative;
@@ -126,9 +125,9 @@
 }
 
 .settingsPanel {
-  position: fixed;
-  top: var(--header-height, 88px);
-  right: 24px;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
   z-index: 20;
   width: 260px;
   display: flex;

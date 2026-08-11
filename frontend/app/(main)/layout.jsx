@@ -9,8 +9,9 @@ import { useParticles } from "@/contexts/ParticlesContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 import Avatar from "@/components/shared/Avatar";
 import CharmToggle from "@/components/shared/CharmToggle";
+import IconButton from "@/components/shared/IconButton";
 import NotificationList from "@/components/notifications/NotificationList";
-import Chat from "@/components/chat/Chat";
+import Chat, { useChat } from "@/components/chat/Chat";
 
 const MAIN_WALLPAPER = "/images/main_wallpaper.png";
 const MAIN_MUSIC = "/audio/main_music.mp3";
@@ -18,6 +19,7 @@ const SEPARATOR = "/images/header_separator.png";
 const ICON_SETTINGS = "/images/icon_settings.png";
 const ICON_NOTIFICATION_ON = "/images/notification_on.png";
 const ICON_NOTIFICATION_OFF = "/images/notification_off.png";
+const ICON_LOGOUT = "/images/icon_logout.png";
 
 export default function MainLayout({ children }) {
   const { user, loading, logout } = useAuth();
@@ -26,6 +28,7 @@ export default function MainLayout({ children }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const headerRef = useRef(null);
+  const chat = useChat();
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -56,51 +59,63 @@ export default function MainLayout({ children }) {
       <img className="mainWallpaper" src={MAIN_WALLPAPER} alt="" />
 
       <header ref={headerRef} className="homeHeader">
-        <Link href="/" className="brandLogo">
-          <img src="/images/main_logo.png" alt="Social Network" />
-        </Link>
+        <div className="headerLeft">
+          <Link href="/" className="brandLogo">
+            <img src="/images/main_logo.png" alt="Social Network" />
+          </Link>
 
-        <div className="userInfo">
-          <Avatar avatar={user?.avatar} username={user.username} size={52} />
-          <div>
-            <strong className="userName">{user.username}</strong>
+          <span className="headerDividerV" />
+
+          <div className="userInfo">
+            <Avatar avatar={user?.avatar} username={user.username} size={52} />
+            <div>
+              <strong className="userName">{user.username}</strong>
+            </div>
           </div>
         </div>
 
-        <div className="headerControls">
-          <button
-            type="button"
-            className="notificationButton"
-            title="Notifications"
-            onClick={() => setNotificationsOpen(!notificationsOpen)}
-          >
-            <img
-              className="notificationBellImg"
-              src={unreadCount > 0 ? ICON_NOTIFICATION_ON : ICON_NOTIFICATION_OFF}
-              alt="Notifications"
-            />
-            {unreadCount > 0 && <span className="notificationBadge">{unreadCount}</span>}
-          </button>
-          <button
-            type="button"
-            className="settingsButton"
-            title="Settings"
-            onClick={() => setSettingsOpen(!settingsOpen)}
-          >
-            <img className="settingsIcon" src={ICON_SETTINGS} alt="Settings" />
-          </button>
-          <button type="button" className="logoutButton" onClick={logout}>
-            Logout
-          </button>
+        <div className="headerRight">
+          <div className="headerRightRow">
+            <div className="headerControlWrap">
+              <IconButton
+                icon={unreadCount > 0 ? ICON_NOTIFICATION_ON : ICON_NOTIFICATION_OFF}
+                label="Notifications"
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+              >
+                {unreadCount > 0 && <span className="iconButtonBadge">{unreadCount}</span>}
+              </IconButton>
+              <NotificationList open={notificationsOpen} />
+            </div>
+            <div className="headerControlWrap">
+              <IconButton
+                icon={ICON_SETTINGS}
+                label="Settings"
+                onClick={() => setSettingsOpen(!settingsOpen)}
+              />
+              <Settings open={settingsOpen} />
+            </div>
+            <IconButton icon={ICON_LOGOUT} label="Logout" onClick={logout} />
+          </div>
+
+          <span className="headerDividerH" />
+
+          <div className="headerRightRow">
+            <IconButton
+              icon="/images/icon_chat.png"
+              label="Chat"
+              active={chat.open}
+              onClick={() => chat.setOpen((open) => !open)}
+            >
+              {chat.totalUnread > 0 && <span className="iconButtonBadge">{chat.totalUnread}</span>}
+            </IconButton>
+            <IconButton href="/group" label="Groups" icon="/images/icon_groups.png" />
+          </div>
         </div>
       </header>
 
       <img className="headerSeparator" src={SEPARATOR} alt="" />
 
-      <Chat />
-
-      <NotificationList open={notificationsOpen} />
-      <Settings open={settingsOpen} />
+      <Chat chat={chat} />
 
       <section className="pageContent">{children}</section>
 

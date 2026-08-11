@@ -63,7 +63,7 @@ export default function HomePage() {
         </Link>
       </div>
 
-      {loading && <div className="postsPlaceholder">Loading your feed…</div>}
+      {loading && <div className="postsPlaceholder">Loading your feed...</div>}
       {error && <div className="postsError">{error}</div>}
       {!loading && !error && posts.length === 0 && (
         <div className="postsPlaceholder">No posts available yet. Create the first one.</div>
@@ -78,7 +78,7 @@ export default function HomePage() {
       {!loading && !error && hasMore && (
         <div className="feedLoadMore">
           <NailButton onClick={loadMore} disabled={loadingMore}>
-            {loadingMore ? "Loading…" : "Load more"}
+            {loadingMore ? "Loading..." : "Load more"}
           </NailButton>
         </div>
       )}

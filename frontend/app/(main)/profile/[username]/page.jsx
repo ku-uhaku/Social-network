@@ -107,7 +107,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <section className="profilePage">
-        <div className="profilePlaceholder">Loading profile…</div>
+        <div className="profilePlaceholder">Loading profile...</div>
       </section>
     );
   }
@@ -180,7 +180,7 @@ export default function ProfilePage() {
             onClick={handleFollow}
             disabled={followLoading}
           >
-            {followLoading ? "…" : followButtonLabel}
+            {followLoading ? "..." : followButtonLabel}
           </button>
         )}
       </div>
@@ -189,7 +189,7 @@ export default function ProfilePage() {
 
       <div className="profilePosts">
         <h2 className="profilePostsTitle">Posts by {username}</h2>
-        {postsLoading && <div className="profilePlaceholder">Loading posts…</div>}
+        {postsLoading && <div className="profilePlaceholder">Loading posts...</div>}
         {!postsLoading && showPosts && posts.length === 0 && (
           <div className="profilePlaceholder">No posts yet.</div>
         )}

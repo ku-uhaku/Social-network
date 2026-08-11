@@ -7,7 +7,7 @@ import NotificationItem from "@/components/notifications/NotificationItem";
 export default function NotificationList({ open }) {
   const { notifications, markRead, loading } = useNotifications();
 
-  // Event notifications are informational only — auto-consume them on open
+  // consume on open
   useEffect(() => {
     if (!open) return;
     notifications.forEach((n) => {

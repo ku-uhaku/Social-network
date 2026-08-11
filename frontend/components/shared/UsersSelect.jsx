@@ -19,7 +19,7 @@ export default function UsersSelect({
   }
 
   return (
-    <div className="followersChecklist">
+    <div className="usersChecklist">
       {users.map((user) => {
         const checked = selected.includes(user.id);
         const handleChange = (event) =>
@@ -36,7 +36,7 @@ export default function UsersSelect({
                 <span className="checkboxCustom"></span>
               </>
             )}
-            <div className="followerInfo">
+            <div className="userSelectInfo">
               {user.avatar && (
                 <Avatar
                   avatar={user.avatar}
@@ -44,7 +44,7 @@ export default function UsersSelect({
                   size={32}
                 />
               )}
-              <span className="followerName">
+              <span className="userSelectName">
                 {user.username} ({user.first_name} {user.last_name})
               </span>
             </div>

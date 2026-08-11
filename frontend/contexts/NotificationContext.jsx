@@ -34,7 +34,7 @@ export function NotificationProvider({ children }) {
 
   const runAction = useCallback((apiCall, onSuccess) => {
     apiCall().then(onSuccess).catch(() => {
-      // ignore — local state stays as-is on failure
+      // ignore
     });
   }, []);
 

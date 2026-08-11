@@ -51,7 +51,7 @@ export default function FollowListModal({ userId, type, onClose }) {
         </div>
 
         <div className="followListModalBody">
-          {loading && <div className="followListPlaceholder">Loading…</div>}
+          {loading && <div className="followListPlaceholder">Loading...</div>}
           {error && <div className="followListError">{error}</div>}
           {!loading && !error && users.length === 0 && (
             <div className="followListPlaceholder">No users found.</div>

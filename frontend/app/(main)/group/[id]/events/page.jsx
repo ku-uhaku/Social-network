@@ -110,7 +110,7 @@ export default function GroupEventsPage({ params }) {
     catch (err) { setError(err?.message || "Could not cancel event."); }
   }
 
-  if (loading) return <div className="postsPlaceholder">Loading events…</div>;
+  if (loading) return <div className="postsPlaceholder">Loading events...</div>;
   if (error) return <div className="postsError">{error}</div>;
   if (!group) notFound();
 
@@ -119,7 +119,7 @@ export default function GroupEventsPage({ params }) {
   return (
     <section className="postsContainer">
       <div className="groupHeader">
-        <h1 className="feedTitle">{group.title} — Events</h1>
+        <h1 className="feedTitle">{group.title} - Events</h1>
         {member && (
           <button className="eventMakeButton" type="button" onClick={() => setFormOpen(!formOpen)}>
             {formOpen ? "Close form" : "Create event"}

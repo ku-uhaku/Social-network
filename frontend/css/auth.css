@@ -5,6 +5,10 @@
   justify-content: center;
 }
 
+.separator{
+  opacity: 0.5;
+}
+
 .separator_right{
   transform: scaleX(-1);
 }

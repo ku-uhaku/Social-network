@@ -104,7 +104,7 @@ export default function GroupsPage() {
         </form>
       )}
 
-      {loading && <div className="postsPlaceholder">Loading groups…</div>}
+      {loading && <div className="postsPlaceholder">Loading groups...</div>}
       {error && !creating && <div className="postsError">{error}</div>}
       {!loading && !error && groups.length === 0 && (
         <div className="postsPlaceholder">No groups yet. Create the first one.</div>

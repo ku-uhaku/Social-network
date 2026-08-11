@@ -7,7 +7,6 @@ import { getGroup, getGroupFeed, joinGroup, leaveGroup, inviteUsers, getAllUsers
 import PostCard from "@/components/posts/PostCard";
 import NailButton from "@/components/shared/NailButton";
 import UsersSelect from "@/components/shared/UsersSelect";
-import Avatar from "@/components/shared/Avatar";
 import "@/css/groups.css";
 
 const pageLimit = 10;
@@ -28,9 +27,7 @@ export default function GroupDetailPage({ params }) {
   const [membersOpen, setMembersOpen] = useState(false);
 
   const groupId = Number(id);
-  if (isNaN(groupId)) {
-    notFound();
-  }
+  if (isNaN(groupId)) notFound();
 
   useEffect(() => {
     let cancelled = false;
@@ -59,7 +56,6 @@ export default function GroupDetailPage({ params }) {
     setNextCursor(data.next_cursor || null);
     setHasMore(Boolean(data.has_more));
   }
-
 
   useEffect(() => {
     if (membership !== "accepted") return;
@@ -108,26 +104,16 @@ export default function GroupDetailPage({ params }) {
     try {
       await leaveGroup(groupId);
       setMembership("none");
-      setPosts([]);
+      applyFeed({}, false);
       setFeedLoaded(false);
-      setNextCursor(null);
-      setHasMore(false);
     } catch (err) {
       setActionError(err?.message || "Could not leave group.");
     }
   }
 
-  if (loadingGroup) {
-    return <div className="postsPlaceholder">Loading group…</div>;
-  }
-
-  if (groupError) {
-    return <div className="postsError">{groupError}</div>;
-  }
-
-  if (!group) {
-    notFound();
-  }
+  if (loadingGroup) return <div className="postsPlaceholder">Loading group...</div>;
+  if (groupError) return <div className="postsError">{groupError}</div>;
+  if (!group) notFound();
 
   return (
     <section className="postsContainer">
@@ -137,7 +123,7 @@ export default function GroupDetailPage({ params }) {
           <p className="groupHeaderDescription">{group.description}</p>
         </div>
 
-        <img className="postTitleSeparator" src="/images/group_title_separator.png" alt="" />
+        <img className="group_title_separator" src="/images/group_title_separator.png" alt="" />
 
         <div className="groupHeaderActions">
           {membership === "accepted" && (
@@ -184,7 +170,7 @@ export default function GroupDetailPage({ params }) {
       {membership === "accepted" ? (
         <>
           {!feedLoaded && !actionError && (
-            <div className="postsPlaceholder">Loading group feed…</div>
+            <div className="postsPlaceholder">Loading group feed...</div>
           )}
           {feedLoaded && posts.length === 0 && !actionError && (
             <div className="postsPlaceholder">No posts in this group yet.</div>
@@ -199,7 +185,7 @@ export default function GroupDetailPage({ params }) {
           {feedLoaded && hasMore && (
             <div className="feedLoadMore">
               <NailButton onClick={loadMore} disabled={loadingMore}>
-                {loadingMore ? "Loading…" : "Load more"}
+                {loadingMore ? "Loading..." : "Load more"}
               </NailButton>
             </div>
           )}
@@ -251,8 +237,7 @@ function InviteModal({ groupId, onClose, onInvited }) {
     );
   }
 
-  async function handleInvite(event) {
-    event.preventDefault();
+  async function handleInvite() {
     if (selected.length === 0) {
       setError("Select at least one user to invite.");
       return;
@@ -272,7 +257,7 @@ function InviteModal({ groupId, onClose, onInvited }) {
 
   return (
     <div className="groupInviteOverlay">
-      <form className="groupInvitePanel" onSubmit={handleInvite}>
+      <div className="groupInvitePanel">
         <h2 className="groupInviteTitle">Invite members</h2>
         {error && <div className="postsError">{error}</div>}
 
@@ -286,12 +271,12 @@ function InviteModal({ groupId, onClose, onInvited }) {
         </div>
 
         <div className="groupInviteActions">
-          <NailButton type="submit" disabled={submitting || loading}>
+          <NailButton onClick={handleInvite} disabled={submitting || loading}>
             {submitting ? "Sending..." : "Invite"}
           </NailButton>
           <NailButton onClick={onClose}>Cancel</NailButton>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
@@ -324,28 +309,7 @@ function MembersModal({ groupId, onClose }) {
         <h2 className="groupInviteTitle">Members</h2>
         {error && <div className="postsError">{error}</div>}
 
-        {loading ? (
-          <div className="postsPlaceholder">Loading members…</div>
-        ) : members.length === 0 ? (
-          <div className="postsPlaceholder">No members yet.</div>
-        ) : (
-          // TODO: use UsersSelect
-          <div className="groupMemberList">
-            {members.map((m) => (
-              <Link
-                key={m.id}
-                href={`/profile/${m.username}`}
-                className="groupMemberItem"
-                onClick={onClose}
-              >
-                <Avatar avatar={m.avatar} username={m.username} size={32} />
-                <span className="followerName">
-                  {m.first_name} {m.last_name} (@{m.username})
-                </span>
-              </Link>
-            ))}
-          </div>
-        )}
+        <UsersSelect users={members} loading={loading} selectable={false} />
 
         <div className="groupInviteActions">
           <NailButton onClick={onClose}>Close</NailButton>

@@ -1,52 +1,8 @@
-/* ---- Notification button ---- */
-.notificationButton {
-  position: relative;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--bone);
-  padding: 8px;
-  border-radius: 999px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.notificationButton:hover {
-  border-color: var(--soul-dim);
-  box-shadow: 0 0 12px rgba(0, 240, 255, 0.15);
-}
-
-.notificationBellImg {
-  width: 36px;
-  height: 36px;
-  display: block;
-  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.6));
-}
-
-.notificationBadge {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  min-width: 18px;
-  height: 18px;
-  display: grid;
-  place-items: center;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: var(--soul);
-  color: #000;
-  font-size: 11px;
-  font-weight: 700;
-  box-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
-}
-
 /* ---- Notification panel ---- */
 .notificationPanel {
-  position: fixed;
-  top: var(--header-height, 88px);
-  right: 24px;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
   z-index: 20;
   width: 340px;
   max-height: 70vh;

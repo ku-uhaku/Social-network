@@ -61,7 +61,7 @@ func (h *Hub) routeEvent(event Event) {
 			select {
 			case client.Send <- msgBytes:
 			default:
-				// Slow client — defer cleanup to handleClientUnregister serially
+				// Slow client defer cleanup to handleClientUnregister serially
 				h.Unregister <- client
 			}
 		}

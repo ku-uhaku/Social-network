@@ -1,12 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import { getConversations, getDirectHistory, markChatRead } from "@/lib/api/chat";
 import Avatar from "@/components/shared/Avatar";
 import EmojiPicker from "./EmojiPicker";
-import SideBar from "./SideBar";
 import "@/css/chat.css";
 
 const empty_single_chat = {
@@ -18,7 +17,7 @@ const empty_single_chat = {
   loadingOlder: false,
 };
 
-function useChat() {
+export function useChat() {
   const { user } = useAuth();
   const { send, subscribe } = useWebSocket();
 
@@ -31,13 +30,13 @@ function useChat() {
 
   const getThread = (id) => contacts[id] || empty_single_chat;
 
-  const patchThread = useCallback((id, patch) => {
+  const patchThread = (id, patch) => {
     setContacts((prev) => {
       const thread = prev[id] || empty_single_chat;
       const next = typeof patch === "function" ? patch(thread) : patch;
       return { ...prev, [id]: { ...thread, ...next } };
     });
-  }, [contacts]);
+  };
 
   // load conversation list + seed persistent unread counts
   useEffect(() => {
@@ -90,82 +89,65 @@ function useChat() {
     return unsub;
   }, [user, subscribe, open, activeId]);
 
-  const unread = useMemo(
-    () => Object.fromEntries(Object.entries(contacts).map(([id, c]) => [id, c.unread])),
-    [contacts]
-  );
-
-  const totalUnread = useMemo(
-    () => Object.values(contacts).reduce((sum, c) => sum + c.unread, 0),
-    [contacts]
-  );
-
-  const activeContact = useMemo(
-    () => (activeId ? conversations.find((c) => c.user_id === activeId) : null),
-    [activeId, conversations]
-  );
+  const unread = Object.fromEntries(Object.entries(contacts).map(([id, c]) => [id, c.unread]));
+  const totalUnread = Object.values(contacts).filter((c) => c.unread > 0).length;
+  const activeContact = activeId ? conversations.find((c) => c.user_id === activeId) : null;
 
   const activeThread = getThread(activeId);
-  const threadMessages = activeThread.messages;
 
-  const openChat = useCallback(
-    async (contactId) => {
-      setActiveId(contactId);
-      markChatRead(contactId).catch(() => {});
-      patchThread(contactId, { unread: 0 });
-      if (getThread(contactId).loaded) return;
+  const openChat = async (contactId) => {
+    setActiveId(contactId);
+    markChatRead(contactId).catch(() => {});
+    patchThread(contactId, { unread: 0 });
+    if ((contacts[contactId] || empty_single_chat).loaded) return;
 
-      setLoading(true);
-      try {
-        const res = await getDirectHistory(contactId);
-        const data = res?.data || {};
-        const history = Array.isArray(data.messages) ? data.messages : [];
-        patchThread(contactId, (thread) => {
-          const missing = history.filter((m) => !thread.messages.some((cm) => cm.id === m.id));
-          return {
-            messages: [...missing, ...thread.messages],
-            loaded: true,
-            hasMore: Boolean(data.has_more),
-            oldestId: history.length ? history[0].id : thread.oldestId,
-          };
-        });
-      } catch {
-        patchThread(contactId, { loaded: false });
-      } finally {
-        setLoading(false);
-      }
-    },
-    [patchThread]
-  );
-
-  const loadOlder = useCallback(
-    async (contactId) => {
-      const thread = getThread(contactId);
-      if (!thread.loaded || !thread.hasMore || thread.loadingOlder) return;
-      patchThread(contactId, { loadingOlder: true });
-      try {
-        const res = await getDirectHistory(contactId, { beforeId: thread.oldestId });
-        const data = res?.data || {};
-        const older = Array.isArray(data.messages) ? data.messages : [];
-        patchThread(contactId, (t) => ({
-          messages: [...older, ...t.messages],
+    setLoading(true);
+    try {
+      const res = await getDirectHistory(contactId);
+      const data = res?.data || {};
+      const history = Array.isArray(data.messages) ? data.messages : [];
+      patchThread(contactId, (prev) => {
+        const seen = new Set(prev.messages.map((m) => m.id));
+        const missing = history.filter((m) => !seen.has(m.id));
+        return {
+          messages: [...missing, ...prev.messages],
+          loaded: true,
           hasMore: Boolean(data.has_more),
-          oldestId: older.length ? older[0].id : t.oldestId,
-          loadingOlder: false,
-        }));
-      } catch {
-        patchThread(contactId, { loadingOlder: false });
-      }
-    },
-    [patchThread]
-  );
+          oldestId: history.length ? history[0].id : prev.oldestId,
+        };
+      });
+    } catch {
+      patchThread(contactId, { loaded: false });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const sendMessage = useCallback(() => {
+  const loadOlder = async (contactId) => {
+    const thread = contacts[contactId] || empty_single_chat;
+    if (!thread.loaded || !thread.hasMore || thread.loadingOlder) return;
+    patchThread(contactId, { loadingOlder: true });
+    try {
+      const res = await getDirectHistory(contactId, { beforeId: thread.oldestId });
+      const data = res?.data || {};
+      const older = Array.isArray(data.messages) ? data.messages : [];
+      patchThread(contactId, (t) => ({
+        messages: [...older, ...t.messages],
+        hasMore: Boolean(data.has_more),
+        oldestId: older.length ? older[0].id : t.oldestId,
+        loadingOlder: false,
+      }));
+    } catch {
+      patchThread(contactId, { loadingOlder: false });
+    }
+  };
+
+  const sendMessage = () => {
     const content = draft.trim();
     if (!content || !activeId) return;
     send("send_direct_message", { receiver_id: activeId, content });
     setDraft("");
-  }, [draft, activeId, send]);
+  };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -178,7 +160,6 @@ function useChat() {
     if (e.target === e.currentTarget) setOpen(false);
   };
 
-  // TODO: rename some of these
   return {
     user,
     open,
@@ -187,9 +168,7 @@ function useChat() {
     activeId,
     setActiveId,
     activeContact,
-    threadMessages,
-    threadHasMore: activeThread.hasMore,
-    threadLoadingOlder: activeThread.loadingOlder,
+    activeThread,
     unread,
     totalUnread,
     draft,
@@ -203,31 +182,27 @@ function useChat() {
   };
 }
 
-export default function Chat() {
-  const chat = useChat();
-
+export default function Chat({ chat }) {
   return (
     <>
-      <SideBar chat={chat} />
-
       {chat.open && (
         <div className="chatModalOverlay" onClick={chat.handleBackdrop}>
           <div className="chatModal">
             {chat.activeId && chat.activeContact ? (
               <SingleChat
                 contact={chat.activeContact}
-                messages={chat.threadMessages}
-                draft={chat.draft}
+                thread={chat.activeThread}
                 loading={chat.loading}
-                hasMore={chat.threadHasMore}
-                loadingOlder={chat.threadLoadingOlder}
                 meId={chat.user?.id}
-                onDraftChange={chat.setDraft}
-                onSend={chat.sendMessage}
-                onKeyDown={chat.handleKeyDown}
-                onLoadOlder={() => chat.loadOlder(chat.activeId)}
-                onBack={() => chat.setActiveId(null)}
-                onClose={() => chat.setOpen(false)}
+                actions={{
+                  draft: chat.draft,
+                  onDraftChange: chat.setDraft,
+                  onSend: chat.sendMessage,
+                  onKeyDown: chat.handleKeyDown,
+                  onLoadOlder: () => chat.loadOlder(chat.activeId),
+                  onBack: () => chat.setActiveId(null),
+                  onClose: () => chat.setOpen(false),
+                }}
               />
             ) : (
               <Contacts
@@ -289,60 +264,46 @@ function Contacts({ conversations, unread, loading, onOpen, onClose }) {
   );
 }
 
-function SingleChat({
-  contact,
-  messages,
-  draft,
-  loading,
-  hasMore,
-  loadingOlder,
-  meId,
-  onDraftChange,
-  onSend,
-  onKeyDown,
-  onLoadOlder,
-  onBack,
-  onClose,
-}) {
+function SingleChat({ contact, thread, loading, meId, actions }) {
   const listEndRef = useRef(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
 
   // keep newest
   useEffect(() => {
     listEndRef.current?.scrollIntoView({ block: "end" });
-  }, [messages]);
+  }, [thread.messages]);
 
   return (
     <div className="chatPanel chatThread">
       <div className="chatPanelHeader">
-        <button type="button" className="chatBackButton" onClick={onBack} title="Back">
+        <button type="button" className="chatBackButton" onClick={actions.onBack} title="Back">
           &larr;
         </button>
         <div className="chatThreadTitle">
           <Avatar avatar={contact.avatar} username={contact.username} size={32} />
           <strong className="chatContactName">{contact.username}</strong>
         </div>
-        <button type="button" className="chatCloseButton" onClick={onClose}>
+        <button type="button" className="chatCloseButton" onClick={actions.onClose}>
           &times;
         </button>
       </div>
 
       <div className="chatMessages">
         {loading && <p className="chatEmpty">Loading...</p>}
-        {!loading && hasMore && (
+        {!loading && thread.hasMore && (
           <button
             type="button"
             className="chatLoadOlder"
-            onClick={onLoadOlder}
-            disabled={loadingOlder}
+            onClick={actions.onLoadOlder}
+            disabled={thread.loadingOlder}
           >
-            {loadingOlder ? "Loading..." : "Load previous"}
+            {thread.loadingOlder ? "Loading..." : "Load previous"}
           </button>
         )}
-        {!loading && messages.length === 0 && (
+        {!loading && thread.messages.length === 0 && (
           <p className="chatEmpty">No messages yet. Say hello!</p>
         )}
-        {messages.map((m) => {
+        {thread.messages.map((m) => {
           const mine = m.sender_id === meId;
           return (
             <div key={m.id} className={`chatBubble ${mine ? "mine" : "theirs"}`}>
@@ -354,7 +315,7 @@ function SingleChat({
         <div ref={listEndRef} />
       </div>
 
-      {emojiOpen && <EmojiPicker onPick={(e) => onDraftChange(draft + e)} />}
+      {emojiOpen && <EmojiPicker onPick={(e) => actions.onDraftChange(actions.draft + e)} />}
 
       <div className="chatComposer">
         <button
@@ -368,12 +329,12 @@ function SingleChat({
         <textarea
           className="chatInput"
           rows={1}
-          value={draft}
+          value={actions.draft}
           placeholder={`Type...`}
-          onChange={(e) => onDraftChange(e.target.value)}
-          onKeyDown={onKeyDown}
+          onChange={(e) => actions.onDraftChange(e.target.value)}
+          onKeyDown={actions.onKeyDown}
         />
-        <button type="button" className="chatSendButton" onClick={onSend}>
+        <button type="button" className="chatSendButton" onClick={actions.onSend}>
           Send
         </button>
       </div>

@@ -85,7 +85,7 @@
 }
 
 /* User selection checklist (UsersSelect) */
-.followersChecklist {
+.usersChecklist {
   max-height: 200px;
   overflow-y: auto;
   border: 1px solid var(--border);
@@ -116,13 +116,13 @@
   accent-color: var(--soul);
 }
 
-.followerInfo {
+.userSelectInfo {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.followerName {
+.userSelectName {
   font-size: 14px;
   color: var(--muted);
 }

@@ -20,7 +20,7 @@ export default function PostCard({ post, isFeed = true }) {
           <div>
             <div className="postAuthorName">{authorName}</div>
             <div className="postMeta">
-              {post.privacy} · {createdAt} · {post.comments_count} comments
+              {post.privacy} - {createdAt} - {post.comments_count} comments
             </div>
           </div>
         </div>

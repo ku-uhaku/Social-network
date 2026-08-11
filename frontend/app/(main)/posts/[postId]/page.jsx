@@ -69,11 +69,11 @@ export default function PostDetailPage({ params }) {
   }
 
   if (loading || !user) {
-    return <div className="postsPlaceholder">Checking authentication…</div>;
+    return <div className="postsPlaceholder">Checking authentication...</div>;
   }
 
   if (loadingPost) {
-    return <div className="postsPlaceholder">Loading post…</div>;
+    return <div className="postsPlaceholder">Loading post...</div>;
   }
 
   if (error) {
@@ -105,7 +105,7 @@ export default function PostDetailPage({ params }) {
           <CommentCreate postId={postId} onCreated={handleCommentCreated} />
 
           {loadingComments ? (
-            <div className="postsPlaceholder">Loading comments…</div>
+            <div className="postsPlaceholder">Loading comments...</div>
           ) : commentsError ? (
             <div className="postsError">{commentsError}</div>
           ) : comments.length === 0 ? (

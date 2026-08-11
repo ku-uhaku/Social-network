@@ -32,7 +32,7 @@ func Server() {
 	// 4. Handlers and Middlewares consume the Service Layer
 	h := handler.New(svc, hub)
 
-	m := middleware.New(svc) // ◄--- CHANGE 'repo' TO 'svc' HERE
+	m := middleware.New(svc)
 
 	router := routes.Register(h, m)
 
