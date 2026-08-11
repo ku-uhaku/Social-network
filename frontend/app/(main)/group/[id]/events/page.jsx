@@ -1,11 +1,12 @@
 "use client";
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { notFound } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { getGroup, getGroupEvents, createGroupEvent, cancelGroupEvent, setEventResponse } from "@/lib/api/groups";
 import NailButton from "@/components/shared/NailButton";
 import "@/css/groups.css";
 
+// TODO: optimize for size
 export default function GroupEventsPage({ params }) {
   const { id } = use(params);
   const { user: currentUser } = useAuth();
@@ -22,6 +23,7 @@ export default function GroupEventsPage({ params }) {
   const [description, setDescription] = useState("");
   const [dateTime, setDateTime] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const pendingRef = useRef(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -65,9 +67,42 @@ export default function GroupEventsPage({ params }) {
     finally { setSubmitting(false); }
   }
 
+  function applyLocalResponse(ev, status) {
+    if (ev.my_status === status) return ev;
+    let going = ev.going_count;
+    let notGoing = ev.not_going_count;
+    if (ev.my_status === "going") going -= 1;
+    if (ev.my_status === "not_going") notGoing -= 1;
+    if (status === "going") going += 1;
+    if (status === "not_going") notGoing += 1;
+    return { ...ev, my_status: status, going_count: going, not_going_count: notGoing };
+  }
+
   async function handleChoice(eventId, status) {
-    try { await setEventResponse(eventId, status); reloadEvents(); }
-    catch (err) { setError(err?.message || "Could not update your response."); }
+    if (pendingRef.current.has(eventId)) return;
+    pendingRef.current.add(eventId);
+    const prev = events.find((ev) => ev.id === eventId);
+    if (!prev) {
+      pendingRef.current.delete(eventId);
+      return;
+    }
+
+    setEvents((list) =>
+      list.map((ev) => (ev.id === eventId ? applyLocalResponse(ev, status) : ev))
+    );
+
+    try {
+      const res = await setEventResponse(eventId, status);
+      const updated = res?.data;
+      if (updated?.id === eventId) {
+        setEvents((list) => list.map((ev) => (ev.id === eventId ? updated : ev)));
+      }
+    } catch (err) {
+      setEvents((list) => list.map((ev) => (ev.id === eventId ? prev : ev)));
+      setError(err?.message || "Could not update your response.");
+    } finally {
+      pendingRef.current.delete(eventId);
+    }
   }
 
   async function handleCancel(eventId) {

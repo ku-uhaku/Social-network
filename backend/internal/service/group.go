@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"kuu/internal/models"
 )
@@ -197,24 +198,27 @@ func (s *Service) CancelGroupEvent(ctx context.Context, userID, eventID int64) e
 	if event.CreatorID != userID {
 		return ErrNotGroupCreator
 	}
-	if event.Status != "upcoming" {
+	if event.Status != "upcoming" || event.EventTime.Before(time.Now()) {
 		return ErrEventExpired
 	}
 	return s.Repo.CancelGroupEvent(ctx, eventID)
 }
 
 // SetEventResponse lets a member choose going/not_going for an upcoming event
-func (s *Service) SetEventResponse(ctx context.Context, userID, eventID int64, status string) error {
+func (s *Service) SetEventResponse(ctx context.Context, userID, eventID int64, status string) (*models.GroupEventWithCounts, error) {
 	event, err := s.Repo.GetEventByID(ctx, eventID)
 	if err != nil {
-		return ErrEventNotFound
+		return nil, ErrEventNotFound
 	}
 	memberStatus, err := s.Repo.GetMemberStatus(ctx, event.GroupID, userID)
 	if err != nil || memberStatus != "accepted" {
-		return ErrNotMember
+		return nil, ErrNotMember
 	}
-	if event.Status != "upcoming" {
-		return ErrEventExpired
+	if event.Status != "upcoming" || event.EventTime.Before(time.Now()) {
+		return nil, ErrEventExpired
 	}
-	return s.Repo.SetEventResponse(ctx, eventID, userID, status)
+	if err := s.Repo.SetEventResponse(ctx, eventID, userID, status); err != nil {
+		return nil, err
+	}
+	return s.Repo.GetEventWithCounts(ctx, eventID, userID)
 }

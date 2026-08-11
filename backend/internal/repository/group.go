@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"strings"
+	"time"
 
 	"kuu/internal/models"
 )
@@ -323,16 +324,10 @@ func (r *Repository) GetEventByID(ctx context.Context, eventID int64) (*models.G
 	return &e, nil
 }
 
-// GetGroupEvents marks past upcoming events as expired, then lists all events for a
-// group with response tallies and the requesting user's choice.
+// GetGroupEvents lists all events for a group with response tallies and the
+// requesting user's choice. Past upcoming events are reported as 'expired'
+// without writing to the database, keeping this a read-only query.
 func (r *Repository) GetGroupEvents(ctx context.Context, groupID, userID int64) ([]models.GroupEventWithCounts, error) {
-	if _, err := r.DB.Database.ExecContext(ctx, `
-		UPDATE group_events SET status = 'expired'
-		WHERE group_id = $1 AND status = 'upcoming' AND event_time <= datetime('now')
-	`, groupID); err != nil {
-		return nil, err
-	}
-
 	query := `
 		SELECT e.id, e.group_id, e.creator_id, e.title, e.description, e.event_time, e.status, e.created_at,
 			(SELECT COUNT(*) FROM event_responses r WHERE r.event_id = e.id AND r.status = 'going'),
@@ -360,12 +355,46 @@ func (r *Repository) GetGroupEvents(ctx context.Context, groupID, userID int64) 
 		); err != nil {
 			return nil, err
 		}
+		if ev.Status == "upcoming" && ev.EventTime.Before(time.Now()) {
+			ev.Status = "expired"
+		}
 		if ev.CreatorUsername != nil && *ev.CreatorUsername == "" {
 			ev.CreatorUsername = nil
 		}
 		events = append(events, ev)
 	}
 	return events, nil
+}
+
+// GetEventWithCounts fetches a single event with response tallies and the
+// caller's choice. Used to return fresh data after recording a response.
+func (r *Repository) GetEventWithCounts(ctx context.Context, eventID, userID int64) (*models.GroupEventWithCounts, error) {
+	query := `
+		SELECT e.id, e.group_id, e.creator_id, e.title, e.description, e.event_time, e.status, e.created_at,
+			(SELECT COUNT(*) FROM event_responses r WHERE r.event_id = e.id AND r.status = 'going'),
+			(SELECT COUNT(*) FROM event_responses r WHERE r.event_id = e.id AND r.status = 'not_going'),
+			COALESCE((SELECT myr.status FROM event_responses myr WHERE myr.event_id = e.id AND myr.user_id = $1), ''),
+			COALESCE(cu.username, ''), cu.avatar
+		FROM group_events e
+		LEFT JOIN users cu ON cu.id = e.creator_id
+		WHERE e.id = $2
+		LIMIT 1
+	`
+	var ev models.GroupEventWithCounts
+	if err := r.DB.Database.QueryRowContext(ctx, query, userID, eventID).Scan(
+		&ev.ID, &ev.GroupID, &ev.CreatorID, &ev.Title, &ev.Description, &ev.EventTime, &ev.Status, &ev.CreatedAt,
+		&ev.GoingCount, &ev.NotGoingCount, &ev.MyStatus,
+		&ev.CreatorUsername, &ev.CreatorAvatar,
+	); err != nil {
+		return nil, err
+	}
+	if ev.Status == "upcoming" && ev.EventTime.Before(time.Now()) {
+		ev.Status = "expired"
+	}
+	if ev.CreatorUsername != nil && *ev.CreatorUsername == "" {
+		ev.CreatorUsername = nil
+	}
+	return &ev, nil
 }
 
 // CancelGroupEvent marks an upcoming event as cancelled

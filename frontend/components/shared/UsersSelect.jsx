@@ -45,7 +45,7 @@ export default function UsersSelect({
                 />
               )}
               <span className="followerName">
-                {user.first_name} {user.last_name} (@{user.username})
+                {user.username} ({user.first_name} {user.last_name})
               </span>
             </div>
           </label>

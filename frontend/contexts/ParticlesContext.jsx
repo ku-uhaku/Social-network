@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 
 const CURSOR_IMG = "/images/cursor.png";
 const PARTICLE_SPRITES = [
@@ -19,72 +19,70 @@ const CRAZY_MAX_SIZE = 500;
 
 const ParticlesCtx = createContext(null);
 
+let particleId = 0;
+
 export function ParticlesProvider({ children }) {
   const [isParticlesEnabled, setIsParticlesEnabled] = useState(true);
-  const enabledRef = useRef(isParticlesEnabled);
   const [isCrazy, setIsCrazy] = useState(false);
-  const crazyRef = useRef(isCrazy);
+  const [particles, setParticles] = useState([]);
 
-  const overlayRef = useRef(null);
-  const cursorRef = useRef(null);
-
+  // still need refs for the mousemove closure, but now they just gate spawning
+  const settingsRef = useRef({ enabled: isParticlesEnabled, crazy: isCrazy });
   useEffect(() => {
-    enabledRef.current = isParticlesEnabled;
-  }, [isParticlesEnabled]);
+    settingsRef.current = { enabled: isParticlesEnabled, crazy: isCrazy };
+  }, [isParticlesEnabled, isCrazy]);
 
-  useEffect(() => {
-    crazyRef.current = isCrazy;
-  }, [isCrazy]);
+  const removeParticle = useCallback((id) => {
+    setParticles((prev) => prev.filter((p) => p.id !== id));
+  }, []);
 
   useEffect(() => {
     document.body.classList.add("customCursor");
-    const overlay = overlayRef.current;
-    const cursor = cursorRef.current;
-    if (!overlay || !cursor) return;
 
-    let particles = [];
     let lastX = 0;
     let lastY = 0;
 
     function spawnParticle(x, y) {
-      if (!enabledRef.current) return;
+      const { enabled, crazy } = settingsRef.current;
+      if (!enabled) return;
 
-      const maxParticles = crazyRef.current ? CRAZY_MAX_PARTICLES : MAX_PARTICLES;
-      if (particles.length >= maxParticles) {
-        const oldest = particles.shift();
-        oldest.remove();
-      }
-
-      const img = document.createElement("img");
-      img.className = "cursorParticle";
-      img.src = PARTICLE_SPRITES[Math.floor(Math.random() * PARTICLE_SPRITES.length)];
-      const size = crazyRef.current
+      const size = crazy
         ? CRAZY_MIN_SIZE + Math.random() * (CRAZY_MAX_SIZE - CRAZY_MIN_SIZE)
         : MIN_SIZE + Math.random() * MAX_SIZE;
-      img.style.width = `${size}px`;
-      img.style.height = `${size}px`;
 
       const angle = Math.random() * Math.PI * 2;
       const distance = 30 + Math.random() * 40;
-      img.style.setProperty("--dx", `${Math.cos(angle) * distance}px`);
-      img.style.setProperty("--dy", `${Math.sin(angle) * distance}px`);
 
-      img.style.left = `${x - size / 2}px`;
-      img.style.top = `${y - size / 2}px`;
-      overlay.appendChild(img);
+      const particle = {
+        id: particleId++,
+        src: PARTICLE_SPRITES[Math.floor(Math.random() * PARTICLE_SPRITES.length)],
+        size,
+        x: x - size / 2,
+        y: y - size / 2,
+        dx: Math.cos(angle) * distance,
+        dy: Math.sin(angle) * distance,
+      };
 
-      particles.push(img);
-      setTimeout(() => img.remove(), PARTICLE_LIFETIME);
+      setParticles((prev) => {
+        const maxParticles = crazy ? CRAZY_MAX_PARTICLES : MAX_PARTICLES;
+        const next = [...prev, particle];
+        return next.length > maxParticles ? next.slice(next.length - maxParticles) : next;
+      });
+
+      setTimeout(() => removeParticle(particle.id), PARTICLE_LIFETIME);
     }
 
     function handleMove(e) {
-      cursor.style.left = `${e.clientX}px`;
-      cursor.style.top = `${e.clientY}px`;
+      const cursor = document.getElementById("customCursorImg");
+      if (cursor) {
+        cursor.style.left = `${e.clientX}px`;
+        cursor.style.top = `${e.clientY}px`;
+      }
 
       const dx = e.clientX - lastX;
       const dy = e.clientY - lastY;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance > (crazyRef.current ? 0.2 : 6)) {
+      if (distance > (settingsRef.current.crazy ? 0.2 : 6)) {
         spawnParticle(e.clientX, e.clientY);
         lastX = e.clientX;
         lastY = e.clientY;
@@ -96,10 +94,8 @@ export function ParticlesProvider({ children }) {
     return () => {
       window.removeEventListener("mousemove", handleMove);
       document.body.classList.remove("customCursor");
-      particles.forEach((p) => p.remove());
-      particles = [];
     };
-  }, []);
+  }, [removeParticle]);
 
   return (
     <ParticlesCtx.Provider
@@ -111,8 +107,24 @@ export function ParticlesProvider({ children }) {
       }}
     >
       {children}
-      <div className="cursorOverlay" ref={overlayRef}>
-        <img className="cursorImage" ref={cursorRef} src={CURSOR_IMG} alt="" />
+      <div className="cursorOverlay">
+        <img id="customCursorImg" className="cursorImage" src={CURSOR_IMG} alt="" />
+        {particles.map((p) => (
+          <img
+            key={p.id}
+            className="cursorParticle"
+            src={p.src}
+            alt=""
+            style={{
+              width: p.size,
+              height: p.size,
+              left: p.x,
+              top: p.y,
+              "--dx": `${p.dx}px`,
+              "--dy": `${p.dy}px`,
+            }}
+          />
+        ))}
       </div>
     </ParticlesCtx.Provider>
   );

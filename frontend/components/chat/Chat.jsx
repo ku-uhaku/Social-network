@@ -276,7 +276,7 @@ function Contacts({ conversations, unread, loading, onOpen, onClose }) {
             >
               <Avatar avatar={c.avatar} username={c.username} />
               <div className="chatContactInfo">
-                <strong className="chatContactName">@{c.username}</strong>
+                <strong className="chatContactName">{c.username}</strong>
               </div>
               {unread[c.user_id] > 0 && (
                 <span className="chatContactUnread">{unread[c.user_id]}</span>
@@ -320,7 +320,7 @@ function SingleChat({
         </button>
         <div className="chatThreadTitle">
           <Avatar avatar={contact.avatar} username={contact.username} size={32} />
-          <strong className="chatContactName">@{contact.username}</strong>
+          <strong className="chatContactName">{contact.username}</strong>
         </div>
         <button type="button" className="chatCloseButton" onClick={onClose}>
           &times;

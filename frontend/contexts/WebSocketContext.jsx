@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getWebSocketUrl } from "@/lib/sockets";
+import { API_BASE } from "@/lib/utils";
 
 const WebSocketContext = createContext(null);
 
@@ -24,7 +24,7 @@ export function WebSocketProvider({ children }) {
     if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
     if (!userRef.current || wsRef.current) return;
 
-    const ws = new WebSocket(getWebSocketUrl());
+    const ws = new WebSocket(`${API_BASE.replace(/^http/, "ws")}/ws`);
     wsRef.current = ws;
 
     ws.onopen = () => {

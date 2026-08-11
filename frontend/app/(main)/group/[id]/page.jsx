@@ -137,6 +137,8 @@ export default function GroupDetailPage({ params }) {
           <p className="groupHeaderDescription">{group.description}</p>
         </div>
 
+        <img className="postTitleSeparator" src="/images/group_title_separator.png" alt="" />
+
         <div className="groupHeaderActions">
           {membership === "accepted" && (
             <>
@@ -327,6 +329,7 @@ function MembersModal({ groupId, onClose }) {
         ) : members.length === 0 ? (
           <div className="postsPlaceholder">No members yet.</div>
         ) : (
+          // TODO: use UsersSelect
           <div className="groupMemberList">
             {members.map((m) => (
               <Link

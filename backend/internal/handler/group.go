@@ -614,7 +614,8 @@ func (h *Handler) SetEventResponse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Service.SetEventResponse(r.Context(), user.ID, payload.EventID, payload.Status); err != nil {
+	updated, err := h.Service.SetEventResponse(r.Context(), user.ID, payload.EventID, payload.Status)
+	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrEventNotFound):
 			helper.Error(w, http.StatusNotFound, err.Error())
@@ -628,7 +629,7 @@ func (h *Handler) SetEventResponse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	helper.Success(w, http.StatusOK, "Event response recorded", nil)
+	helper.Success(w, http.StatusOK, "Event response recorded", updated)
 }
 
 // HandleJoinRequestAction POST /api/v1/groups/join/accept|decline (creator only)
