@@ -1,0 +1,268 @@
+@media (max-width: 1000px) {
+  .homeHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+}
+
+
+/* ---- Medium / small screens ---- */
+@media (max-width: 720px) {
+  /* Umbrella: nothing may overflow horizontally */
+  body {
+    overflow-x: hidden;
+  }
+
+  img {
+    max-width: 100%;
+  }
+
+  /* Header becomes vertical */
+  
+
+  .headerLeft {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .headerRight {
+    width: 100%;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .headerRightRow {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .headerDividerV {
+    display: none;
+  }
+
+  .homeHeader .brandLogo > img {
+    width: 150px;
+  }
+
+  .userInfo {
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  .homeHeader .iconButton {
+    padding: 8px 12px;
+  }
+
+  .homeHeader .iconButtonIcon {
+    width: 26px;
+    height: 26px;
+  }
+
+  /* Popover panels: keep them on-screen (fixed + centered) */
+  body .settingsPanel,
+  body .notificationPanel {
+    position: fixed;
+    top: calc(var(--header-height, 88px) + 12px);
+    right: auto;
+    left: 50%;
+    width: min(340px, 92vw);
+    transform: translateX(-50%) translateY(-6px);
+  }
+
+  body .settingsPanel.open,
+  body .notificationPanel.open {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Decorative separators with fixed pixel widths */
+  .headerSeparator,
+  .footerSeparator {
+    width: min(500px, 90vw);
+    height: 70px;
+  }
+}
+
+/* ---- Mobile ---- */
+@media (max-width: 640px) {
+  /* Global font shrink: scales every rem-based size */
+  html {
+    font-size: 15px;
+  }
+
+  /* Auth: card takes full width instead of 50vw */
+  .authPage {
+    padding: 1.25rem 0.75rem;
+  }
+
+  .authContent .card {
+    width: 100%;
+    max-width: 440px;
+    padding: 1.5rem;
+  }
+
+  /* Hide decorative side separators on narrow screens */
+  .authPage .container > .separator {
+    display: none;
+  }
+
+  /* Stack multi-field form rows (first/last name, ...);
+     let the image-upload row wrap instead of collapsing */
+  .authContent .card .row {
+    flex-wrap: wrap;
+  }
+
+  .authContent .card .row:has(.field) {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Feed / page containers */
+  .postsContainer {
+    padding: 16px;
+  }
+
+  .profilePage {
+    padding: 16px;
+  }
+
+  .feedHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .profileCard {
+    padding: 20px;
+  }
+
+  .profileUsername {
+    font-size: 1.5rem;
+  }
+
+  .profileStats {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .postCommentSeparator {
+    width: min(400px, 80%);
+  }
+
+  .groupList {
+    width: 100%;
+  }
+
+  .groupHeader {
+    padding: 16px;
+  }
+
+  .group_title_separator {
+    height: 120px;
+  }
+}
+
+/* ---- Small phones ---- */
+@media (max-width: 480px) {
+  /* Further global font shrink */
+  html {
+    font-size: 14px;
+  }
+
+  .homeHeader {
+    gap: 10px;
+    padding: 10px 14px;
+  }
+
+  .homeHeader .brandLogo > img {
+    width: 130px;
+  }
+
+  .headerRightRow {
+    gap: 6px;
+  }
+
+  .headerSeparator,
+  .footerSeparator {
+    height: 60px;
+  }
+
+  .feedTitle {
+    font-size: 1.6rem;
+  }
+
+  .postCard {
+    padding: 16px;
+  }
+
+  .postDetailContent {
+    padding: 16px;
+  }
+
+  .postsPlaceholder,
+  .postsError {
+    padding: 20px;
+  }
+
+  .profileCardTop {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .profileEmail,
+  .postSnippet,
+  .commentContent,
+  .notificationMessage {
+    overflow-wrap: break-word;
+  }
+
+  .homeFooter {
+    flex-wrap: wrap;
+    text-align: center;
+    padding: 14px 16px;
+  }
+
+  /* Chat becomes full width */
+  body .chatModalOverlay {
+    padding: 0;
+  }
+
+  body .chatModal {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .chatComposer {
+    padding: 10px;
+  }
+
+  .chatEmojiTray {
+    padding: 8px 10px;
+  }
+
+  /* Group events: choices stack nicely */
+  .eventChoices {
+    gap: 8px;
+  }
+
+  .eventChoice {
+    flex: 1 1 45%;
+  }
+
+  .eventCancelButton {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .groupInviteOverlay {
+    padding: 12px;
+  }
+}

@@ -6,7 +6,7 @@ import "@/css/error.css";
 export default function ErrorDisplay({ message, onRetry, homeHref = "/" }) {
   return (
     <div className="page">
-      <img className="wallpaper" src="/images/err_wallpaper.png" alt="" />
+      <img className="wallpaper" src="/images/loading.gif" alt="" />
       <img className="separator" src="/images/card_separator.png" alt="" />
       <div className="card">
         <div className="card-content">
