@@ -102,19 +102,25 @@ func (r *Repository) GetPostByID(ctx context.Context, postID int64) (*models.Pos
 // plus group posts for groups they belong to. Paginated by cursor (last post id) and limit.
 func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64, limit int, cursor *int64) ([]models.Post, bool, error) {
 	query := `
-		SELECT DISTINCT p.id, p.user_id, p.group_id, p.title, p.content, p.privacy, p.image_url, p.created_at,
+		SELECT p.id, p.user_id, p.group_id, p.title, p.content, p.privacy, p.image_url, p.created_at,
 			(SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comments_count,
 			u.id, u.username, u.first_name, u.last_name, u.avatar
 		FROM posts p
 		JOIN users u ON u.id = p.user_id
-		LEFT JOIN follows f ON f.following_id = p.user_id AND f.follower_id = $1 AND f.status = 'accepted'
-		LEFT JOIN group_members gm ON gm.group_id = p.group_id AND gm.user_id = $1 AND gm.status = 'accepted'
-		LEFT JOIN post_viewers pv ON pv.post_id = p.id AND pv.user_id = $1
-		WHERE 
+		WHERE
 			p.user_id = $1 OR
-			(p.group_id IS NOT NULL AND gm.user_id IS NOT NULL) OR
-			(p.group_id IS NULL AND f.follower_id IS NOT NULL AND p.privacy IN ('public', 'almost private')) OR
-			(p.group_id IS NULL AND pv.user_id IS NOT NULL AND p.privacy = 'private')
+			(p.group_id IS NOT NULL AND EXISTS (
+				SELECT 1 FROM group_members gm
+				WHERE gm.group_id = p.group_id AND gm.user_id = $1 AND gm.status = 'accepted'
+			)) OR
+			(p.group_id IS NULL AND p.privacy IN ('public', 'almost private') AND EXISTS (
+				SELECT 1 FROM follows f
+				WHERE f.following_id = p.user_id AND f.follower_id = $1 AND f.status = 'accepted'
+			)) OR
+			(p.group_id IS NULL AND p.privacy = 'private' AND EXISTS (
+				SELECT 1 FROM post_viewers pv
+				WHERE pv.post_id = p.id AND pv.user_id = $1
+			))
 		ORDER BY p.created_at DESC, p.id DESC
 	`
 	args := []interface{}{currentUserID}

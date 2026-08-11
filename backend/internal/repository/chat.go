@@ -115,9 +115,8 @@ func (r *Repository) ListConversations(ctx context.Context, viewerID int64) ([]m
 SELECT u.id, u.username, u.avatar, dm.created_at,
        (SELECT COUNT(*)
         FROM direct_messages du
-        WHERE ((du.sender_id = $1 AND du.receiver_id = u.id)
-            OR (du.sender_id = u.id AND du.receiver_id = $1))
-          AND du.sender_id = u.id
+        WHERE du.sender_id = u.id
+          AND du.receiver_id = $1
           AND du.id > COALESCE(cr.last_read_message_id, 0))
 FROM users u
 LEFT JOIN direct_messages dm ON dm.id = (

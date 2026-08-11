@@ -157,14 +157,18 @@ func (r *Repository) GetUserPosts(ctx context.Context, targetUserID int64, viewe
 			u.id, u.username, u.first_name, u.last_name, u.avatar
 		FROM posts p
 		JOIN users u ON u.id = p.user_id
-		LEFT JOIN follows f ON f.following_id = p.user_id AND f.follower_id = $2 AND f.status = 'accepted'
-		LEFT JOIN post_viewers pv ON pv.post_id = p.id AND pv.user_id = $2
 		WHERE p.user_id = $1 AND p.group_id IS NULL
 		AND (
 			$2 = $1 OR
 			p.privacy = 'public' OR
-			(f.follower_id IS NOT NULL AND p.privacy = 'almost private') OR
-			(pv.user_id IS NOT NULL AND p.privacy = 'private')
+			(p.privacy = 'almost private' AND EXISTS (
+				SELECT 1 FROM follows f
+				WHERE f.following_id = p.user_id AND f.follower_id = $2 AND f.status = 'accepted'
+			)) OR
+			(p.privacy = 'private' AND EXISTS (
+				SELECT 1 FROM post_viewers pv
+				WHERE pv.post_id = p.id AND pv.user_id = $2
+			))
 		)
 		ORDER BY p.created_at DESC, p.id DESC
 	`

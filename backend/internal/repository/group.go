@@ -335,16 +335,13 @@ func (r *Repository) GetGroupEvents(ctx context.Context, groupID, userID int64) 
 
 	query := `
 		SELECT e.id, e.group_id, e.creator_id, e.title, e.description, e.event_time, e.status, e.created_at,
-			COALESCE(SUM(CASE WHEN r.status = 'going' THEN 1 ELSE 0 END), 0),
-			COALESCE(SUM(CASE WHEN r.status = 'not_going' THEN 1 ELSE 0 END), 0),
-			COALESCE(MAX(myr.status), ''),
+			(SELECT COUNT(*) FROM event_responses r WHERE r.event_id = e.id AND r.status = 'going'),
+			(SELECT COUNT(*) FROM event_responses r WHERE r.event_id = e.id AND r.status = 'not_going'),
+			COALESCE((SELECT myr.status FROM event_responses myr WHERE myr.event_id = e.id AND myr.user_id = $1), ''),
 			COALESCE(cu.username, ''), cu.avatar
 		FROM group_events e
-		LEFT JOIN event_responses r ON r.event_id = e.id
-		LEFT JOIN event_responses myr ON myr.event_id = e.id AND myr.user_id = ?
 		LEFT JOIN users cu ON cu.id = e.creator_id
-		WHERE e.group_id = ?
-		GROUP BY e.id
+		WHERE e.group_id = $2
 		ORDER BY e.event_time ASC, e.id ASC
 	`
 	rows, err := r.DB.Database.QueryContext(ctx, query, userID, groupID)
