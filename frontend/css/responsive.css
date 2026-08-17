@@ -5,6 +5,14 @@
     gap: 12px;
     padding: 14px 16px;
   }
+
+  .feedLayout {
+    padding: 16px;
+  }
+
+  .suggestedFollows {
+    display: none;
+  }
 }
 
 

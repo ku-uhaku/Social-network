@@ -13,14 +13,12 @@ import (
 
 // UpdateProfile reads active session context data and applies new settings
 func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
-	// 1. Authenticate user context
 	user, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
 		helper.Error(w, http.StatusUnauthorized, "Authentication context missing")
 		return
 	}
 
-	// 2. Decode incoming update values
 	var payload models.UpdateProfilePayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		helper.Error(w, http.StatusBadRequest, "Malformed JSON request body")
@@ -28,14 +26,11 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	// 3. Fire structural assertions
 	if validationErrs := requests.ValidateUpdateProfile(payload); len(validationErrs) > 0 {
 		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, validationErrs)
 		return
 	}
 
-	// 4. If switching from private to public, auto-accept all pending follow requests
-	//    and expire their follow_request notifications.
 	if payload.IsPublic == 1 && user.IsPublic == 0 {
 		if _, err := h.Service.AcceptAllPendingFollows(r.Context(), user.ID); err != nil {
 			helper.Error(w, http.StatusInternalServerError, err.Error())
@@ -47,14 +42,12 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 5. Update profiles inside persistence layer
 	updatedUser, err := h.Service.UpdateProfile(r.Context(), user.ID, payload)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// 6. Return success data
 	helper.Success(w, http.StatusOK, "Profile updated successfully", updatedUser)
 }
 
@@ -235,6 +228,7 @@ func (h *Handler) respondToFollowRequest(w http.ResponseWriter, r *http.Request,
 	helper.Success(w, http.StatusOK, msg, nil)
 }
 
+
 // GetAllUsers GET /api/v1/user/all
 func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.Service.GetAllUsers(r.Context())
@@ -297,4 +291,34 @@ func (h *Handler) GetFollowRequests(w http.ResponseWriter, r *http.Request) {
 	}
 
 	helper.Success(w, http.StatusOK, "Pending requests retrieved successfully", requestsList)
+}
+
+
+// GetSuggestedUsers GET /api/v1/user/suggestions?limit=5
+func (h *Handler) GetSuggestedUsers(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	println("there is the user for suggest ",user)
+	if !ok {
+		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	limit := 5
+	//take five for now then i will take more 
+	if raw := r.URL.Query().Get("limit"); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+	if limit > 20 {
+		limit = 20
+	}
+	suggestions, err := h.Service.GetSuggestedUsers(r.Context(), user.ID, limit)
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	//pass it to succes func 
+	// println("not every thing  is okay we bring exactlry what we need ",suggestions)
+	helper.Success(w, http.StatusOK, "Suggestions retrieved successfully", suggestions)
 }

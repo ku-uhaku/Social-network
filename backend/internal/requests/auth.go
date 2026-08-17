@@ -32,7 +32,8 @@ func ParseRegisterPayload(r *http.Request) (models.InputRegisterPayload, error) 
 		if aboutMe := strings.TrimSpace(r.FormValue("about_me")); aboutMe != "" {
 			payload.AboutMe = &aboutMe
 		}
-
+		deeefaultavatar:="/media/defaulte_avatar.jpeg"
+		payload.Avatar=&deeefaultavatar
 		if file, header, err := r.FormFile("avatar"); err == nil {
 			defer file.Close()
 			if header != nil && header.Size > 0 {

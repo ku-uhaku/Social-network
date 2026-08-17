@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getFeed } from "@/lib/api/posts";
 import PostCard from "@/components/posts/PostCard";
 import NailButton from "@/components/shared/NailButton";
+import SuggestedFollows from "@/components/sidebar/SuggestedFollows";
 
 const PAGE_LIMIT = 10;
 
@@ -19,6 +20,10 @@ export default function HomePage() {
   const [error, setError] = useState("");
 
   const applyFeed = useCallback((data, append) => {
+    //i will check first if the useer is exict 
+    console.log("thhhe user availaible",user)
+    if (!user )return
+
     setPosts((prev) => (append ? [...prev, ...(data.posts || [])] : data.posts || []));
     setNextCursor(data.next_cursor || null);
     setHasMore(Boolean(data.has_more));
@@ -53,38 +58,41 @@ export default function HomePage() {
   }
 
   return (
-    <section className="postsContainer">
-      <div className="feedHeader">
-        <div>
-          <h1 className="feedTitle">Home feed</h1>
+    <section className="feedLayout">
+      <SuggestedFollows />
+      <section className="postsContainer">
+        <div className="feedHeader">
+          <div>
+            <h1 className="feedTitle">Home feed</h1>
+          </div>
+          <Link href="/posts/create" className="createPostLink">
+            <NailButton>Create post</NailButton>
+          </Link>
         </div>
-        <Link href="/posts/create" className="createPostLink">
-          <NailButton>Create post</NailButton>
-        </Link>
-      </div>
 
-      {loading && <div className="postsPlaceholder">Loading your feed...</div>}
-      {error && <div className="postsError">{error}</div>}
-      {!loading && !error && posts.length === 0 && (
-        <div className="postsPlaceholder">No posts available yet. Create the first one.</div>
-      )}
+        {loading && <div className="postsPlaceholder">Loading your feed...</div>}
+        {error && <div className="postsError">{error}</div>}
+        {!loading && !error && posts.length === 0 && (
+          <div className="postsPlaceholder">No posts available yet. Create the first one.</div>
+        )}
 
-      <div className="feedList">
-        {posts.map((post) => (
-          <PostCard key={post.id} post={post} isFeed={true} />
-        ))}
-      </div>
-
-      {!loading && !error && hasMore && (
-        <div className="feedLoadMore">
-          <NailButton onClick={loadMore} disabled={loadingMore}>
-            {loadingMore ? "Loading..." : "Load more"}
-          </NailButton>
+        <div className="feedList">
+          {posts.map((post) => (
+            <PostCard key={post.id} post={post} isFeed={true} />
+          ))}
         </div>
-      )}
-      {!loading && !error && !hasMore && posts.length > 0 && (
-        <div className="feedEnd">{"You've reached the end of the feed."}</div>
-      )}
+
+        {!loading && !error && hasMore && (
+          <div className="feedLoadMore">
+            <NailButton onClick={loadMore} disabled={loadingMore}>
+              {loadingMore ? "Loading..." : "Load more"}
+            </NailButton>
+          </div>
+        )}
+        {!loading && !error && !hasMore && posts.length > 0 && (
+          <div className="feedEnd">{"You've reached the end of the feed."}</div>
+        )}
+      </section>
     </section>
   );
 }

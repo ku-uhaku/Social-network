@@ -29,4 +29,5 @@ func registerUserRoutes(mux *http.ServeMux, h *handler.Handler, m *middleware.Mi
 	mux.Handle("/api/v1/user/followers", m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.GetFollowers))))
 	mux.Handle("/api/v1/user/following", m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.GetFollowing))))
 	mux.Handle("/api/v1/user/all", m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.GetAllUsers))))
+	mux.Handle("/api/v1/user/suggestions", m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.GetSuggestedUsers))))
 }

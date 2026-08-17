@@ -50,3 +50,7 @@ export function getFollowers(userId) {
 export function getFollowing(userId) {
   return apiFetch(`/api/v1/user/following?id=${userId}`, { method: "GET" });
 }
+
+export function getSuggestedUsers(limit = 5) {
+  return apiFetch(`/api/v1/user/suggestions?limit=${limit}`, { method: "GET" });
+}

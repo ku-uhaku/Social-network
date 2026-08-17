@@ -149,3 +149,8 @@ func (s *Service) GetPendingRequests(ctx context.Context, userID int64) ([]model
 func (s *Service) GetAllUsers(ctx context.Context) ([]models.UserFollowView, error) {
 	return s.Repo.GetAllUsers(ctx)
 }
+
+// GetSuggestedUsers returns a shortlist of users for the viewer to follow
+func (s *Service) GetSuggestedUsers(ctx context.Context, viewerID int64, limit int) ([]models.UserFollowView, error) {
+	return s.Repo.GetSuggestedUsers(ctx, viewerID, limit)
+}
