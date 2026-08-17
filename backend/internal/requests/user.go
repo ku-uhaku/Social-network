@@ -13,6 +13,10 @@ func ValidateUpdateProfile(payload models.UpdateProfilePayload) []error {
 	if payload.IsPublic != 0 && payload.IsPublic != 1 {
 		errs = append(errs, errors.New("is_public must be either 0 (private) or 1 (public)"))
 	}
+	// _,err:=helper.IsValidImage([]byte(p.Content))
+	// if err!=nil{
+	// 	errs = append(errs, errors.New("the comment image not good check the format or content"))
+	// }
 
 	return errs
 }

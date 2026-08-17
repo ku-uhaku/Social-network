@@ -18,7 +18,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
-
+	
 	if validationErrs := requests.ValidateRegister(payload); len(validationErrs) > 0 {
 		fmt.Println("Validation errors:", validationErrs)
 		helper.ValidationErrorResponse(w, http.StatusUnprocessableEntity, validationErrs)

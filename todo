@@ -1,5 +1,6 @@
 get sugggests users [x]
-image handel fack image[]
+image handel fack image[x]
+add toast instead of error display []
 chat of groups []
 defaut avatar [x]
 error message for login and the register like :Validation failed: [object Object] []

@@ -73,7 +73,10 @@ func ValidateCreatePost(p models.CreatePostPayload) []error {
 	if strings.TrimSpace(p.Content) == "" {
 		errs = append(errs, errors.New("content cannot be empty"))
 	}
-
+	_,err:=helper.IsValidImage([]byte(p.Content))
+	if err!=nil{
+		errs = append(errs, errors.New("the image not valid check the type or the content "))
+	}
 	p.Privacy = strings.ToLower(strings.TrimSpace(p.Privacy))
 	if p.Privacy != "public" && p.Privacy != "almost private" && p.Privacy != "private" {
 		errs = append(errs, errors.New("privacy must be 'public', 'almost private', or 'private'"))
@@ -133,6 +136,10 @@ func ValidateCreateComment(p models.CreateCommentPayload) []error {
 	if strings.TrimSpace(p.Content) == "" {
 		errs = append(errs, errors.New("comment content cannot be empty"))
 	}
-
+	// _,err:=helper.IsValidImage([]byte(p.Content))
+	// if err!=nil{
+	// 	errs = append(errs, errors.New("the comment image not good check the format or content"))
+	// }
+	
 	return errs
 }

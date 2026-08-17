@@ -138,7 +138,20 @@ func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	// file, header, err := r.FormFile("image")
+	// if err != nil {
+	// 	http.Error(w, "failed to get uploaded file", http.StatusBadRequest)
+	// 	return
+	// }
+	// defer file.Close()
 
+	// _, err = helper.SaveUploadedImage(file, header)
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
+
+	// fmt.Fprintln(w, path)
 	if errs := requests.ValidateCreateComment(payload); len(errs) > 0 {
 		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, errs)
 		return
