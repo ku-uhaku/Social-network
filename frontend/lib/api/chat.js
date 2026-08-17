@@ -16,3 +16,8 @@ export function markChatRead(userId) {
     body: { user_id: userId },
   });
 }
+
+export function getGroupHistory(groupId, { page = 1 } = {}) {
+  const params = new URLSearchParams({ group_id: String(groupId), page: String(page) });
+  return apiFetch(`/api/v1/chat/group?${params}`, { method: "GET" });
+}

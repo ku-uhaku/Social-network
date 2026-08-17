@@ -22,19 +22,28 @@ RETURNING id, sender_id, receiver_id, content, created_at
 	return &msg, nil
 }
 
-// SaveGroupMessage persists a group message
+// SaveGroupMessage persisssts a group messsage and returns it joiined with the
+// sender's username/avatar so realtime recipients can render it immediately.
 func (r *Repository) SaveGroupMessage(ctx context.Context, senderID, groupID int64, content string) (*models.GroupMessage, error) {
-	query := `
-INSERT INTO group_messages (group_id, sender_id, content)
+	println("the user id",senderID)
+	println("the grouii id",groupID)
+	println("the conteeent ",content)
+
+	query := ` INSERT INTO group_messages (group_id, sender_id, content)
 VALUES ($1, $2, $3)
-RETURNING id, group_id, sender_id, content, created_at
+RETURNING id, group_id, sender_id, content, created_at,
+          (SELECT username FROM users WHERE id = sender_id),
+          (SELECT avatar FROM users WHERE id = sender_id)
 `
 	var msg models.GroupMessage
+	// var err error
 	err := r.DB.Database.QueryRowContext(ctx, query, groupID, senderID, content).
-		Scan(&msg.ID, &msg.GroupID, &msg.SenderID, &msg.Content, &msg.CreatedAt)
+		Scan(&msg.ID, &msg.GroupID, &msg.SenderID, &msg.Content, &msg.CreatedAt, &msg.Username, &msg.Avatar)
 	if err != nil {
+		println("am sure the errr is here ",err)
 		return nil, err
 	}
+	println("the message",&msg)
 	return &msg, nil
 }
 

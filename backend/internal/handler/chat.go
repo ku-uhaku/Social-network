@@ -96,6 +96,7 @@ func (h *Handler) GetGroupHistory(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
+	println("we have now an message for groups ")
 
 	groupID, err := strconv.ParseInt(r.URL.Query().Get("group_id"), 10, 64)
 	if err != nil || groupID <= 0 {

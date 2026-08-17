@@ -1,0 +1,180 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useWebSocket } from "@/contexts/WebSocketContext";
+import { getGroupHistory } from "@/lib/api/chat";
+import Avatar from "@/components/shared/Avatar";
+import EmojiPicker from "./EmojiPicker";
+import "@/css/chat.css";
+
+const pageSize = 30;
+
+export default function GroupChat({ groupId, title, meId, onClose }) {
+  const { send, subscribe } = useWebSocket();
+  const [messages, setMessages] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const listEndRef = useRef(null);
+
+  
+  useEffect(() => {
+    let cancelled = false;
+    getGroupHistory(groupId, { page: 1 })
+      .then((res) => {
+        if (cancelled) return;
+        const history = Array.isArray(res?.data) ? res.data : [];
+        setMessages(history.slice().reverse());
+        setHasMore(history.length === pageSize);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [groupId]);
+
+  useEffect(() => {
+    const unsub = subscribe("new_group_message", (msg) => {
+      if (!msg || msg.group_id !== groupId) return;
+      setMessages((prev) =>
+        prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]
+      );
+    });
+    return unsub;
+  }, [subscribe, groupId]);
+
+  // Keep the newest message in view.
+  useEffect(() => {
+    listEndRef.current?.scrollIntoView({ block: "end" });
+  }, [messages.length]);
+
+  const loadOlder = async () => {
+    if (loadingOlder || !hasMore) return;
+    setLoadingOlder(true);
+    try {
+      const nextPage = page + 1;
+      const res = await getGroupHistory(groupId, { page: nextPage });
+      const older = Array.isArray(res?.data) ? res.data : [];
+      if (older.length === 0) {
+        setHasMore(false);
+      } else {
+        setMessages((prev) => [...older.slice().reverse(), ...prev]);
+        setPage(nextPage);
+        setHasMore(older.length === pageSize);
+      }
+    } catch {
+      /* ignore; keep existing messages */
+    } finally {
+      setLoadingOlder(false);
+    }
+  };
+
+  const sendMessage = () => {
+    const content = draft.trim();
+    console.log("there is content ",content)
+    if (!content) return;
+    send("send_group_message", { group_id: groupId, content });
+    setDraft("");
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  return (
+    <div className="chatModalOverlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="chatModal chatThread">
+        <div className="chatPanelHeader">
+          <div className="chatThreadTitle">
+            <strong className="chatContactName">{title}</strong>
+          </div>
+          <button type="button" className="chatCloseButton" onClick={onClose}>
+            &times;
+          </button>
+        </div>
+
+        <div className="chatMessages">
+          {!loaded && <p className="chatEmpty">Loading...</p>}
+          {loaded && hasMore && (
+            <button
+              type="button"
+              className="chatLoadOlder"
+              onClick={loadOlder}
+              disabled={loadingOlder}
+            >
+              {loadingOlder ? "Loading..." : "Load previous"}
+            </button>
+          )}
+          {loaded && messages.length === 0 && (
+            <p className="chatEmpty">No messages yet. Say hello!</p>
+          )}
+          {messages.map((m) => {
+            const mine = m.sender_id === meId;
+            return (
+              <div key={m.id} className="chatGroupMessage">
+                {!mine && (
+                  <div className="chatSender">
+                    <Avatar avatar={m.avatar} username={m.username} size={22} />
+                    <span className="chatSenderName">{m.username}</span>
+                  </div>
+                )}
+                <div className={`chatBubble ${mine ? "mine" : "theirs"}`}>
+                  <span className="chatBubbleText">{m.content}</span>
+                  <span className="chatBubbleTime">{formatTime(m.created_at)}</span>
+                </div>
+              </div>
+            );
+          })}
+          <div ref={listEndRef} />
+        </div>
+
+        {emojiOpen && <EmojiPicker onPick={(e) => setDraft((d) => d + e)} />}
+
+        <div className="chatComposer">
+          <button
+            type="button"
+            className={`chatEmojiToggle ${emojiOpen ? "active" : ""}`}
+            onClick={() => setEmojiOpen(!emojiOpen)}
+            title="Emoji"
+          >
+            {"☺"}
+          </button>
+          <textarea
+            className="chatInput"
+            rows={1}
+            value={draft}
+            placeholder="Type..."
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          <button type="button" className="chatSendButton" onClick={sendMessage}>
+            Send
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function formatTime(dateString) {
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const time = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  if (date.toDateString() === new Date().toDateString()) {
+    return time;
+  }
+
+  return `${date.toLocaleDateString([], { month: "short", day: "numeric" })} ${time}`;
+}

@@ -4,15 +4,18 @@ import { use, useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getGroup, getGroupFeed, joinGroup, leaveGroup, inviteUsers, getAllUsers, getGroupMembers } from "@/lib/api/groups";
+import { useAuth } from "@/contexts/AuthContext";
 import PostCard from "@/components/posts/PostCard";
 import NailButton from "@/components/shared/NailButton";
 import UsersSelect from "@/components/shared/UsersSelect";
+import GroupChat from "@/components/chat/GroupChat";
 import "@/css/groups.css";
 
 const pageLimit = 10;
 
 export default function GroupDetailPage({ params }) {
   const { id } = use(params);
+  const { user } = useAuth();
   const [group, setGroup] = useState(null);
   const [membership, setMembership] = useState("none");
   const [loadingGroup, setLoadingGroup] = useState(true);
@@ -25,6 +28,7 @@ export default function GroupDetailPage({ params }) {
   const [actionError, setActionError] = useState("");
   const [inviteOpen, setInviteOpen] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const groupId = Number(id);
   if (isNaN(groupId)) notFound();
@@ -134,6 +138,7 @@ export default function GroupDetailPage({ params }) {
               <Link href={`/group/${groupId}/events`}>
                 <NailButton>Events</NailButton>
               </Link>
+              <NailButton onClick={() => setChatOpen(true)}>Chat</NailButton>
               <NailButton onClick={() => setMembersOpen(true)}>Members</NailButton>
               <NailButton onClick={() => setInviteOpen(!inviteOpen)}>
                 {inviteOpen ? "Close invite" : "Invite"}
@@ -195,6 +200,15 @@ export default function GroupDetailPage({ params }) {
         </>
       ) : (
         <div className="postsPlaceholder">Join this group to see its posts.</div>
+      )}
+
+      {chatOpen && membership === "accepted" && (
+        <GroupChat
+          groupId={groupId}
+          title={group.title}
+          meId={user?.id}
+          onClose={() => setChatOpen(false)}
+        />
       )}
     </section>
   );
