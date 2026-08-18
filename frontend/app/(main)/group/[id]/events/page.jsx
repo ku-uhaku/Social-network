@@ -2,6 +2,7 @@
 import { use, useEffect, useRef, useState } from "react";
 import { notFound } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 import { getGroup, getGroupEvents, createGroupEvent, cancelGroupEvent, setEventResponse } from "@/lib/api/groups";
 import NailButton from "@/components/shared/NailButton";
 import "@/css/groups.css";
@@ -10,6 +11,7 @@ import "@/css/groups.css";
 export default function GroupEventsPage({ params }) {
   const { id } = use(params);
   const { user: currentUser } = useAuth();
+  const toast = useToast();
   const groupId = Number(id);
   if (isNaN(groupId)) notFound();
 
@@ -56,14 +58,15 @@ export default function GroupEventsPage({ params }) {
 
   async function handleCreate(e) {
     e.preventDefault();
-    setError("");
-    if (!dateTime) { setError("Choose a date and time for the event."); return; }
+    if (!dateTime) { toast.error("Choose a date and time for the event."); return; }
     setSubmitting(true);
     try {
       await createGroupEvent({ group_id: groupId, title, description, event_time: new Date(dateTime).toISOString() });
       setTitle(""); setDescription(""); setDateTime(""); setFormOpen(false);
       reloadEvents();
-    } catch (err) { setError(err?.message || "Could not create event."); }
+    } catch (err) {
+      toast.error(err?.message || "Could not create event.", { action: { label: "Go Home", href: "/" } });
+    }
     finally { setSubmitting(false); }
   }
 
@@ -99,7 +102,7 @@ export default function GroupEventsPage({ params }) {
       }
     } catch (err) {
       setEvents((list) => list.map((ev) => (ev.id === eventId ? prev : ev)));
-      setError(err?.message || "Could not update your response.");
+      toast.error(err?.message || "Could not update your response.");
     } finally {
       pendingRef.current.delete(eventId);
     }
@@ -107,7 +110,7 @@ export default function GroupEventsPage({ params }) {
 
   async function handleCancel(eventId) {
     try { await cancelGroupEvent(eventId); reloadEvents(); }
-    catch (err) { setError(err?.message || "Could not cancel event."); }
+    catch (err) { toast.error(err?.message || "Could not cancel event."); }
   }
 
   if (loading) return <div className="postsPlaceholder">Loading events...</div>;

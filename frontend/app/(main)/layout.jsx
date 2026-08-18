@@ -27,6 +27,7 @@ export default function MainLayout({ children }) {
   const router = useRouter();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const headerRef = useRef(null);
   const chat = useChat();
 
@@ -72,9 +73,21 @@ export default function MainLayout({ children }) {
               <strong className="userName">{user.username}</strong>
             </div>
           </div>
+
+          <button
+            type="button"
+            className={`headerMenuToggle ${menuOpen ? "open" : ""}`}
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label="Toggle menu"
+            aria-expanded={menuOpen}
+          >
+            <span className="headerMenuBar" />
+            <span className="headerMenuBar" />
+            <span className="headerMenuBar" />
+          </button>
         </div>
 
-        <div className="headerRight">
+        <div className={`headerRight ${menuOpen ? "open" : ""}`}>
           <div className="headerRightRow">
             <div className="headerControlWrap">
               <IconButton

@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useWebSocket } from "@/contexts/WebSocketContext";
+import { useAudio } from "@/contexts/AudioContext";
+import { useGroupChat } from "@/contexts/GroupChatContext";
 import { getGroupHistory } from "@/lib/api/chat";
 import Avatar from "@/components/shared/Avatar";
 import EmojiPicker from "./EmojiPicker";
@@ -11,6 +13,19 @@ const pageSize = 30;
 
 export default function GroupChat({ groupId, title, meId, onClose }) {
   const { send, subscribe } = useWebSocket();
+  const { playSfx } = useAudio();
+  const { openGroup, closeGroup } = useGroupChat();
+  const playSfxRef = useRef(playSfx);
+  useEffect(() => {
+    playSfxRef.current = playSfx;
+  }, [playSfx]);
+
+  // Mark this group as the open chat (clears its unread badge).
+  useEffect(() => {
+    openGroup(groupId);
+    return () => closeGroup(groupId);
+  }, [groupId, openGroup, closeGroup]);
+
   const [messages, setMessages] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [page, setPage] = useState(1);
@@ -45,9 +60,10 @@ export default function GroupChat({ groupId, title, meId, onClose }) {
       setMessages((prev) =>
         prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]
       );
+      if (msg.sender_id !== meId) playSfxRef.current("/audio/receive.mp3");
     });
     return unsub;
-  }, [subscribe, groupId]);
+  }, [subscribe, groupId, meId]);
 
   // Keep the newest message in view.
   useEffect(() => {
@@ -77,9 +93,9 @@ export default function GroupChat({ groupId, title, meId, onClose }) {
 
   const sendMessage = () => {
     const content = draft.trim();
-    console.log("there is content ",content)
     if (!content) return;
     send("send_group_message", { group_id: groupId, content });
+    playSfxRef.current("/audio/send.mp3");
     setDraft("");
   };
 

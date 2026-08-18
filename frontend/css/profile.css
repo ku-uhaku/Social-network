@@ -98,7 +98,7 @@
   border-radius: 999px;
   padding: 8px 20px;
   color: var(--muted);
-  font-family: inherit;
+   /* font-family: inherit; */
   font-size: 0.9rem;
   cursor: pointer;
   transition: border-color 0.2s, color 0.2s;
@@ -121,7 +121,7 @@
   padding: 10px 32px;
   border-radius: 999px;
   cursor: pointer;
-  font-family: inherit;
+   /* font-family: inherit; */
   font-size: 14px;
   letter-spacing: 0.16em;
   text-transform: uppercase;

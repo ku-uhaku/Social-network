@@ -85,7 +85,7 @@
   color: var(--bone);
   text-align: left;
   cursor: pointer;
-  font-family: inherit;
+   /* font-family: inherit; */
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 
@@ -232,7 +232,7 @@
   border: 1px solid var(--border);
   background: rgba(10, 13, 18, 0.7);
   color: var(--bone);
-  font-family: inherit;
+  /*  /* font-family: inherit; */ 
   font-size: 13px;
   border-radius: 4px;
   padding: 8px 10px;
@@ -250,7 +250,7 @@
   border-radius: 4px;
   background: transparent;
   color: var(--bone);
-  font-family: inherit;
+   /* font-family: inherit; */
   font-size: 12px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -339,7 +339,7 @@
   border-radius: 999px;
   background: transparent;
   color: var(--muted);
-  font-family: inherit;
+   /* font-family: inherit; */
   font-size: 12px;
   letter-spacing: 0.12em;
   text-transform: uppercase;

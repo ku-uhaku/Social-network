@@ -6,6 +6,7 @@ import (
 	"net/mail"
 	"regexp"
 	"strings"
+	"time"
 
 	"kuu/internal/helper"
 	"kuu/internal/models"
@@ -107,14 +108,25 @@ func ValidateRegister(payload models.InputRegisterPayload) []ValidationError {
 			Message: "gender must be either male or female",
 		})
 	}
-
-	if strings.TrimSpace(payload.DateOfBirth) == "" {
+	// i would validate usee age 
+	dateOfBirth := strings.TrimSpace(payload.DateOfBirth)
+	if dateOfBirth == "" {
 		errs = append(errs, ValidationError{
 			Field:   "date_of_birth",
 			Message: "date of birth is required",
 		})
+	} else if birth, parseErr := time.Parse("2006-01-02", dateOfBirth); parseErr != nil {
+		errs = append(errs, ValidationError{
+			Field:   "date_of_birth",
+			Message: "date of birth must be a valid date (YYYY-MM-DD)",
+		})
+	} else if birth.AddDate(18, 0, 0).After(time.Now()) {
+		errs = append(errs, ValidationError{
+			Field:   "date_of_birth",
+			Message: "you must be at least 18 years old to register",
+		})
 	}
-	
+
 
 	if len(payload.Password) < 8 {
 		errs = append(errs, ValidationError{

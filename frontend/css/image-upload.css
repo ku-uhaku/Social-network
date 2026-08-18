@@ -35,7 +35,7 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
-  font-family: inherit;
+   /* font-family: inherit; */
   transition: border-color 0.2s, color 0.2s;
 }
 
@@ -54,7 +54,7 @@
   text-transform: uppercase;
   color: var(--muted);
   cursor: pointer;
-  font-family: inherit;
+   /* font-family: inherit; */
   white-space: nowrap;
   transition: border-color 0.2s, color 0.2s;
 }

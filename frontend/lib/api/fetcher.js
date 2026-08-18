@@ -22,7 +22,11 @@ export async function apiFetch(path, options = {}) {
   }
 
   if (!res.ok) {
-    const details = Array.isArray(data?.errors) ? `: ${data.errors.join(", ")}` : "";
+    const details = Array.isArray(data?.errors)
+      ? `: ${data.errors
+          .map((e) => (typeof e === "string" ? e : e?.message || JSON.stringify(e)))
+          .join(", ")}`
+      : "";
     throw new Error(`${data?.message || res.statusText}${details}`);
   }
 

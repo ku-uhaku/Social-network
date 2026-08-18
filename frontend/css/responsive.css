@@ -35,10 +35,24 @@
     justify-content: space-between;
   }
 
+  .headerMenuToggle {
+    display: inline-flex;
+  }
+
   .headerRight {
     width: 100%;
     align-items: center;
     gap: 6px;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease, opacity 0.2s ease, gap 0.25s ease;
+  }
+
+  .headerRight.open {
+    max-height: 260px;
+    opacity: 1;
+    gap: 8px;
   }
 
   .headerRightRow {

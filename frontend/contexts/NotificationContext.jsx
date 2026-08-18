@@ -45,8 +45,11 @@ export function NotificationProvider({ children }) {
     notificationsApi.getNotifications()
       .then((data) => {
         if (cancelled) return;
-        setNotifications(data?.data?.notifications ?? data?.notifications ?? []);
-        setUnreadCount(data?.data?.unread_count ?? data?.unread_count ?? 0);
+        const list = (data?.data?.notifications ?? data?.notifications ?? []).filter(
+          (n) => n.type !== "group_message"
+        );
+        setNotifications(list);
+        setUnreadCount(list.filter((n) => !n.is_read && !n.is_expired).length);
       })
       .catch(() => {
         // keep existing state on failure
@@ -64,7 +67,7 @@ export function NotificationProvider({ children }) {
     if (!user) return;
 
     const unsubNew = subscribe("new_notification", (payload) => {
-      if (!payload) return;
+      if (!payload || payload.type === "group_message") return;
       setNotifications((prev) => {
         // deduplicate in case of notifications with same id
         if (prev.some((n) => n.id === payload.id)) return prev;

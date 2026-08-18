@@ -134,7 +134,7 @@
   background: transparent;
   color: var(--bone);
   cursor: pointer;
-  font-family: inherit;
+   /* font-family: inherit; */
   font-size: 12px;
   letter-spacing: 0.12em;
   text-transform: uppercase;

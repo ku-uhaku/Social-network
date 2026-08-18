@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getGroup, getGroupFeed, joinGroup, leaveGroup, inviteUsers, getAllUsers, getGroupMembers } from "@/lib/api/groups";
 import { useAuth } from "@/contexts/AuthContext";
+import { useGroupChat } from "@/contexts/GroupChatContext";
 import PostCard from "@/components/posts/PostCard";
 import NailButton from "@/components/shared/NailButton";
 import UsersSelect from "@/components/shared/UsersSelect";
@@ -16,6 +17,7 @@ const pageLimit = 10;
 export default function GroupDetailPage({ params }) {
   const { id } = use(params);
   const { user } = useAuth();
+  const { unread } = useGroupChat();
   const [group, setGroup] = useState(null);
   const [membership, setMembership] = useState("none");
   const [loadingGroup, setLoadingGroup] = useState(true);
@@ -32,6 +34,7 @@ export default function GroupDetailPage({ params }) {
 
   const groupId = Number(id);
   if (isNaN(groupId)) notFound();
+  const unreadCount = unread[groupId] || 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -138,7 +141,10 @@ export default function GroupDetailPage({ params }) {
               <Link href={`/group/${groupId}/events`}>
                 <NailButton>Events</NailButton>
               </Link>
-              <NailButton onClick={() => setChatOpen(true)}>Chat</NailButton>
+              <span className="groupChatButton">
+                <NailButton onClick={() => setChatOpen(true)}>Chat</NailButton>
+                {unreadCount > 0 && <span className="groupChatBadge">{unreadCount}</span>}
+              </span>
               <NailButton onClick={() => setMembersOpen(true)}>Members</NailButton>
               <NailButton onClick={() => setInviteOpen(!inviteOpen)}>
                 {inviteOpen ? "Close invite" : "Invite"}

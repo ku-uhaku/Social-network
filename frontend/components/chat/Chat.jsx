@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
+import { useAudio } from "@/contexts/AudioContext";
 import { getConversations, getDirectHistory, markChatRead } from "@/lib/api/chat";
 import Avatar from "@/components/shared/Avatar";
 import EmojiPicker from "./EmojiPicker";
@@ -20,6 +21,11 @@ const empty_single_chat = {
 export function useChat() {
   const { user } = useAuth();
   const { send, subscribe } = useWebSocket();
+  const { playSfx } = useAudio();
+  const playSfxRef = useRef(playSfx);
+  useEffect(() => {
+    playSfxRef.current = playSfx;
+  }, [playSfx]);
 
   const [open, setOpen] = useState(false);
   const [conversations, setConversations] = useState([]);
@@ -85,6 +91,8 @@ export function useChat() {
       });
 
       if (isViewing) markChatRead(otherId).catch(() => {});
+
+      if (msg.sender_id !== user.id) playSfxRef.current("/audio/receive.mp3");
     });
     return unsub;
   }, [user, subscribe, open, activeId]);
@@ -146,6 +154,7 @@ export function useChat() {
     const content = draft.trim();
     if (!content || !activeId) return;
     send("send_direct_message", { receiver_id: activeId, content });
+    playSfxRef.current("/audio/send.mp3");
     setDraft("");
   };
 
