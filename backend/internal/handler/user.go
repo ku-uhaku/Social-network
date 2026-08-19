@@ -116,7 +116,6 @@ func (h *Handler) FollowUser(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
-
 	var payload models.FollowActionPayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")

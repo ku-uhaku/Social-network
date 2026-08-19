@@ -113,8 +113,8 @@ func (r *Repository) CreateUser(ctx context.Context, payload models.InputRegiste
 		id := strconv.FormatInt(user.ID, 10)
 		_, err = r.DB.Database.Exec(`
 		UPDATE users 
-		SET username = ?
-		WHERE id=?
+		SET username = $1
+		WHERE id=$2
 		`, "user"+id, user.ID)
 		if err != nil {
 			return nil, err

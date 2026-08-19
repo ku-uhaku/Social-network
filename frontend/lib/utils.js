@@ -8,6 +8,32 @@ export function formatDate(value, options) {
   return date.toLocaleDateString(undefined, options);
 }
 
+export function isOldEnough(birthday) {
+    const birthDate = new Date(birthday);
+    console.log(birthDate);
+    
+    const today = new Date();
+    console.log("today",today);
+    
+    
+    let age = today.getFullYear() - birthDate.getFullYear();
+     
+    const month = today.getMonth() - birthDate.getMonth();
+
+    if (
+        month < 0 ||
+        (month === 0 && today.getDate() < birthDate.getDate())
+    ) {
+        age--;
+    }
+    if (age>100){
+      return false
+    }
+    
+    
+    return age >= 16;
+}
+
 export function resolveMediaSrc(value) {
   // image path is either a path in "backend/media" or "http.." path for testing
   if (!value) return null;

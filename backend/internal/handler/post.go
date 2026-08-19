@@ -120,7 +120,6 @@ func (h *Handler) GetPost(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	
 	println("the is the post data feed ",post.Content,post.Title)
 	helper.Success(w, http.StatusOK, "Post retrieved successfully", post)
 }

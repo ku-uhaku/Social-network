@@ -40,7 +40,6 @@ export default function HomePage() {
         setLoading(false);
       }
     }
-
     loadFeed();
   }, [applyFeed]);
 

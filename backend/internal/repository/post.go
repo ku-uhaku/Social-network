@@ -109,11 +109,12 @@ func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64, limi
 		JOIN users u ON u.id = p.user_id
 		WHERE
 			p.user_id = $1 OR
+			p.privacy = 'public' OR
 			(p.group_id IS NOT NULL AND EXISTS (
 				SELECT 1 FROM group_members gm
 				WHERE gm.group_id = p.group_id AND gm.user_id = $1 AND gm.status = 'accepted'
 			)) OR
-			(p.group_id IS NULL AND p.privacy IN ('public', 'almost private') AND EXISTS (
+			(p.group_id IS NULL AND p.privacy ='almost private' AND EXISTS (
 				SELECT 1 FROM follows f
 				WHERE f.following_id = p.user_id AND f.follower_id = $1 AND f.status = 'accepted'
 			)) OR
@@ -133,6 +134,7 @@ func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64, limi
 
 	rows, err := r.DB.Database.QueryContext(ctx, query, args...)
 	if err != nil {
+		fmt.Println(err)
 		return nil, false, err
 	}
 	defer rows.Close()
@@ -154,6 +156,7 @@ func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64, limi
 	if hasMore {
 		posts = posts[:limit]
 	}
+	fmt.Println("POSTS:::",posts)
 	return posts, hasMore, nil
 }
 
