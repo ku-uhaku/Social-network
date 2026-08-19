@@ -67,16 +67,17 @@ func ParseCreatePostPayload(r *http.Request) (models.CreatePostPayload, error) {
 // ValidateCreatePost validates the CreatePostPayload struct
 func ValidateCreatePost(p models.CreatePostPayload) []error {
 	var errs []error
+	println("that is the conneterwb ",p.Content,p.Title)
 	if strings.TrimSpace(p.Title) == "" {
 		errs = append(errs, errors.New("title cannot be empty"))
 	}
 	if strings.TrimSpace(p.Content) == "" {
 		errs = append(errs, errors.New("content cannot be empty"))
 	}
-	_,err:=helper.IsValidImage([]byte(p.Content))
-	if err!=nil{
-		errs = append(errs, errors.New("the image not valid check the type or the content "))
-	}
+	// _,err:=helper.IsValidImage([]byte(p.Content))
+	// if err!=nil{
+	// 	errs = append(errs, errors.New("the image not valid check the type or the content "))
+	// }
 	p.Privacy = strings.ToLower(strings.TrimSpace(p.Privacy))
 	if p.Privacy != "public" && p.Privacy != "almost private" && p.Privacy != "private" {
 		errs = append(errs, errors.New("privacy must be 'public', 'almost private', or 'private'"))

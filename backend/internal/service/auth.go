@@ -18,7 +18,6 @@ func (s *Service) RegisterUser(ctx context.Context, payload models.InputRegister
 	if err != nil {
 		return nil, errors.New("failed to secure user credentials")
 	}
-
 	// 2. Pass the record onto the persistence layer
 	user, err := s.Repo.CreateUser(ctx, payload, string(hashedBytes))
 	if err != nil {
