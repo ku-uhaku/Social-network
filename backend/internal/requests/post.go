@@ -67,24 +67,38 @@ func ParseCreatePostPayload(r *http.Request) (models.CreatePostPayload, error) {
 // ValidateCreatePost validates the CreatePostPayload struct
 func ValidateCreatePost(p models.CreatePostPayload) []error {
 	var errs []error
-	if strings.TrimSpace(p.Title) == "" {
-		errs = append(errs, errors.New("title cannot be empty"))
+	if strings.TrimSpace(p.Title) == ""  {
+		errs = append(errs, errors.New("title cannot be empty  "))
+		return errs
 	}
-	if strings.TrimSpace(p.Content) == "" {
-		errs = append(errs, errors.New("content cannot be empty"))
+	if len((p.Title))>40{
+		errs = append(errs, errors.New("title cannot be long then 40 letter "))
+		return errs
 	}
-	_,err:=helper.IsValidImage([]byte(p.Content))
-	if err!=nil{
-		errs = append(errs, errors.New("the image not valid check the type or the content "))
+	if strings.TrimSpace(p.Content) == "" || len(p.Content)>200 {
+		errs = append(errs, errors.New("content cannot be empty on more long "))
+		return  errs
 	}
+	if len(p.Content)>200{
+		errs = append(errs, errors.New("conttent cannot be long theeen 200 letter "))
+		return errs
+	}
+	
+	// _,err:=helper.IsValidImage([]byte(p.ImageURL))
+	// if err!=nil{
+	// 	errs = append(errs, errors.New("the image not valid check the type or the content "))
+	// 	return  errs
+	// }
 	p.Privacy = strings.ToLower(strings.TrimSpace(p.Privacy))
 	if p.Privacy != "public" && p.Privacy != "almost private" && p.Privacy != "private" {
 		errs = append(errs, errors.New("privacy must be 'public', 'almost private', or 'private'"))
+		return  errs
 	}
 
 	// visible_to for private posts
 	if p.Privacy == "private" && len(p.VisibleTo) == 0 {
 		errs = append(errs, errors.New("private posts must specify visible_to users"))
+		return errs
 	}
 
 	return errs
@@ -132,9 +146,19 @@ func ValidateCreateComment(p models.CreateCommentPayload) []error {
 	}
 	if strings.TrimSpace(p.Title) == "" {
 		errs = append(errs, errors.New("comment title is required"))
+		return errs
+	}
+	if len(p.Title)>40{
+		errs = append(errs, errors.New("comment title is moore long then 40 letter "))
+		return errs
 	}
 	if strings.TrimSpace(p.Content) == "" {
 		errs = append(errs, errors.New("comment content cannot be empty"))
+		return errs
+	}
+	if len(p.Title)>200{
+		errs = append(errs, errors.New("comment conntent is moore long then 200 letter "))
+		return errs
 	}
 	// _,err:=helper.IsValidImage([]byte(p.Content))
 	// if err!=nil{
