@@ -70,7 +70,6 @@ func (h *Handler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
 	helper.Success(w, http.StatusOK, "Profile retrieved successfully", profile)
 }
 

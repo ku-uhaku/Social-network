@@ -110,7 +110,11 @@ func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64, limi
 		WHERE
 		p.group_id IS NULL AND 
 			(p.user_id = $1   OR
-			p.privacy = 'public' OR
+			(p.privacy = 'public' AND u.is_public = 1) OR 
+			(p.privacy = 'public' AND u.is_public = 0 AND EXISTS (
+				SELECT 1 FROM follows f
+				WHERE f.following_id = p.user_id AND f.follower_id = $1 AND f.status = 'accepted'
+			)) OR
 			( p.privacy ='almost private' AND EXISTS (
 				SELECT 1 FROM follows f
 				WHERE f.following_id = p.user_id AND f.follower_id = $1 AND f.status = 'accepted'
@@ -153,7 +157,7 @@ func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64, limi
 	if hasMore {
 		posts = posts[:limit]
 	}
-	fmt.Println("POSTS:::", posts)
+	// fmt.Println("POSTS:::", posts)
 	return posts, hasMore, nil
 }
 

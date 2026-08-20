@@ -70,6 +70,25 @@ func (r *Repository) GetUserByUsername(ctx context.Context, username string) (*m
 
 	return &user, nil
 }
+func (r *Repository) IsPrivate(ctx context.Context, id int64) (bool, error) {
+	// var user models.User
+	var is_public  int
+	query := `
+        SELECT is_public
+        FROM users 
+        WHERE id = $1
+    `
+	err := r.DB.Database.QueryRowContext(ctx, query, id).Scan(
+		&is_public,
+	)
+	if err != nil {
+		return false, err // Returns sql.ErrNoRows if the username doesn't exist
+	}
+	if (is_public==1){
+		return  false,nil
+	}
+	return true, nil
+}
 
 func (r *Repository) CreateUser(ctx context.Context, payload models.InputRegisterPayload, hashedPassword string) (*models.User, error) {
 	var user models.User

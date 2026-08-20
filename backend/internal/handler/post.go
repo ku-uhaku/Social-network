@@ -40,7 +40,7 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
+	
 	helper.Success(w, http.StatusCreated, "Post created successfully", post)
 }
 

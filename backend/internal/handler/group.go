@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -332,29 +331,29 @@ func (h *Handler) JoinGroup(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 	// if membership == "pending" {
-		group, err := h.Service.GetGroupByID(r.Context(), payload.GroupID)
-		if err != nil {
-			helper.Error(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		actorID := user.ID
-		if _, err := h.DispatchNotification(r.Context(), group.CreatorID, &models.Notification{
-			RecipientID: group.CreatorID,
-			ActorID:     &actorID,
-			Type:        models.NotificationGroupJoinRequest,
-			Title:       "Group join request",
-			Message:     user.Username + " requested to join " + group.Title,
-			Payload:     models.JSONText{"group_id": group.ID, "target_user_id": user.ID},
-			Actions: models.JSONText{
-				"buttons": []interface{}{
-					map[string]interface{}{"action": "accept", "label": "Accept"},
-					map[string]interface{}{"action": "decline", "label": "Decline"},
-				},
+	group, err := h.Service.GetGroupByID(r.Context(), payload.GroupID)
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	actorID := user.ID
+	if _, err := h.DispatchNotification(r.Context(), group.CreatorID, &models.Notification{
+		RecipientID: group.CreatorID,
+		ActorID:     &actorID,
+		Type:        models.NotificationGroupJoinRequest,
+		Title:       "Group join request",
+		Message:     user.Username + " requested to join " + group.Title,
+		Payload:     models.JSONText{"group_id": group.ID, "target_user_id": user.ID},
+		Actions: models.JSONText{
+			"buttons": []interface{}{
+				map[string]interface{}{"action": "accept", "label": "Accept"},
+				map[string]interface{}{"action": "decline", "label": "Decline"},
 			},
-		}); err != nil {
-			helper.Error(w, http.StatusInternalServerError, err.Error())
-			return
-		}
+		},
+	}); err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 	helper.Success(w, http.StatusOK, "Join request processed", nil)
 }
 
@@ -647,13 +646,13 @@ func (h *Handler) HandleJoinRequestAction(w http.ResponseWriter, r *http.Request
 		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, errs)
 		return
 	}
-	
+
 	if err := h.Service.HandleJoinRequest(r.Context(), user.ID, payload.GroupID, payload.TargetUserID, accept); err != nil {
 		if errors.Is(err, service.ErrNotGroupCreator) {
 			helper.Error(w, http.StatusForbidden, err.Error())
 			return
 		}
-		fmt.Println("this is the error:::",err)
+		// fmt.Println("this is the error:::",err)
 		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
