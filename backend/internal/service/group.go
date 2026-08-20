@@ -100,19 +100,19 @@ func (s *Service) RespondToInvitation(ctx context.Context, userID int64, groupID
 
 // JoinGroup handles public join or requesting join for private groups
 func (s *Service) JoinGroup(ctx context.Context, userID int64, groupID int64) error {
-	group, err := s.Repo.GetGroupByID(ctx, groupID)
-	if err != nil {
-		return err
-	}
+	// group, err := s.Repo.GetGroupByID(ctx, groupID)
+	// if err != nil {
+	// 	return err
+	// }
 
 	status, err := s.Repo.GetMemberStatus(ctx, groupID, userID)
 	if err == nil && (status == "accepted" || status == "pending") {
 		return ErrAlreadyMember
 	}
 
-	if group.IsPublic == 1 {
-		return s.Repo.AddMember(ctx, groupID, userID, "accepted")
-	}
+	// if group.IsPublic == 1 {
+	// 	return s.Repo.AddMember(ctx, groupID, userID, "accepted")
+	// }
 
 	// For private group: create a pending join request
 	return s.Repo.AddMember(ctx, groupID, userID, "pending")
@@ -127,7 +127,6 @@ func (s *Service) HandleJoinRequest(ctx context.Context, creatorID int64, groupI
 	if group.CreatorID != creatorID {
 		return ErrNotGroupCreator
 	}
-
 	if approve {
 		return s.Repo.UpdateMemberStatus(ctx, groupID, targetUserID, "accepted")
 	}

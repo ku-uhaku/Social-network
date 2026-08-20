@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -313,7 +314,6 @@ func (h *Handler) JoinGroup(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
-
 	var payload models.GroupActionPayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
@@ -326,12 +326,12 @@ func (h *Handler) JoinGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If a pending join request was created (private group), notify the creator
-	membership, err := h.Service.GetMembershipStatus(r.Context(), payload.GroupID, user.ID)
-	if err != nil {
-		helper.Error(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	if membership == "pending" {
+	// membership, err := h.Service.GetMembershipStatus(r.Context(), payload.GroupID, user.ID)
+	// if err != nil {
+	// 	helper.Error(w, http.StatusInternalServerError, err.Error())
+	// 	return
+	// }
+	// if membership == "pending" {
 		group, err := h.Service.GetGroupByID(r.Context(), payload.GroupID)
 		if err != nil {
 			helper.Error(w, http.StatusInternalServerError, err.Error())
@@ -355,8 +355,6 @@ func (h *Handler) JoinGroup(w http.ResponseWriter, r *http.Request) {
 			helper.Error(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-	}
-
 	helper.Success(w, http.StatusOK, "Join request processed", nil)
 }
 
@@ -649,12 +647,13 @@ func (h *Handler) HandleJoinRequestAction(w http.ResponseWriter, r *http.Request
 		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, errs)
 		return
 	}
-
+	
 	if err := h.Service.HandleJoinRequest(r.Context(), user.ID, payload.GroupID, payload.TargetUserID, accept); err != nil {
 		if errors.Is(err, service.ErrNotGroupCreator) {
 			helper.Error(w, http.StatusForbidden, err.Error())
 			return
 		}
+		fmt.Println("this is the error:::",err)
 		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}

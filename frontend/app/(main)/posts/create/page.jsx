@@ -21,7 +21,8 @@ export default function CreatePostPage() {
   const [followers, setFollowers] = useState([]);
   const [selectedViewers, setSelectedViewers] = useState([]);
   const [loadingFollowers, setLoadingFollowers] = useState(false);
-
+  const params = new URLSearchParams(window.location.search);
+  const groupId = params.get("group_id") ? Number(params.get("group_id")) : null;
   // Fetch current user followers when privacy is private
   useEffect(() => {
     if (privacy !== "private" || !currentUser?.id) return;
@@ -56,10 +57,13 @@ export default function CreatePostPage() {
       const formData = new FormData();
       formData.append("title", title.trim());
       formData.append("content", content.trim());
-      formData.append("privacy", privacy);
-      const params = new URLSearchParams(window.location.search);
-      const groupId = params.get("group_id") ? Number(params.get("group_id")) : null;
-      if (groupId) formData.append("group_id", groupId);
+      console.log("groupId:::,!!!::", groupId);
+      if (groupId) {
+        formData.append("group_id", groupId);
+        formData.append("privacy", "group");
+      } else {
+        formData.append("privacy", privacy);
+      }
       if (privacy === "private") {
         selectedViewers.forEach((id) => formData.append("visible_to", id));
       }
@@ -110,26 +114,30 @@ export default function CreatePostPage() {
           </div>
 
           <div className="row">
-            <div className="field">
-              <label htmlFor="privacy">Privacy</label>
-              <select
-                id="privacy"
-                value={privacy}
-                onChange={(event) => {
-                  const next = event.target.value;
-                  setPrivacy(next);
-                  setLoadingFollowers(next === "private");
-                  if (next !== "private") {
-                    setSelectedViewers([]);
-                    setFollowers([]);
-                  }
-                }}
-              >
-                <option value="public">Public</option>
-                <option value="almost private">Almost Private</option>
-                <option value="private">Private</option>
-              </select>
-            </div>
+            {
+              groupId ? (<></>) : (
+                <div className="field">
+                  <label htmlFor="privacy">Privacy</label>
+                  <select
+                    id="privacy"
+                    value={privacy}
+                    onChange={(event) => {
+                      const next = event.target.value;
+                      setPrivacy(next);
+                      setLoadingFollowers(next === "private");
+                      if (next !== "private") {
+                        setSelectedViewers([]);
+                        setFollowers([]);
+                      }
+                    }}
+                  >
+                    <option value="public">Public</option>
+                    <option value="almost private">Almost Private</option>
+                    <option value="private">Private</option>
+                  </select>
+                </div>
+              )
+            }
             <div className="field">
               <ImageUploadButton
                 label="Image (optional)"

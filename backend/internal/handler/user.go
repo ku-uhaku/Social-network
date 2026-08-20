@@ -296,7 +296,6 @@ func (h *Handler) GetFollowRequests(w http.ResponseWriter, r *http.Request) {
 // GetSuggestedUsers GET /api/v1/user/suggestions?limit=5
 func (h *Handler) GetSuggestedUsers(w http.ResponseWriter, r *http.Request) {
 	user, ok := middleware.GetUserFromContext(r.Context())
-	println("there is the user for suggest ",user)
 	if !ok {
 		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return

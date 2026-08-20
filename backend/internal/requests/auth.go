@@ -50,7 +50,6 @@ func ParseRegisterPayload(r *http.Request) (models.InputRegisterPayload, error) 
 				payload.Avatar = &avatarName
 			}
 		}
-		println("---------displaaay the avatar",payload.Avatar)
 	}
 	return payload, nil
 }
