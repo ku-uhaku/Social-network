@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthBackground from "@/components/shared/AuthBackground";
 import NailButton from "@/components/shared/NailButton";
+import { useToast } from '@/contexts/ToastContext';
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
@@ -25,7 +26,8 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter();
   const { login } = useAuth();
-
+//use tossast 
+const toooasst=useToast()
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -37,9 +39,11 @@ function LoginForm() {
     setSubmitting(true);
     try {
       await login(identifier, password);
+        toooasst.success("You welcooome again to our social netwooook ")
       router.push("/");
     } catch (err) {
-      setError(err?.message || "Login failed");
+      // setError(err?.message || "Login failed");
+            toooasst.error(err?.message ||"Failed to load followers list")
     } finally {
       setSubmitting(false);
     }

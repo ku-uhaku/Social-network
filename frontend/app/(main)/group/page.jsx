@@ -7,6 +7,7 @@ import { useGroupChat } from "@/contexts/GroupChatContext";
 import GroupCard from "@/components/groups/GroupCard";
 import NailButton from "@/components/shared/NailButton";
 import "@/css/groups.css";
+import { useToast } from "@/contexts/ToastContext";
 
 export default function GroupsPage() {
   const router = useRouter();
@@ -18,6 +19,8 @@ export default function GroupsPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  //add tooast to grouppp creation 
+  const  toooasst=useToast()
 
   useEffect(() => {
     let cancelled = false;
@@ -56,7 +59,8 @@ export default function GroupsPage() {
         setError("Unexpected response from the server.");
       }
     } catch (err) {
-      setError(err?.message || "Could not create group.");
+      // setError(err?.message || "Could not create group.");
+          toooasst.error(err?.message ||"Could not create group.")
     } finally {
       setSubmitting(false);
     }

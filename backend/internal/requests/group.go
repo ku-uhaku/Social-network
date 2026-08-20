@@ -11,15 +11,21 @@ import (
 // ValidateCreateGroup checks required fields when making a new group
 func ValidateCreateGroup(payload models.CreateGroupPayload) []error {
 	var errs []error
-
+	println("i starting valide the title and discription ")
 	if strings.TrimSpace(payload.Title) == "" {
 		errs = append(errs, errors.New("title is required"))
-	} else if len(strings.TrimSpace(payload.Title)) < 3 {
-		errs = append(errs, errors.New("title must be at least 3 characters long"))
+		return errs
+	} else if len(strings.TrimSpace(payload.Title)) < 3 || len((strings.TrimSpace(payload.Title)))>20{
+		errs = append(errs, errors.New("title must be at least 3 characters long of less then 20"))
+		return errs
 	}
 
 	if strings.TrimSpace(payload.Description) == "" {
 		errs = append(errs, errors.New("description is required"))
+		return  errs
+	}else if len(( strings.TrimSpace(payload.Description)))>200{
+		errs = append(errs, errors.New("description is too longg "))
+		return  errs
 	}
 
 	if payload.IsPublic == nil {
@@ -86,17 +92,28 @@ func ValidateCreateGroupEvent(payload models.CreateGroupEventPayload) []error {
 	var errs []error
 	if payload.GroupID <= 0 {
 		errs = append(errs, errors.New("group_id is required"))
+		return errs
 	}
 	if strings.TrimSpace(payload.Title) == "" {
 		errs = append(errs, errors.New("title is required"))
 	}
+	if len(strings.TrimSpace(payload.Title) )>20{
+				errs = append(errs, errors.New("title moore long "))
+				return  errs
+	}
 	if strings.TrimSpace(payload.Description) == "" {
 		errs = append(errs, errors.New("description is required"))
 	}
+	if len(strings.TrimSpace(payload.Description) )>100{
+				errs = append(errs, errors.New("description moore long "))
+				return  errs
+	}
 	if payload.EventTime.IsZero() {
 		errs = append(errs, errors.New("event_time is required"))
+		return errs
 	} else if payload.EventTime.Before(time.Now()) {
 		errs = append(errs, errors.New("event_time must be in the future"))
+		return  errs
 	}
 	return errs
 }

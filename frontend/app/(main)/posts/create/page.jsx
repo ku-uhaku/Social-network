@@ -8,6 +8,7 @@ import ImageUploadButton from "@/components/shared/ImageUploadButton";
 import UsersSelect from "@/components/shared/UsersSelect";
 import { useAuth } from "@/contexts/AuthContext";
 import "@/css/createPost.css";
+import { useToast } from "@/contexts/ToastContext";
 
 export default function CreatePostPage() {
   const router = useRouter();
@@ -21,6 +22,8 @@ export default function CreatePostPage() {
   const [followers, setFollowers] = useState([]);
   const [selectedViewers, setSelectedViewers] = useState([]);
   const [loadingFollowers, setLoadingFollowers] = useState(false);
+  const toooasst=useToast()
+  console.log("that is the toastt",toooasst)
 
   // Fetch current user followers when privacy is private
   useEffect(() => {
@@ -31,7 +34,11 @@ export default function CreatePostPage() {
       .then((response) => {
         if (!cancelled) setFollowers(response.data || []);
       })
-      .catch(() => setError("Failed to load followers list"))
+      .catch(() =>
+        
+        // setError("Failed to load followers list")
+      toooasst.error(err?.message ||"Failed to load followers list")
+      )
       .finally(() => {
         if (!cancelled) setLoadingFollowers(false);
       });
@@ -42,13 +49,14 @@ export default function CreatePostPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    setError("");
+    // setError("");
     setSubmitting(true);
 
     try {
       // Validate private posts
       if (privacy === "private" && selectedViewers.length === 0) {
-        setError("Private posts must specify at least one viewer");
+        // setError("Private posts must specify at least one viewer");
+            toooasst.error(err?.message ||"Private posts must specify at least one viewer");
         setSubmitting(false);
         return;
       }
@@ -70,10 +78,12 @@ export default function CreatePostPage() {
       if (post?.id) {
         router.push(groupId ? `/group/${groupId}` : `/`);
       } else {
-        setError("Unexpected response from the server.");
+        // setError("Unexpected response from the server.");
+            toooasst.error(err?.message ||"Unexpected response from the server.");
       }
     } catch (err) {
-      setError(err?.message || "Could not create post.");
+      // setError(err?.message || "Could not create post.");
+            toooasst.error(err?.message || "Could not create post.");
     } finally {
       setSubmitting(false);
     }

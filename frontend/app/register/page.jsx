@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import ImageUploadButton from "@/components/shared/ImageUploadButton";
 import AuthBackground from "@/components/shared/AuthBackground";
 import NailButton from "@/components/shared/NailButton";
+import { useToast } from "@/contexts/ToastContext";
 
 const initialState = {
   username: "",
@@ -37,6 +38,7 @@ export default function RegisterPage() {
 function RegisterForm() {
   const router = useRouter();
   const { register } = useAuth();
+  const toassst=useToast()
 
   const [values, setValues] = useState(initialState);
   const [avatar, setAvatar] = useState(null);
@@ -66,6 +68,7 @@ function RegisterForm() {
       if (avatar) formData.append("avatar", avatar);
 
       await register(formData);
+                  toassst.success("You registereed succesfully now try to login ")
       router.push("/login");
     } catch (err) {
       setError(err?.message || "Registration failed");
