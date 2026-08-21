@@ -64,6 +64,17 @@ func (h *Handler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusBadRequest, "Invalid username parameter")
 		return
 	}
+	targetUser, err := h.Service.GetUserProfile(r.Context(), user.ID, username)
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Only the owner, public profiles, or accepted followers can view posts
+	if targetUser.FollowStatus != "self" && targetUser.IsPublic == 0 && targetUser.FollowStatus != "accepted" {
+		helper.Error(w, http.StatusForbidden, "This account is private")
+		return
+	}
 
 	profile, err := h.Service.GetUserProfile(r.Context(), user.ID, username)
 	if err != nil {
@@ -226,7 +237,6 @@ func (h *Handler) respondToFollowRequest(w http.ResponseWriter, r *http.Request,
 	helper.Success(w, http.StatusOK, msg, nil)
 }
 
-
 // GetAllUsers GET /api/v1/user/all
 func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.Service.GetAllUsers(r.Context())
@@ -291,7 +301,6 @@ func (h *Handler) GetFollowRequests(w http.ResponseWriter, r *http.Request) {
 	helper.Success(w, http.StatusOK, "Pending requests retrieved successfully", requestsList)
 }
 
-
 // GetSuggestedUsers GET /api/v1/user/suggestions?limit=5
 func (h *Handler) GetSuggestedUsers(w http.ResponseWriter, r *http.Request) {
 	user, ok := middleware.GetUserFromContext(r.Context())
@@ -301,7 +310,7 @@ func (h *Handler) GetSuggestedUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	limit := 5
-	//take five for now then i will take more 
+	// take five for now then i will take more
 	if raw := r.URL.Query().Get("limit"); raw != "" {
 		if parsed, err := strconv.Atoi(raw); err == nil && parsed > 0 {
 			limit = parsed
@@ -315,7 +324,7 @@ func (h *Handler) GetSuggestedUsers(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	//pass it to succes func 
+	// pass it to succes func
 	// println("not every thing  is okay we bring exactlry what we need ",suggestions)
 	helper.Success(w, http.StatusOK, "Suggestions retrieved successfully", suggestions)
 }

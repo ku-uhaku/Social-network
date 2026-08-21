@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createPost } from "@/lib/api/posts";
 import { getFollowers } from "@/lib/api/user";
 import ImageUploadButton from "@/components/shared/ImageUploadButton";
@@ -21,7 +21,7 @@ export default function CreatePostPage() {
   const [followers, setFollowers] = useState([]);
   const [selectedViewers, setSelectedViewers] = useState([]);
   const [loadingFollowers, setLoadingFollowers] = useState(false);
-  const params = new URLSearchParams(window.location.search);
+  const params = useSearchParams();
   const groupId = params.get("group_id") ? Number(params.get("group_id")) : null;
   // Fetch current user followers when privacy is private
   useEffect(() => {
@@ -114,8 +114,8 @@ export default function CreatePostPage() {
           </div>
 
           <div className="row">
-            {
-              groupId ? (<></>) : (
+            
+              {groupId ? (<></>) : (
                 <div className="field">
                   <label htmlFor="privacy">Privacy</label>
                   <select
@@ -136,8 +136,8 @@ export default function CreatePostPage() {
                     <option value="private">Private</option>
                   </select>
                 </div>
-              )
-            }
+              )}
+            
             <div className="field">
               <ImageUploadButton
                 label="Image (optional)"
