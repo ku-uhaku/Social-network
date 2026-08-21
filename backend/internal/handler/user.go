@@ -53,6 +53,7 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 // GetUserProfile GET /api/v1/user/profile?username=john
 func (h *Handler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
+
 	user, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
 		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
@@ -64,17 +65,21 @@ func (h *Handler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusBadRequest, "Invalid username parameter")
 		return
 	}
-	targetUser, err := h.Service.GetUserProfile(r.Context(), user.ID, username)
-	if err != nil {
-		helper.Error(w, http.StatusInternalServerError, err.Error())
-		return
-	}
+	// targetUser, err := h.Service.GetUserProfile(r.Context(), user.ID, username)
+	// if err != nil {
+	// 	helper.Error(w, http.StatusInternalServerError, err.Error())
+	// 	return
+	// }
 
-	// Only the owner, public profiles, or accepted followers can view posts
-	if targetUser.FollowStatus != "self" && targetUser.IsPublic == 0 && targetUser.FollowStatus != "accepted" {
-		helper.Error(w, http.StatusForbidden, "This account is private")
-		return
-	}
+	// // Only the owner, public profiles, or accepted followers can view posts
+	// if targetUser.FollowStatus != "self" && targetUser.IsPublic == 0 && targetUser.FollowStatus != "accepted" {
+	// 	// helper.Error(w, http.StatusForbidden, "This account is private")
+	// 	helper.ValidationErrorResponse(w, http.StatusForbidden, models.ErrorMsg{
+	// 		Code:    403,
+	// 		Message: "This account is private",
+	// 	})
+	// 	return
+	// }
 
 	profile, err := h.Service.GetUserProfile(r.Context(), user.ID, username)
 	if err != nil {

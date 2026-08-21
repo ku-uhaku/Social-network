@@ -29,9 +29,8 @@ export default function ProfilePage() {
     try {
       const response = await getUserProfile(username);
       setProfile(response?.data || response);
-    } catch {
-      
-      notFound();
+    } catch(err) {
+        notFound();
     }
   }, [username]);
 
@@ -123,7 +122,7 @@ export default function ProfilePage() {
     return "Follow";
   })();
 
-  const showPosts = isOwner || (profile &&  profile.is_public === 0) || profile?.follow_status === "accepted";
+  const showPosts = isOwner || (profile && profile.is_public==1) || profile?.follow_status === "accepted";
   // console.log("profile:::::",profile);
   
   return (
@@ -147,7 +146,7 @@ export default function ProfilePage() {
 
         <img className="profileSeparator" src="/images/profile_separator.png" alt="" />
         {
-          (!loading && profile &&  profile.is_public === 0) ? (
+          (!loading && showPosts ) ? (
             <div className="profileDetails">
               <div className="profileDetail"><strong>FullName:</strong> {profile.first_name} {profile.last_name}</div>
               <div className="profileDetail"><strong>Email:</strong> {profile.email}</div>
