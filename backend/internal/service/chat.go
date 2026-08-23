@@ -57,10 +57,9 @@ func (s *Service) SaveGroupMessage(ctx context.Context, senderID, groupID int64,
 	return s.Repo.SaveGroupMessage(ctx, senderID, groupID, content)
 }
 
-// GetDirectHistory authorizes the conversation, returns a page of messages via
-// cursor pagination (beforeID) and marks the conversation as read when the newest
-// page is requested.
-func (s *Service) GetDirectHistory(ctx context.Context, userA, userB, beforeID int64, limit int) (*models.DirectHistoryPage, error) {
+// GetDirectHistory authorizes the conversation, returns a page of messages and
+// marks it read when the newest page is requested.
+func (s *Service) GetDirectHistory(ctx context.Context, userA, userB int64, limit, offset int) ([]models.DirectMessage, error) {
 	if userA == userB {
 		return nil, ErrChatSelf
 	}
@@ -73,18 +72,13 @@ func (s *Service) GetDirectHistory(ctx context.Context, userA, userB, beforeID i
 		return nil, ErrChatNoConnection
 	}
 
-	msgs, hasMore, err := s.Repo.GetDirectHistory(ctx, userA, userB, beforeID, limit)
-	if err != nil {
-		return nil, err
-	}
-
-	if beforeID == 0 {
+	if offset == 0 {
 		if err := s.Repo.MarkChatRead(ctx, userA, userB); err != nil {
 			return nil, err
 		}
 	}
 
-	return &models.DirectHistoryPage{Messages: msgs, HasMore: hasMore}, nil
+	return s.Repo.GetDirectHistory(ctx, userA, userB, limit, offset)
 }
 
 // MarkChatRead marks a conversation as read up to its latest message.

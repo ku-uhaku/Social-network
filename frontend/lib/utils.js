@@ -56,3 +56,14 @@ export function resolveMediaSrc(value) {
 
   return `${API_BASE}/media/${normalized}`;
 }
+
+// formatMessageTime: "14:05" for today, "Mar 4 14:05" otherwise
+export function formatMessageTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const time = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  if (date.toDateString() === new Date().toDateString()) return time;
+
+  return `${date.toLocaleDateString([], { month: "short", day: "numeric" })} ${time}`;
+}

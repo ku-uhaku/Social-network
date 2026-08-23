@@ -40,29 +40,18 @@ RETURNING id, group_id, sender_id, content, created_at,
 	return &msg, nil
 }
 
-// GetDirectHistory returns a page of DMs between two users. beforeID == 0 gives
-// the newest page; otherwise it returns the page of messages older than beforeID.
-// Messages come back chronological with a flag telling whether older ones exist.
-func (r *Repository) GetDirectHistory(ctx context.Context, userA, userB, beforeID int64, limit int) ([]models.DirectMessage, bool, error) {
-	base := `
+// GetDirectHistory returns a page of DMs between two users, newest first.
+func (r *Repository) GetDirectHistory(ctx context.Context, userA, userB int64, limit, offset int) ([]models.DirectMessage, error) {
+	query := `
 SELECT id, sender_id, receiver_id, content, created_at
 FROM direct_messages
-WHERE ((sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1))
+WHERE (sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)
+ORDER BY id DESC
+LIMIT $3 OFFSET $4
 `
-
-	var query string
-	var args []interface{}
-	if beforeID > 0 {
-		query = base + ` AND id < $3 ORDER BY id DESC LIMIT $4`
-		args = []interface{}{userA, userB, beforeID, limit + 1}
-	} else {
-		query = base + ` ORDER BY id DESC LIMIT $3`
-		args = []interface{}{userA, userB, limit + 1}
-	}
-
-	rows, err := r.DB.Database.QueryContext(ctx, query, args...)
+	rows, err := r.DB.Database.QueryContext(ctx, query, userA, userB, limit, offset)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -70,25 +59,11 @@ WHERE ((sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id 
 	for rows.Next() {
 		var m models.DirectMessage
 		if err := rows.Scan(&m.ID, &m.SenderID, &m.ReceiverID, &m.Content, &m.CreatedAt); err != nil {
-			return nil, false, err
+			return nil, err
 		}
 		msgs = append(msgs, m)
 	}
-	if err := rows.Err(); err != nil {
-		return nil, false, err
-	}
-
-	hasMore := len(msgs) > limit
-	if hasMore {
-		msgs = msgs[:limit]
-	}
-
-	// rows come back newest-first; flip them to chronological order
-	for i, j := 0, len(msgs)-1; i < j; i, j = i+1, j-1 {
-		msgs[i], msgs[j] = msgs[j], msgs[i]
-	}
-
-	return msgs, hasMore, nil
+	return msgs, rows.Err()
 }
 
 // MarkChatRead records that the viewer has read the conversation up to its latest message.

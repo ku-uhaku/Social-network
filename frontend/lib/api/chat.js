@@ -4,9 +4,8 @@ export function getConversations() {
   return apiFetch("/api/v1/chat/conversations", { method: "GET" });
 }
 
-export function getDirectHistory(userId, { beforeId = 0, limit = 30 } = {}) {
-  const params = new URLSearchParams({ user_id: String(userId), limit: String(limit) });
-  if (beforeId > 0) params.set("before_id", String(beforeId));
+export function getDirectHistory(userId, { page = 1 } = {}) {
+  const params = new URLSearchParams({ user_id: String(userId), page: String(page) });
   return apiFetch(`/api/v1/chat/direct?${params}`, { method: "GET" });
 }
 

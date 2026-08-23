@@ -11,7 +11,10 @@ import (
 	"kuu/internal/service"
 )
 
-// GetDirectHistory GET /api/v1/chat/direct?user_id=123&before_id=456&limit=30
+// pageSize is how many messages one history page holds.
+const pageSize = 30
+
+// GetDirectHistory GET /api/v1/chat/direct?user_id=123&page=1
 func (h *Handler) GetDirectHistory(w http.ResponseWriter, r *http.Request) {
 	user, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
@@ -25,17 +28,12 @@ func (h *Handler) GetDirectHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	beforeID, _ := strconv.ParseInt(r.URL.Query().Get("before_id"), 10, 64)
-	if beforeID < 0 {
-		beforeID = 0
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	if page < 1 {
+		page = 1
 	}
 
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	if limit <= 0 || limit > 50 {
-		limit = 30
-	}
-
-	page, err := h.Service.GetDirectHistory(r.Context(), user.ID, targetUserID, beforeID, limit)
+	messages, err := h.Service.GetDirectHistory(r.Context(), user.ID, targetUserID, pageSize, (page-1)*pageSize)
 	if err != nil {
 		status := http.StatusInternalServerError
 		if errors.Is(err, service.ErrChatSelf) || errors.Is(err, service.ErrChatNoConnection) {
@@ -45,7 +43,7 @@ func (h *Handler) GetDirectHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	helper.Success(w, http.StatusOK, "Direct message history retrieved", page)
+	helper.Success(w, http.StatusOK, "Direct message history retrieved", messages)
 }
 
 // MarkChatRead POST /api/v1/chat/read { user_id }
@@ -107,10 +105,8 @@ func (h *Handler) GetGroupHistory(w http.ResponseWriter, r *http.Request) {
 	if page < 1 {
 		page = 1
 	}
-	limit := 30
-	offset := (page - 1) * limit
 
-	messages, err := h.Service.GetGroupHistory(r.Context(), user.ID, groupID, limit, offset)
+	messages, err := h.Service.GetGroupHistory(r.Context(), user.ID, groupID, pageSize, (page-1)*pageSize)
 	if err != nil {
 		helper.Error(w, http.StatusForbidden, err.Error())
 		return

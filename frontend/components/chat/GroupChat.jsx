@@ -5,8 +5,9 @@ import { useWebSocket } from "@/contexts/WebSocketContext";
 import { useAudio } from "@/contexts/AudioContext";
 import { useGroupChat } from "@/contexts/GroupChatContext";
 import { getGroupHistory } from "@/lib/api/chat";
+import { formatMessageTime } from "@/lib/utils";
 import Avatar from "@/components/shared/Avatar";
-import EmojiPicker from "./EmojiPicker";
+import Composer from "./Composer";
 import "@/css/chat.css";
 
 const pageSize = 30;
@@ -27,27 +28,25 @@ export default function GroupChat({ groupId, title, meId, onClose }) {
   }, [groupId, openGroup, closeGroup]);
 
   const [messages, setMessages] = useState([]);
-  const [loaded, setLoaded] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [draft, setDraft] = useState("");
-  const [emojiOpen, setEmojiOpen] = useState(false);
   const listEndRef = useRef(null);
 
-  
   useEffect(() => {
     let cancelled = false;
     getGroupHistory(groupId, { page: 1 })
       .then((res) => {
         if (cancelled) return;
         const history = Array.isArray(res?.data) ? res.data : [];
-        setMessages(history.slice().reverse());
+        setMessages(history.slice().reverse()); // server sends newest first
         setHasMore(history.length === pageSize);
       })
       .catch(() => {})
       .finally(() => {
-        if (!cancelled) setLoaded(true);
+        if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
@@ -57,9 +56,7 @@ export default function GroupChat({ groupId, title, meId, onClose }) {
   useEffect(() => {
     const unsub = subscribe("new_group_message", (msg) => {
       if (!msg || msg.group_id !== groupId) return;
-      setMessages((prev) =>
-        prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]
-      );
+      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
       if (msg.sender_id !== meId) playSfxRef.current("/audio/receive.mp3");
     });
     return unsub;
@@ -77,13 +74,9 @@ export default function GroupChat({ groupId, title, meId, onClose }) {
       const nextPage = page + 1;
       const res = await getGroupHistory(groupId, { page: nextPage });
       const older = Array.isArray(res?.data) ? res.data : [];
-      if (older.length === 0) {
-        setHasMore(false);
-      } else {
-        setMessages((prev) => [...older.slice().reverse(), ...prev]);
-        setPage(nextPage);
-        setHasMore(older.length === pageSize);
-      }
+      setMessages((prev) => [...older.slice().reverse(), ...prev]);
+      setPage(nextPage);
+      setHasMore(older.length === pageSize);
     } catch {
       /* ignore; keep existing messages */
     } finally {
@@ -99,13 +92,6 @@ export default function GroupChat({ groupId, title, meId, onClose }) {
     setDraft("");
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
   return (
     <div className="chatModalOverlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="chatModal chatThread">
@@ -119,8 +105,8 @@ export default function GroupChat({ groupId, title, meId, onClose }) {
         </div>
 
         <div className="chatMessages">
-          {!loaded && <p className="chatEmpty">Loading...</p>}
-          {loaded && hasMore && (
+          {loading && <p className="chatEmpty">Loading...</p>}
+          {!loading && hasMore && (
             <button
               type="button"
               className="chatLoadOlder"
@@ -130,7 +116,7 @@ export default function GroupChat({ groupId, title, meId, onClose }) {
               {loadingOlder ? "Loading..." : "Load previous"}
             </button>
           )}
-          {loaded && messages.length === 0 && (
+          {!loading && messages.length === 0 && (
             <p className="chatEmpty">No messages yet. Say hello!</p>
           )}
           {messages.map((m) => {
@@ -145,7 +131,7 @@ export default function GroupChat({ groupId, title, meId, onClose }) {
                 )}
                 <div className={`chatBubble ${mine ? "mine" : "theirs"}`}>
                   <span className="chatBubbleText">{m.content}</span>
-                  <span className="chatBubbleTime">{formatTime(m.created_at)}</span>
+                  <span className="chatBubbleTime">{formatMessageTime(m.created_at)}</span>
                 </div>
               </div>
             );
@@ -153,44 +139,8 @@ export default function GroupChat({ groupId, title, meId, onClose }) {
           <div ref={listEndRef} />
         </div>
 
-        {emojiOpen && <EmojiPicker onPick={(e) => setDraft((d) => d + e)} />}
-
-        <div className="chatComposer">
-          <button
-            type="button"
-            className={`chatEmojiToggle ${emojiOpen ? "active" : ""}`}
-            onClick={() => setEmojiOpen(!emojiOpen)}
-            title="Emoji"
-          >
-            {"☺"}
-          </button>
-          <textarea
-            className="chatInput"
-            rows={1}
-            value={draft}
-            placeholder="Type..."
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-          <button type="button" className="chatSendButton" onClick={sendMessage}>
-            Send
-          </button>
-        </div>
+        <Composer draft={draft} setDraft={setDraft} onSend={sendMessage} />
       </div>
     </div>
   );
-}
-
-function formatTime(dateString) {
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  const time = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  if (date.toDateString() === new Date().toDateString()) {
-    return time;
-  }
-
-  return `${date.toLocaleDateString([], { month: "short", day: "numeric" })} ${time}`;
 }

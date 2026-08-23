@@ -5,18 +5,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import { useAudio } from "@/contexts/AudioContext";
 import { getConversations, getDirectHistory, markChatRead } from "@/lib/api/chat";
+import { formatMessageTime } from "@/lib/utils";
 import Avatar from "@/components/shared/Avatar";
-import EmojiPicker from "./EmojiPicker";
+import Composer from "./Composer";
 import "@/css/chat.css";
 
-const empty_single_chat = {
-  messages: [],
-  loaded: false,
-  unread: 0,
-  hasMore: false,
-  oldestId: null,
-  loadingOlder: false,
-};
+const pageSize = 30;
 
 export function useChat() {
   const { user } = useAuth();
@@ -29,22 +23,18 @@ export function useChat() {
 
   const [open, setOpen] = useState(false);
   const [conversations, setConversations] = useState([]);
+  const [unread, setUnread] = useState({}); // { [userId]: count }
+
+  // Only the open conversation is kept in memory; history is refetched on open.
   const [activeId, setActiveId] = useState(null);
-  const [contacts, setContacts] = useState({}); // { [id]: { messages, loaded, unread, hasMore, oldestId } }
-  const [draft, setDraft] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [draft, setDraft] = useState("");
 
-  const getThread = (id) => contacts[id] || empty_single_chat;
-
-  const patchThread = (id, patch) => {
-    setContacts((prev) => {
-      const thread = prev[id] || empty_single_chat;
-      const next = typeof patch === "function" ? patch(thread) : patch;
-      return { ...prev, [id]: { ...thread, ...next } };
-    });
-  };
-
-  // load conversation list + seed persistent unread counts
+  // Conversation list, with the unread counts the server remembers.
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
@@ -53,15 +43,7 @@ export function useChat() {
         if (cancelled) return;
         const list = Array.isArray(res?.data) ? res.data : [];
         setConversations(list);
-        setContacts((prev) => {
-          let next = prev;
-          for (const c of list) {
-            if (!next[c.user_id]) {
-              next = { ...next, [c.user_id]: { ...empty_single_chat, unread: c.unread_count || 0 } };
-            }
-          }
-          return next;
-        });
+        setUnread(Object.fromEntries(list.map((c) => [c.user_id, c.unread_count || 0])));
       })
       .catch(() => {});
     return () => {
@@ -69,84 +51,61 @@ export function useChat() {
     };
   }, [user]);
 
-  // realtime dm
+  // Realtime DMs: append to the open thread, otherwise bump its badge.
   useEffect(() => {
     if (!user) return;
     const unsub = subscribe("new_direct_message", (msg) => {
       if (!msg) return;
       const otherId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
-      const isViewing = open && activeId === otherId;
 
-      setContacts((prev) => {
-        const thread = prev[otherId] || empty_single_chat;
-        if (thread.messages.some((m) => m.id === msg.id)) return prev;
-        return {
-          ...prev,
-          [otherId]: {
-            ...thread,
-            messages: [...thread.messages, msg],
-            unread: isViewing ? thread.unread : thread.unread + 1,
-          },
-        };
-      });
-
-      if (isViewing) markChatRead(otherId).catch(() => {});
+      if (open && activeId === otherId) {
+        setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+        markChatRead(otherId).catch(() => {});
+      } else {
+        setUnread((prev) => ({ ...prev, [otherId]: (prev[otherId] || 0) + 1 }));
+      }
 
       if (msg.sender_id !== user.id) playSfxRef.current("/audio/receive.mp3");
     });
     return unsub;
   }, [user, subscribe, open, activeId]);
 
-  const unread = Object.fromEntries(Object.entries(contacts).map(([id, c]) => [id, c.unread]));
-  const totalUnread = Object.values(contacts).filter((c) => c.unread > 0).length;
-  const activeContact = activeId ? conversations.find((c) => c.user_id === activeId) : null;
-
-  const activeThread = getThread(activeId);
+  const totalUnread = Object.values(unread).filter((count) => count > 0).length;
+  const activeContact = conversations.find((c) => c.user_id === activeId) || null;
 
   const openChat = async (contactId) => {
     setActiveId(contactId);
-    markChatRead(contactId).catch(() => {});
-    patchThread(contactId, { unread: 0 });
-    if ((contacts[contactId] || empty_single_chat).loaded) return;
-
+    setUnread((prev) => ({ ...prev, [contactId]: 0 }));
+    setMessages([]);
+    setPage(1);
+    setHasMore(false);
     setLoading(true);
     try {
-      const res = await getDirectHistory(contactId);
-      const data = res?.data || {};
-      const history = Array.isArray(data.messages) ? data.messages : [];
-      patchThread(contactId, (prev) => {
-        const seen = new Set(prev.messages.map((m) => m.id));
-        const missing = history.filter((m) => !seen.has(m.id));
-        return {
-          messages: [...missing, ...prev.messages],
-          loaded: true,
-          hasMore: Boolean(data.has_more),
-          oldestId: history.length ? history[0].id : prev.oldestId,
-        };
-      });
+      const res = await getDirectHistory(contactId, { page: 1 });
+      const history = Array.isArray(res?.data) ? res.data : [];
+      setMessages(history.slice().reverse()); // server sends newest first
+      setHasMore(history.length === pageSize);
     } catch {
-      patchThread(contactId, { loaded: false });
+      /* ignore; the thread just stays empty */
     } finally {
       setLoading(false);
     }
   };
 
-  const loadOlder = async (contactId) => {
-    const thread = contacts[contactId] || empty_single_chat;
-    if (!thread.loaded || !thread.hasMore || thread.loadingOlder) return;
-    patchThread(contactId, { loadingOlder: true });
+  const loadOlder = async () => {
+    if (loadingOlder || !hasMore) return;
+    setLoadingOlder(true);
     try {
-      const res = await getDirectHistory(contactId, { beforeId: thread.oldestId });
-      const data = res?.data || {};
-      const older = Array.isArray(data.messages) ? data.messages : [];
-      patchThread(contactId, (t) => ({
-        messages: [...older, ...t.messages],
-        hasMore: Boolean(data.has_more),
-        oldestId: older.length ? older[0].id : t.oldestId,
-        loadingOlder: false,
-      }));
+      const nextPage = page + 1;
+      const res = await getDirectHistory(activeId, { page: nextPage });
+      const older = Array.isArray(res?.data) ? res.data : [];
+      setMessages((prev) => [...older.slice().reverse(), ...prev]);
+      setPage(nextPage);
+      setHasMore(older.length === pageSize);
     } catch {
-      patchThread(contactId, { loadingOlder: false });
+      /* ignore; keep existing messages */
+    } finally {
+      setLoadingOlder(false);
     }
   };
 
@@ -158,17 +117,6 @@ export function useChat() {
     setDraft("");
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  const handleBackdrop = (e) => {
-    if (e.target === e.currentTarget) setOpen(false);
-  };
-
   return {
     user,
     open,
@@ -177,59 +125,40 @@ export function useChat() {
     activeId,
     setActiveId,
     activeContact,
-    activeThread,
+    messages,
     unread,
     totalUnread,
+    hasMore,
+    loading,
+    loadingOlder,
     draft,
     setDraft,
-    loading,
     openChat,
     loadOlder,
     sendMessage,
-    handleKeyDown,
-    handleBackdrop,
   };
 }
 
 export default function Chat({ chat }) {
+  if (!chat.open) return null;
+
   return (
-    <>
-      {chat.open && (
-        <div className="chatModalOverlay" onClick={chat.handleBackdrop}>
-          <div className="chatModal">
-            {chat.activeId && chat.activeContact ? (
-              <SingleChat
-                contact={chat.activeContact}
-                thread={chat.activeThread}
-                loading={chat.loading}
-                meId={chat.user?.id}
-                actions={{
-                  draft: chat.draft,
-                  onDraftChange: chat.setDraft,
-                  onSend: chat.sendMessage,
-                  onKeyDown: chat.handleKeyDown,
-                  onLoadOlder: () => chat.loadOlder(chat.activeId),
-                  onBack: () => chat.setActiveId(null),
-                  onClose: () => chat.setOpen(false),
-                }}
-              />
-            ) : (
-              <Contacts
-                conversations={chat.conversations}
-                unread={chat.unread}
-                loading={chat.loading}
-                onOpen={chat.openChat}
-                onClose={() => chat.setOpen(false)}
-              />
-            )}
-          </div>
-        </div>
-      )}
-    </>
+    <div
+      className="chatModalOverlay"
+      onClick={(e) => e.target === e.currentTarget && chat.setOpen(false)}
+    >
+      <div className="chatModal">
+        {chat.activeContact ? (
+          <SingleChat chat={chat} contact={chat.activeContact} />
+        ) : (
+          <Contacts chat={chat} />
+        )}
+      </div>
+    </div>
   );
 }
 
-function Contacts({ conversations, unread, loading, onOpen, onClose }) {
+function Contacts({ chat }) {
   // NOTE: unfollowing a user doesn't hide contact UI, this isn't a bug
   //       contacts are not real time. Messages will not work
 
@@ -237,33 +166,31 @@ function Contacts({ conversations, unread, loading, onOpen, onClose }) {
     <div className="chatPanel">
       <div className="chatPanelHeader">
         <h3 className="chatPanelTitle">Chat</h3>
-        <button type="button" className="chatCloseButton" onClick={onClose}>
+        <button type="button" className="chatCloseButton" onClick={() => chat.setOpen(false)}>
           &times;
         </button>
       </div>
       <div className="chatPanelBody">
-        {loading ? (
-          <p className="chatEmpty">Loading...</p>
-        ) : conversations.length === 0 ? (
+        {chat.conversations.length === 0 ? (
           <p className="chatEmpty">No conversations yet.</p>
         ) : (
-          conversations.map((c) => (
+          chat.conversations.map((c) => (
             <div
               key={c.user_id}
               role="button"
               tabIndex={0}
               className="chatContact"
-              onClick={() => onOpen(c.user_id)}
+              onClick={() => chat.openChat(c.user_id)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") onOpen(c.user_id);
+                if (e.key === "Enter") chat.openChat(c.user_id);
               }}
             >
               <Avatar avatar={c.avatar} username={c.username} />
               <div className="chatContactInfo">
                 <strong className="chatContactName">{c.username}</strong>
               </div>
-              {unread[c.user_id] > 0 && (
-                <span className="chatContactUnread">{unread[c.user_id]}</span>
+              {chat.unread[c.user_id] > 0 && (
+                <span className="chatContactUnread">{chat.unread[c.user_id]}</span>
               )}
             </div>
           ))
@@ -273,96 +200,59 @@ function Contacts({ conversations, unread, loading, onOpen, onClose }) {
   );
 }
 
-function SingleChat({ contact, thread, loading, meId, actions }) {
+function SingleChat({ chat, contact }) {
   const listEndRef = useRef(null);
-  const [emojiOpen, setEmojiOpen] = useState(false);
 
-  // keep newest
+  // Keep the newest message in view.
   useEffect(() => {
     listEndRef.current?.scrollIntoView({ block: "end" });
-  }, [thread.messages]);
+  }, [chat.messages.length]);
 
   return (
     <div className="chatPanel chatThread">
       <div className="chatPanelHeader">
-        <button type="button" className="chatBackButton" onClick={actions.onBack} title="Back">
+        <button
+          type="button"
+          className="chatBackButton"
+          onClick={() => chat.setActiveId(null)}
+          title="Back"
+        >
           &larr;
         </button>
         <div className="chatThreadTitle">
           <Avatar avatar={contact.avatar} username={contact.username} size={32} />
           <strong className="chatContactName">{contact.username}</strong>
         </div>
-        <button type="button" className="chatCloseButton" onClick={actions.onClose}>
+        <button type="button" className="chatCloseButton" onClick={() => chat.setOpen(false)}>
           &times;
         </button>
       </div>
 
       <div className="chatMessages">
-        {loading && <p className="chatEmpty">Loading...</p>}
-        {!loading && thread.hasMore && (
+        {chat.loading && <p className="chatEmpty">Loading...</p>}
+        {!chat.loading && chat.hasMore && (
           <button
             type="button"
             className="chatLoadOlder"
-            onClick={actions.onLoadOlder}
-            disabled={thread.loadingOlder}
+            onClick={chat.loadOlder}
+            disabled={chat.loadingOlder}
           >
-            {thread.loadingOlder ? "Loading..." : "Load previous"}
+            {chat.loadingOlder ? "Loading..." : "Load previous"}
           </button>
         )}
-        {!loading && thread.messages.length === 0 && (
+        {!chat.loading && chat.messages.length === 0 && (
           <p className="chatEmpty">No messages yet. Say hello!</p>
         )}
-        {thread.messages.map((m) => {
-          const mine = m.sender_id === meId;
-          return (
-            <div key={m.id} className={`chatBubble ${mine ? "mine" : "theirs"}`}>
-              <span className="chatBubbleText">{m.content}</span>
-              <span className="chatBubbleTime">{formatTime(m.created_at)}</span>
-            </div>
-          );
-        })}
+        {chat.messages.map((m) => (
+          <div key={m.id} className={`chatBubble ${m.sender_id === chat.user?.id ? "mine" : "theirs"}`}>
+            <span className="chatBubbleText">{m.content}</span>
+            <span className="chatBubbleTime">{formatMessageTime(m.created_at)}</span>
+          </div>
+        ))}
         <div ref={listEndRef} />
       </div>
 
-      {emojiOpen && <EmojiPicker onPick={(e) => actions.onDraftChange(actions.draft + e)} />}
-
-      <div className="chatComposer">
-        <button
-          type="button"
-          className={`chatEmojiToggle ${emojiOpen ? "active" : ""}`}
-          onClick={() => setEmojiOpen(!emojiOpen)}
-          title="Emoji"
-        >
-          {"\u263A"}
-        </button>
-        <textarea
-          className="chatInput"
-          rows={1}
-          value={actions.draft}
-          placeholder={`Type...`}
-          onChange={(e) => actions.onDraftChange(e.target.value)}
-          onKeyDown={actions.onKeyDown}
-        />
-        <button type="button" className="chatSendButton" onClick={actions.onSend}>
-          Send
-        </button>
-      </div>
+      <Composer draft={chat.draft} setDraft={chat.setDraft} onSend={chat.sendMessage} />
     </div>
   );
-}
-
-function formatTime(dateString) {
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  const time = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  if (date.toDateString() === new Date().toDateString()) {
-    // same time
-    return time;
-  }
-
-  // if not same day add date
-  return `${date.toLocaleDateString([], { month: "short", day: "numeric" })} ${time}`;
 }
