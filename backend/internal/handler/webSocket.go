@@ -18,6 +18,7 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
+// WebSocket upgrades the request and keeps the connection open for the session.
 func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
 	user, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
@@ -27,7 +28,7 @@ func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Printf("[WS] Upgrade failure: %v", err)
+		log.Printf("[WS] upgrade failed: %v", err)
 		return
 	}
 
@@ -36,121 +37,92 @@ func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
 		Conn:   conn,
 		Send:   make(chan []byte, 256),
 	}
+	h.Hub.Register(client)
 
-	h.Hub.Register <- client
-
-	// Send initial list of online users to this connection
-	go func() {
-		onlineSnapshot := h.Hub.GetOnlineUsers()
-		initEvent := ws.Event{
-			Type:         ws.EventOnlineUsersList,
-			TargetUserID: user.ID,
-			Payload: map[string]interface{}{
-				"online_user_ids": onlineSnapshot,
-			},
-		}
-		h.Hub.Broadcast <- initEvent
-	}()
-
-	// Outbound Writer Loop (Pushes messages to client browser)
-	go func() {
-		for msg := range client.Send {
-			if err := conn.WriteMessage(websocket.TextMessage, msg); err != nil {
-				break
-			}
-		}
-	}()
-
-	// Inbound Reader Loop (Reads incoming frames from client)
-	go h.handleIncomingWSMessages(context.Background(), client)
+	go writeLoop(client)
+	go h.readLoop(client)
 }
 
-func (h *Handler) handleIncomingWSMessages(ctx context.Context, client *ws.Client) {
-	defer func() {
-		h.Hub.Unregister <- client
-	}()
+// writeLoop pushes queued events to the browser until the hub closes Send.
+func writeLoop(client *ws.Client) {
+	for msg := range client.Send {
+		if err := client.Conn.WriteMessage(websocket.TextMessage, msg); err != nil {
+			return
+		}
+	}
+}
 
+// readLoop handles what the browser sends until the connection drops.
+func (h *Handler) readLoop(client *ws.Client) {
+	defer h.Hub.Unregister(client)
+
+	ctx := context.Background()
 	for {
-		_, rawMessage, err := client.Conn.ReadMessage()
+		_, raw, err := client.Conn.ReadMessage()
 		if err != nil {
-			break // Connection closed or failed
+			return
 		}
 
-		var incoming ws.Event
-		if err := json.Unmarshal(rawMessage, &incoming); err != nil {
-			log.Printf("[WS] Invalid event payload from user %d: %v", client.UserID, err)
+		var event ws.Event
+		if err := json.Unmarshal(raw, &event); err != nil {
+			log.Printf("[WS] invalid event from user %d: %v", client.UserID, err)
 			continue
 		}
 
-		// Validate session on every client message
-		token := ""
-		if payloadMap, ok := incoming.Payload.(map[string]interface{}); ok {
-			if v, ok := payloadMap["token"].(string); ok {
-				token = v
-			}
-		}
-		if token != "" {
-			if _, err := h.Service.ValidateSession(ctx, token); err != nil {
-				break
-			}
-		}
-
-		switch incoming.Type {
+		switch event.Type {
 		case ws.ClientSendDirectMessage:
-			h.processDirectMessage(ctx, client.UserID, incoming.Payload)
-
+			h.sendDirectMessage(ctx, client.UserID, event.Payload)
 		case ws.ClientSendGroupMessage:
-			h.processGroupMessage(ctx, client.UserID, incoming.Payload)
+			h.sendGroupMessage(ctx, client.UserID, event.Payload)
 		}
 	}
 }
 
-func (h *Handler) processDirectMessage(ctx context.Context, senderID int64, rawPayload interface{}) {
-	payloadBytes, _ := json.Marshal(rawPayload)
-	var req models.SendMessagePayload
-	if err := json.Unmarshal(payloadBytes, &req); err != nil || req.ReceiverID == nil || strings.TrimSpace(req.Content) == "" {
+func (h *Handler) sendDirectMessage(ctx context.Context, senderID int64, payload interface{}) {
+	req, ok := decodeMessage(payload)
+	if !ok || req.ReceiverID == nil {
 		return
 	}
 
-	// Save DM via Service
 	msg, err := h.Service.SaveDirectMessage(ctx, senderID, *req.ReceiverID, req.Content)
 	if err != nil {
-		log.Printf("[WS] Failed to save DM: %v", err)
+		log.Printf("[WS] cannot save direct message: %v", err)
 		return
 	}
 
-	// Dispatch real-time event to recipient and sender (for multi-tab sync)
-	h.Hub.Broadcast <- ws.Event{
-		Type:           ws.EventNewDirectMessage,
-		TargetUsersIDs: []int64{senderID, *req.ReceiverID},
-		Payload:        msg,
-	}
+	// The sender gets it back too, so their other tabs stay in sync.
+	h.Hub.BroadcastToUsers([]int64{senderID, *req.ReceiverID}, ws.EventNewDirectMessage, msg)
 }
 
-func (h *Handler) processGroupMessage(ctx context.Context, senderID int64, rawPayload interface{}) {
-	payloadBytes, _ := json.Marshal(rawPayload)
-	var req models.SendMessagePayload
-	if err := json.Unmarshal(payloadBytes, &req); err != nil || req.GroupID == nil || strings.TrimSpace(req.Content) == "" {
+func (h *Handler) sendGroupMessage(ctx context.Context, senderID int64, payload interface{}) {
+	req, ok := decodeMessage(payload)
+	if !ok || req.GroupID == nil {
 		return
 	}
 
-	// Save Group Message via Service (validates group membership inside Service)
+	// The service checks that the sender belongs to the group.
 	msg, err := h.Service.SaveGroupMessage(ctx, senderID, *req.GroupID, req.Content)
 	if err != nil {
-		log.Printf("[WS] Failed to save group message: %v", err)
+		log.Printf("[WS] cannot save group message: %v", err)
 		return
 	}
 
-	// Fetch active group members to route event
 	memberIDs, err := h.Service.GetGroupMemberIDs(ctx, *req.GroupID)
 	if err != nil {
+		log.Printf("[WS] cannot load members of group %d: %v", *req.GroupID, err)
 		return
 	}
 
-	h.Hub.Broadcast <- ws.Event{
-		Type:           ws.EventNewGroupMessage,
-		TargetGroupID:  *req.GroupID,
-		TargetUsersIDs: memberIDs,
-		Payload:        msg,
+	h.Hub.BroadcastToUsers(memberIDs, ws.EventNewGroupMessage, msg)
+}
+
+// decodeMessage re-reads the generic payload as a message and rejects empty text.
+func decodeMessage(payload interface{}) (models.SendMessagePayload, bool) {
+	var req models.SendMessagePayload
+
+	raw, err := json.Marshal(payload)
+	if err != nil || json.Unmarshal(raw, &req) != nil {
+		return req, false
 	}
+	return req, strings.TrimSpace(req.Content) != ""
 }
