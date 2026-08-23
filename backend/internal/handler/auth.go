@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -20,7 +19,6 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if validationErrs := requests.ValidateRegister(payload); len(validationErrs) > 0 {
-		fmt.Println("Validation errors:", validationErrs)
 		helper.ValidationErrorResponse(w, http.StatusUnprocessableEntity, validationErrs)
 		return
 	}

@@ -11,7 +11,6 @@ import (
 // ValidateCreateGroup checks required fields when making a new group
 func ValidateCreateGroup(payload models.CreateGroupPayload) []error {
 	var errs []error
-
 	if strings.TrimSpace(payload.Title) == "" {
 		errs = append(errs, errors.New("title is required"))
 	} else if len(strings.TrimSpace(payload.Title)) < 3 {
