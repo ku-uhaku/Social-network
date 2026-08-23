@@ -421,7 +421,6 @@ func (r *Repository) GetSuggestedUsers(viewerID int64, limit int) ([]models.User
 		}
 		users = append(users, user)
 	}
-	// println("check if we reciave users",users)
 	return users, rows.Err()
 }
 

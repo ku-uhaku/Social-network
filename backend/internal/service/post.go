@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"fmt"
 
 	"kuu/internal/models"
 )
@@ -17,7 +16,6 @@ func (s *Service) CreatePost(userID int64, payload models.CreatePostPayload) (*m
 			return nil, ErrAccessDenied
 		}
 	}
-	fmt.Println("payload ::::::", payload)
 	return s.Repo.CreatePost(userID, payload)
 }
 
@@ -34,7 +32,6 @@ func (s *Service) GetPost(userID int64, postID int64) (*models.Post, error) {
 	if err := s.checkPostVisibility(userID, post); err != nil {
 		return nil, err
 	}
-	fmt.Println("innnnnnnnn")
 	if post.Privacy == "private" {
 		viewers, err := s.Repo.GetPostViewers(post.ID)
 		if err != nil {
@@ -74,8 +71,6 @@ func (s *Service) GetComments(userID int64, postID int64) ([]models.Comment, err
 }
 
 func (s *Service) checkPostVisibility(userID int64, post *models.Post) error {
-	fmt.Println("prayvacy::::::", post.Privacy)
-	fmt.Println("post.UserID,userID", post.UserID, userID)
 	if post.UserID == userID {
 		return nil
 	}
@@ -83,7 +78,6 @@ func (s *Service) checkPostVisibility(userID int64, post *models.Post) error {
 	if err != nil {
 		return ErrAccessDenied
 	}
-	fmt.Println("is_private::::::", is_private)
 	// Group posts are visible only to accepted group members, regardless of privacy
 	if post.GroupID != nil && *post.GroupID > 0 {
 		status, err := s.Repo.GetMemberStatus(*post.GroupID, userID)

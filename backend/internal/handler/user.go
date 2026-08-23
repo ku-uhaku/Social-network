@@ -330,6 +330,5 @@ func (h *Handler) GetSuggestedUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// pass it to succes func
-	// println("not every thing  is okay we bring exactlry what we need ",suggestions)
 	helper.Success(w, http.StatusOK, "Suggestions retrieved successfully", suggestions)
 }

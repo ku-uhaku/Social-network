@@ -149,7 +149,6 @@ func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
-	// fmt.Fprintln(w, path)
 	if errs := requests.ValidateCreateComment(payload); len(errs) > 0 {
 		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, errs)
 		return

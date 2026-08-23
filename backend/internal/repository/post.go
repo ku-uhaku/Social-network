@@ -134,7 +134,6 @@ func (r *Repository) GetFeedPosts(currentUserID int64, limit int, cursor *int64)
 
 	rows, err := r.DB.Database.Query(query, args...)
 	if err != nil {
-		fmt.Println(err)
 		return nil, false, err
 	}
 	defer rows.Close()
@@ -156,7 +155,6 @@ func (r *Repository) GetFeedPosts(currentUserID int64, limit int, cursor *int64)
 	if hasMore {
 		posts = posts[:limit]
 	}
-	// fmt.Println("POSTS:::", posts)
 	return posts, hasMore, nil
 }
 

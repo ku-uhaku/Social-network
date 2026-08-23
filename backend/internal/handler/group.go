@@ -651,7 +651,6 @@ func (h *Handler) HandleJoinRequestAction(w http.ResponseWriter, r *http.Request
 			helper.Error(w, http.StatusForbidden, err.Error())
 			return
 		}
-		// fmt.Println("this is the error:::",err)
 		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}

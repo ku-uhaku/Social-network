@@ -78,6 +78,5 @@ func clientIP(r *http.Request) string {
 	if err != nil {
 		return r.RemoteAddr
 	}
-	println("thaat is the host",host)
 	return host
 }
