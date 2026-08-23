@@ -71,6 +71,7 @@ func ValidateCreatePost(p models.CreatePostPayload) []error {
 		errs = append(errs, errors.New("title cannot be empty  "))
 		return errs
 	}
+
 	if len((p.Title))>40{
 		errs = append(errs, errors.New("title cannot be long then 40 letter "))
 		return errs
@@ -88,9 +89,12 @@ func ValidateCreatePost(p models.CreatePostPayload) []error {
 	// if err!=nil{
 	// 	errs = append(errs, errors.New("the image not valid check the type or the content "))
 	// 	return  errs
+	// _,err:=helper.IsValidImage([]byte(p.Content))
+	// if err!=nil{
+	// 	errs = append(errs, errors.New("the image not valid check the type or the content "))
 	// }
 	p.Privacy = strings.ToLower(strings.TrimSpace(p.Privacy))
-	if p.Privacy != "public" && p.Privacy != "almost private" && p.Privacy != "private" {
+	if p.Privacy != "public" && p.Privacy != "almost private" && p.Privacy != "private" && p.Privacy != "group" {
 		errs = append(errs, errors.New("privacy must be 'public', 'almost private', or 'private'"))
 		return  errs
 	}

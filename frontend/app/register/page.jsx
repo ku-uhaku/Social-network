@@ -8,6 +8,7 @@ import ImageUploadButton from "@/components/shared/ImageUploadButton";
 import AuthBackground from "@/components/shared/AuthBackground";
 import NailButton from "@/components/shared/NailButton";
 import { useToast } from "@/contexts/ToastContext";
+import { isOldEnough } from "@/lib/utils";
 
 const initialState = {
   username: "",
@@ -30,7 +31,7 @@ export default function RegisterPage() {
 
   return (
     <AuthBackground>
-      <RegisterForm />
+      <RegisterFormAutomatic />
     </AuthBackground>
   );
 }
@@ -49,12 +50,19 @@ function RegisterForm() {
     const { name, value } = e.target;
     setValues((v) => ({ ...v, [name]: value }));
   }
-
+  console.log("all that");
+  
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     setSubmitting(true);
-
+    // console.log("values.date_of_birth:::okok",values.date_of_birth);
+     console.log("values.date_of_birth:::okok",values.date_of_birth);
+    if (!isOldEnough(values.date_of_birth)){
+      setError("You must select a valid age (you must be at least 16 years old)");
+      setSubmitting(false);
+      return
+    }
     try {
       const formData = new FormData();
       formData.append("username", values.username.trim());
@@ -63,6 +71,7 @@ function RegisterForm() {
       formData.append("first_name", values.first_name.trim());
       formData.append("last_name", values.last_name.trim());
       formData.append("gender", values.gender);
+      console.log("values.date_of_birth:::",values.date_of_birth);
       formData.append("date_of_birth", values.date_of_birth);
       if (values.about_me?.trim()) formData.append("about_me", values.about_me.trim());
       if (avatar) formData.append("avatar", avatar);
@@ -82,12 +91,9 @@ function RegisterForm() {
       <img className="separator" src="/images/card_separator.png" alt="" />
       <form className="card" onSubmit={handleSubmit}>
         <h1 className="title">Create an account</h1>
-
-        {error && <div className="error">{error}</div>}
-
         <div className="field">
-          <label className="label" htmlFor="username">Nickname</label>
-          <input id="username" name="username" className="input" type="text" value={values.username} onChange={handleChange} required minLength={3} maxLength={20} />
+          <label className="label" htmlFor="username">Nickname (optional)</label>
+          <input id="username" name="username" className="input" type="text" value={values.username} onChange={handleChange} maxLength={20} />
         </div>
 
         <div className="field">
@@ -124,17 +130,16 @@ function RegisterForm() {
           <label className="label" htmlFor="date_of_birth">Date of birth</label>
           <input id="date_of_birth" name="date_of_birth" className="input" type="date" value={values.date_of_birth} onChange={handleChange} required />
         </div>
-
         <ImageUploadButton
           label="Avatar (optional)"
           value={avatar}
           onChange={setAvatar}
-        />
-
+          />
         <div className="field">
           <label className="label" htmlFor="about_me">About me (optional)</label>
           <textarea id="about_me" name="about_me" className="input" rows={3} value={values.about_me} onChange={handleChange} />
         </div>
+          {error && <div className="error">{error}</div>}
 
         <NailButton type="submit" disabled={submitting}>
           {submitting ? "Creating account..." : "Create account"}

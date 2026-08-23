@@ -15,12 +15,10 @@ func (m *Middleware) AllowMethods(allowedMethods ...string) func(http.Handler) h
 					break
 				}
 			}
-
 			if !isAllowed {
 				http.Error(w, "Status Method Not Allowed", http.StatusMethodNotAllowed)
 				return
 			}
-
 			next.ServeHTTP(w, r)
 		})
 	}

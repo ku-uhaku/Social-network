@@ -45,16 +45,16 @@ type UpdateProfilePayload struct {
 // UserProfileView represents a user profile as displayed on the profile page,
 // including follow statistics and the viewer's relationship to the user.
 type UserProfileView struct {
-	ID          int64   `json:"id"`
-	Username    string  `json:"username"`
-	Email       string  `json:"email"`
-	FirstName   string  `json:"first_name"`
-	LastName    string  `json:"last_name"`
-	Gender      string  `json:"gender"`
-	DateOfBirth string  `json:"date_of_birth"`
-	IsPublic    int     `json:"is_public"`
-	Avatar      *string `json:"avatar"`
-	AboutMe     *string `json:"about_me"`
+	ID          int64     `json:"id"`
+	Username    string    `json:"username"`
+	Email       string    `json:"email"`
+	FirstName   string    `json:"first_name"`
+	LastName    string    `json:"last_name"`
+	Gender      string    `json:"gender"`
+	DateOfBirth string    `json:"date_of_birth"`
+	IsPublic    int       `json:"is_public"`
+	Avatar      *string   `json:"avatar"`
+	AboutMe     *string   `json:"about_me"`
 	CreatedAt   time.Time `json:"created_at"`
 
 	FollowersCount int64  `json:"followers_count"`
@@ -80,4 +80,9 @@ type UserFollowView struct {
 type FollowStats struct {
 	FollowersCount int64 `json:"followers_count"`
 	FollowingCount int64 `json:"following_count"`
+}
+
+type ErrorMsg struct {
+	Code int
+	Message  string
 }

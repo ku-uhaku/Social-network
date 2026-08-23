@@ -48,8 +48,7 @@ var imageExtensions = map[string]string{
 	"gif":  ".gif",
 }
 
-
-// avoid renaaaame file 
+// avoid renaaaame file
 // the deteeeected of foormaat "jpeg", "png", or "gif"
 func IsValidImage(data []byte) (string, error) {
 	if len(data) == 0 {

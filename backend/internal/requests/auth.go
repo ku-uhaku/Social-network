@@ -50,7 +50,6 @@ func ParseRegisterPayload(r *http.Request) (models.InputRegisterPayload, error) 
 				payload.Avatar = &avatarName
 			}
 		}
-		println("---------displaaay the avatar",payload.Avatar)
 	}
 	return payload, nil
 }
@@ -58,12 +57,7 @@ func ParseRegisterPayload(r *http.Request) (models.InputRegisterPayload, error) 
 func ValidateRegister(payload models.InputRegisterPayload) []ValidationError {
 	var errs []ValidationError
 
-	if strings.TrimSpace(payload.Username) == "" {
-		errs = append(errs, ValidationError{
-			Field:   "username",
-			Message: "username is required",
-		})
-	} else if !usernameRegex.MatchString(payload.Username) {
+	 if strings.TrimSpace(payload.Username) != ""&&!usernameRegex.MatchString(payload.Username) {
 		errs = append(errs, ValidationError{
 			Field:   "username",
 			Message: "username must be between 3 and 20 alphanumeric characters or underscores",

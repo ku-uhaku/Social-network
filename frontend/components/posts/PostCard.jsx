@@ -11,6 +11,8 @@ export default function PostCard({ post, isFeed = true }) {
   const imageSrc = resolveMediaSrc(post.image_url);
   const author = post.user || {};
   const authorName = author.username || "Unknown";
+  console.log("the title ", content)
+  console.log("the title fdsgfdgdf ", post.title)
 
   const cardContent = (
     <>
@@ -24,17 +26,13 @@ export default function PostCard({ post, isFeed = true }) {
             </div>
           </div>
         </div>
-
         <img className="postCardHeaderDecoration" src="/images/post_corner_decoration.png" alt="" />
       </div>
-
       <h2 className="postTitle">{post.title}</h2>
       <img className="postTitleSeparator" src="/images/post_title_separator.png" alt="" />
-
       {imageSrc && (
         <img className="postCardImage" src={imageSrc} alt="image" />
       )}
-
       <p className="postSnippet">{snippet}</p>
     </>
   );

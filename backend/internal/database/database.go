@@ -21,6 +21,7 @@ func New(path string) *DB {
 		log.Fatal("[DATABASE] : ", err.Error())
 	}
 	
+	
 
 	if err := db.Ping(); err != nil {
 		db.Close()
