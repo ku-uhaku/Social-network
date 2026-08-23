@@ -44,6 +44,9 @@ func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
 func writeLoop(client *ws.Client) {
 	for msg := range client.Send {
 		if err := client.Conn.WriteMessage(websocket.TextMessage, msg); err != nil {
+			// The connection is broken: close it so readLoop unblocks and
+			// unregisters the client instead of leaving it in the hub.
+			client.Conn.Close()
 			return
 		}
 	}

@@ -8,7 +8,7 @@ import (
 	"kuu/internal/models"
 )
 
-const maxDirectMessageLength = 2000
+const maxMessageLength = 2000
 
 var (
 	ErrChatSelf         = errors.New("schizophrenia detected")
@@ -41,7 +41,7 @@ func (s *Service) SaveDirectMessage(senderID, receiverID int64, content string) 
 	if content == "" {
 		return nil, ErrChatEmpty
 	}
-	if len(content) > maxDirectMessageLength {
+	if len(content) > maxMessageLength {
 		return nil, ErrChatTooLong
 	}
 
@@ -53,6 +53,15 @@ func (s *Service) SaveGroupMessage(senderID, groupID int64, content string) (*mo
 	if err != nil || status != "accepted" {
 		return nil, errors.New("unauthorized group access")
 	}
+
+	content = strings.TrimSpace(content)
+	if content == "" {
+		return nil, ErrChatEmpty
+	}
+	if len(content) > maxMessageLength {
+		return nil, ErrChatTooLong
+	}
+
 	return s.Repo.SaveGroupMessage(senderID, groupID, content)
 }
 

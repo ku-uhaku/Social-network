@@ -135,7 +135,7 @@ SELECT gm.id, gm.group_id, gm.sender_id, u.username, u.avatar, gm.content, gm.cr
 FROM group_messages gm
 JOIN users u ON u.id = gm.sender_id
 WHERE gm.group_id = $1
-ORDER BY gm.created_at DESC
+ORDER BY gm.id DESC
 LIMIT $2 OFFSET $3
 `
 	rows, err := r.DB.Database.Query(query, groupID, limit, offset)
@@ -152,7 +152,7 @@ LIMIT $2 OFFSET $3
 		}
 		msgs = append(msgs, m)
 	}
-	return msgs, nil
+	return msgs, rows.Err()
 }
 
 // GetGroupMemberIDs returns all active user IDs in a group for event routing
