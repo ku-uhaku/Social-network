@@ -21,7 +21,7 @@ export function useChat() {
     playSfxRef.current = playSfx;
   }, [playSfx]);
 
-  const [open, setOpen] = useState(false);
+  const [open, setOpenState] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [unread, setUnread] = useState({}); // { [userId]: count }
 
@@ -69,6 +69,14 @@ export function useChat() {
     });
     return unsub;
   }, [user, subscribe, open, activeId]);
+
+  // Closing the modal ends the open thread, so reopening always refetches the
+  // history instead of showing a thread missing the messages that arrived meanwhile.
+  const setOpen = (next) => {
+    const value = typeof next === "function" ? next(open) : next;
+    if (!value) setActiveId(null);
+    setOpenState(value);
+  };
 
   const totalUnread = Object.values(unread).filter((count) => count > 0).length;
   const activeContact = conversations.find((c) => c.user_id === activeId) || null;
