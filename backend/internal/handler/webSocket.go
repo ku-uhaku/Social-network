@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 
@@ -27,7 +26,6 @@ func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Printf("[WS] upgrade failed: %v", err)
 		return
 	}
 
@@ -63,7 +61,6 @@ func (h *Handler) readLoop(client *ws.Client) {
 
 		var event ws.Event
 		if err := json.Unmarshal(raw, &event); err != nil {
-			log.Printf("[WS] invalid event from user %d: %v", client.UserID, err)
 			continue
 		}
 
@@ -84,7 +81,6 @@ func (h *Handler) sendDirectMessage(senderID int64, payload interface{}) {
 
 	msg, err := h.Service.SaveDirectMessage(senderID, *req.ReceiverID, req.Content)
 	if err != nil {
-		log.Printf("[WS] cannot save direct message: %v", err)
 		return
 	}
 
@@ -101,13 +97,11 @@ func (h *Handler) sendGroupMessage(senderID int64, payload interface{}) {
 	// The service checks that the sender belongs to the group.
 	msg, err := h.Service.SaveGroupMessage(senderID, *req.GroupID, req.Content)
 	if err != nil {
-		log.Printf("[WS] cannot save group message: %v", err)
 		return
 	}
 
 	memberIDs, err := h.Service.GetGroupMemberIDs(*req.GroupID)
 	if err != nil {
-		log.Printf("[WS] cannot load members of group %d: %v", *req.GroupID, err)
 		return
 	}
 
