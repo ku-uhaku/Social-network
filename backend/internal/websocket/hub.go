@@ -2,7 +2,6 @@ package websocket
 
 import (
 	"encoding/json"
-	"log"
 )
 
 // Hub holds every open connection and routes events to them.
@@ -28,11 +27,9 @@ func (h *Hub) Run() {
 		select {
 		case client := <-h.register:
 			h.clients[client] = true
-			log.Printf("[WS] user %d connected (%d connections)", client.UserID, len(h.clients))
 
 		case client := <-h.unregister:
 			h.remove(client)
-			log.Printf("[WS] user %d disconnected (%d connections)", client.UserID, len(h.clients))
 
 		case event := <-h.events:
 			h.route(event)
@@ -57,7 +54,6 @@ func (h *Hub) BroadcastToUsers(userIDs []int64, eventType string, payload interf
 func (h *Hub) route(event Event) {
 	msg, err := json.Marshal(event)
 	if err != nil {
-		log.Printf("[WS] cannot encode %s event: %v", event.Type, err)
 		return
 	}
 
