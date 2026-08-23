@@ -18,14 +18,14 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	
+
 	if validationErrs := requests.ValidateRegister(payload); len(validationErrs) > 0 {
 		fmt.Println("Validation errors:", validationErrs)
 		helper.ValidationErrorResponse(w, http.StatusUnprocessableEntity, validationErrs)
 		return
 	}
 
-	user, err := h.Service.RegisterUser(r.Context(), payload)
+	user, err := h.Service.RegisterUser(payload)
 	if err != nil {
 		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
@@ -48,7 +48,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 1. Service returns BOTH sessionInfo and user
-	sessionInfo, user, err := h.Service.LoginUser(r.Context(), payload)
+	sessionInfo, user, err := h.Service.LoginUser(payload)
 	if err != nil {
 		helper.Error(w, http.StatusUnauthorized, err.Error())
 		return
@@ -75,7 +75,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_token")
 	if err == nil {
 		// Delete session from the database asynchronously or synchronously
-		_ = h.Service.DeleteSession(r.Context(), cookie.Value)
+		_ = h.Service.DeleteSession(cookie.Value)
 	}
 
 	// Explicitly instruct the browser to wipe the cookie

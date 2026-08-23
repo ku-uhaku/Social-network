@@ -33,7 +33,7 @@ func (h *Handler) GetDirectHistory(w http.ResponseWriter, r *http.Request) {
 		page = 1
 	}
 
-	messages, err := h.Service.GetDirectHistory(r.Context(), user.ID, targetUserID, pageSize, (page-1)*pageSize)
+	messages, err := h.Service.GetDirectHistory(user.ID, targetUserID, pageSize, (page-1)*pageSize)
 	if err != nil {
 		status := http.StatusInternalServerError
 		if errors.Is(err, service.ErrChatSelf) || errors.Is(err, service.ErrChatNoConnection) {
@@ -62,7 +62,7 @@ func (h *Handler) MarkChatRead(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Service.MarkChatRead(r.Context(), user.ID, req.UserID); err != nil {
+	if err := h.Service.MarkChatRead(user.ID, req.UserID); err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -78,7 +78,7 @@ func (h *Handler) GetConversations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conversations, err := h.Service.GetConversations(r.Context(), user.ID)
+	conversations, err := h.Service.GetConversations(user.ID)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -106,7 +106,7 @@ func (h *Handler) GetGroupHistory(w http.ResponseWriter, r *http.Request) {
 		page = 1
 	}
 
-	messages, err := h.Service.GetGroupHistory(r.Context(), user.ID, groupID, pageSize, (page-1)*pageSize)
+	messages, err := h.Service.GetGroupHistory(user.ID, groupID, pageSize, (page-1)*pageSize)
 	if err != nil {
 		helper.Error(w, http.StatusForbidden, err.Error())
 		return

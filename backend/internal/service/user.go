@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 
@@ -15,24 +14,24 @@ var (
 )
 
 // UpdateProfile orchestrates incoming structural profile changes
-func (s *Service) UpdateProfile(ctx context.Context, userID int64, payload models.UpdateProfilePayload) (*models.User, error) {
-	return s.Repo.UpdateUserProfile(ctx, userID, payload)
+func (s *Service) UpdateProfile(userID int64, payload models.UpdateProfilePayload) (*models.User, error) {
+	return s.Repo.UpdateUserProfile(userID, payload)
 }
 
 // AcceptAllPendingFollows accepts all pending follow requests for a user
-func (s *Service) AcceptAllPendingFollows(ctx context.Context, targetUserID int64) ([]int64, error) {
-	return s.Repo.AcceptAllPendingFollows(ctx, targetUserID)
+func (s *Service) AcceptAllPendingFollows(targetUserID int64) ([]int64, error) {
+	return s.Repo.AcceptAllPendingFollows(targetUserID)
 }
 
 // GetUserProfile fetches a user profile by username, enriched with follow stats
 // and the requesting viewer's relationship to the target user.
-func (s *Service) GetUserProfile(ctx context.Context, viewerID int64, username string) (*models.UserProfileView, error) {
-	user, err := s.Repo.GetUserByUsername(ctx, username)
+func (s *Service) GetUserProfile(viewerID int64, username string) (*models.UserProfileView, error) {
+	user, err := s.Repo.GetUserByUsername(username)
 	if err != nil {
 		return nil, err
 	}
 
-	stats, err := s.Repo.GetFollowStats(ctx, user.ID)
+	stats, err := s.Repo.GetFollowStats(user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +58,7 @@ func (s *Service) GetUserProfile(ctx context.Context, viewerID int64, username s
 		return view, nil
 	}
 
-	status, err := s.Repo.GetFollowRelation(ctx, viewerID, user.ID)
+	status, err := s.Repo.GetFollowRelation(viewerID, user.ID)
 	if err == nil && (status == "pending" || status == "accepted") {
 		view.FollowStatus = status
 	}
@@ -68,17 +67,17 @@ func (s *Service) GetUserProfile(ctx context.Context, viewerID int64, username s
 }
 
 // GetUserPosts retrieves a user's posts (excluding group posts) with author metadata
-func (s *Service) GetUserPosts(ctx context.Context, targetUserID int64, viewerID int64) ([]models.Post, error) {
-    return s.Repo.GetUserPosts(ctx, targetUserID, viewerID)
+func (s *Service) GetUserPosts(targetUserID int64, viewerID int64) ([]models.Post, error) {
+	return s.Repo.GetUserPosts(targetUserID, viewerID)
 }
 
-func (s *Service) FollowUser(ctx context.Context, followerID, targetID int64) (string, error) {
+func (s *Service) FollowUser(followerID, targetID int64) (string, error) {
 	if followerID == targetID {
 		return "", ErrCannotFollowSelf
 	}
 
 	// 1. Verify target user exists
-	targetUser, err := s.Repo.GetUserByID(ctx, targetID)
+	targetUser, err := s.Repo.GetUserByID(targetID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", errors.New("target user does not exist")
@@ -87,7 +86,7 @@ func (s *Service) FollowUser(ctx context.Context, followerID, targetID int64) (s
 	}
 
 	// 2. Check current status
-	status, err := s.Repo.GetFollowRelation(ctx, followerID, targetID)
+	status, err := s.Repo.GetFollowRelation(followerID, targetID)
 	if err == nil && (status == "accepted" || status == "pending") {
 		return "", ErrAlreadyFollowing
 	}
@@ -98,7 +97,7 @@ func (s *Service) FollowUser(ctx context.Context, followerID, targetID int64) (s
 		initialStatus = "pending"
 	}
 
-	if err := s.Repo.InsertFollowRelation(ctx, followerID, targetID, initialStatus); err != nil {
+	if err := s.Repo.InsertFollowRelation(followerID, targetID, initialStatus); err != nil {
 		return "", err
 	}
 
@@ -106,14 +105,14 @@ func (s *Service) FollowUser(ctx context.Context, followerID, targetID int64) (s
 }
 
 // UnfollowUser handles unfollowing or cancelling a pending request
-func (s *Service) UnfollowUser(ctx context.Context, followerID, targetID int64) error {
-	return s.Repo.RemoveFollowRelation(ctx, followerID, targetID)
+func (s *Service) UnfollowUser(followerID, targetID int64) error {
+	return s.Repo.RemoveFollowRelation(followerID, targetID)
 }
 
 // HandleFollowRequest accepts or declines an incoming request (called by target user).
 // if already accepted, returns nil; if no row exists, returns nil.
-func (s *Service) HandleFollowRequest(ctx context.Context, targetUserID, requesterID int64, accept bool) error {
-	status, err := s.Repo.GetFollowRelation(ctx, requesterID, targetUserID)
+func (s *Service) HandleFollowRequest(targetUserID, requesterID int64, accept bool) error {
+	status, err := s.Repo.GetFollowRelation(requesterID, targetUserID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil
@@ -129,28 +128,28 @@ func (s *Service) HandleFollowRequest(ctx context.Context, targetUserID, request
 	}
 
 	if accept {
-		return s.Repo.UpdateFollowStatus(ctx, requesterID, targetUserID, "accepted")
+		return s.Repo.UpdateFollowStatus(requesterID, targetUserID, "accepted")
 	}
-	return s.Repo.RemoveFollowRelation(ctx, requesterID, targetUserID)
+	return s.Repo.RemoveFollowRelation(requesterID, targetUserID)
 }
 
-func (s *Service) GetFollowers(ctx context.Context, userID int64) ([]models.UserFollowView, error) {
-	return s.Repo.GetFollowers(ctx, userID)
+func (s *Service) GetFollowers(userID int64) ([]models.UserFollowView, error) {
+	return s.Repo.GetFollowers(userID)
 }
 
-func (s *Service) GetFollowing(ctx context.Context, userID int64) ([]models.UserFollowView, error) {
-	return s.Repo.GetFollowing(ctx, userID)
+func (s *Service) GetFollowing(userID int64) ([]models.UserFollowView, error) {
+	return s.Repo.GetFollowing(userID)
 }
 
-func (s *Service) GetPendingRequests(ctx context.Context, userID int64) ([]models.UserFollowView, error) {
-	return s.Repo.GetPendingFollowRequests(ctx, userID)
+func (s *Service) GetPendingRequests(userID int64) ([]models.UserFollowView, error) {
+	return s.Repo.GetPendingFollowRequests(userID)
 }
 
-func (s *Service) GetAllUsers(ctx context.Context) ([]models.UserFollowView, error) {
-	return s.Repo.GetAllUsers(ctx)
+func (s *Service) GetAllUsers() ([]models.UserFollowView, error) {
+	return s.Repo.GetAllUsers()
 }
 
 // GetSuggestedUsers returns a shortlist of users for the viewer to follow
-func (s *Service) GetSuggestedUsers(ctx context.Context, viewerID int64, limit int) ([]models.UserFollowView, error) {
-	return s.Repo.GetSuggestedUsers(ctx, viewerID, limit)
+func (s *Service) GetSuggestedUsers(viewerID int64, limit int) ([]models.UserFollowView, error) {
+	return s.Repo.GetSuggestedUsers(viewerID, limit)
 }

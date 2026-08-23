@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"context"
-
 	"kuu/internal/models"
 )
 
@@ -13,12 +11,12 @@ const notificationSelectColumns = `
 `
 
 // CreateNotification persists a new notification for a recipient
-func (r *Repository) CreateNotification(ctx context.Context, n *models.Notification) (*models.Notification, error) {
+func (r *Repository) CreateNotification(n *models.Notification) (*models.Notification, error) {
 	query := `
 		INSERT INTO notifications (recipient_id, actor_id, type, title, message, payload, actions)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
-	res, err := r.DB.Database.ExecContext(ctx, query,
+	res, err := r.DB.Database.Exec(query,
 		n.RecipientID, n.ActorID, n.Type, n.Title, n.Message, n.Payload, n.Actions)
 	if err != nil {
 		return nil, err
@@ -27,13 +25,13 @@ func (r *Repository) CreateNotification(ctx context.Context, n *models.Notificat
 	if err != nil {
 		return nil, err
 	}
-	return r.GetNotification(ctx, n.RecipientID, id)
+	return r.GetNotification(n.RecipientID, id)
 }
 
 // GetUserNotifications returns a page of notifications for a recipient, newest
 // first, using lastID as a cursor (0 = newest page). Fetches limit+1 rows to
 // report whether a further page exists.
-func (r *Repository) GetUserNotifications(ctx context.Context, recipientID int64, limit int, lastID int64) ([]models.Notification, bool, error) {
+func (r *Repository) GetUserNotifications(recipientID int64, limit int, lastID int64) ([]models.Notification, bool, error) {
 	query := `
 		SELECT ` + notificationSelectColumns + `
 		FROM notifications n
@@ -42,7 +40,7 @@ func (r *Repository) GetUserNotifications(ctx context.Context, recipientID int64
 		ORDER BY n.id DESC
 		LIMIT $3
 	`
-	rows, err := r.DB.Database.QueryContext(ctx, query, recipientID, lastID, limit+1)
+	rows, err := r.DB.Database.Query(query, recipientID, lastID, limit+1)
 	if err != nil {
 		return nil, false, err
 	}
@@ -66,25 +64,25 @@ func (r *Repository) GetUserNotifications(ctx context.Context, recipientID int64
 }
 
 // GetUnreadCount returns the number of unread, non-expired notifications
-func (r *Repository) GetUnreadCount(ctx context.Context, recipientID int64) (int64, error) {
+func (r *Repository) GetUnreadCount(recipientID int64) (int64, error) {
 	query := `
 		SELECT COUNT(*) FROM notifications
 		WHERE recipient_id = $1 AND is_read = 0 AND is_expired = 0
 	`
 	var count int64
-	err := r.DB.Database.QueryRowContext(ctx, query, recipientID).Scan(&count)
+	err := r.DB.Database.QueryRow(query, recipientID).Scan(&count)
 	return count, err
 }
 
 // MarkNotificationRead marks a single notification (by id) or all as read for a recipient.
 // Returns the id of the single notification if it was marked, or 0 when marking all.
-func (r *Repository) MarkNotificationRead(ctx context.Context, recipientID, notificationID int64) (int64, error) {
+func (r *Repository) MarkNotificationRead(recipientID, notificationID int64) (int64, error) {
 	if notificationID > 0 {
 		query := `
 			UPDATE notifications SET is_read = 1
 			WHERE id = $1 AND recipient_id = $2 AND is_expired = 0
 		`
-		_, err := r.DB.Database.ExecContext(ctx, query, notificationID, recipientID)
+		_, err := r.DB.Database.Exec(query, notificationID, recipientID)
 		return notificationID, err
 	}
 
@@ -92,33 +90,33 @@ func (r *Repository) MarkNotificationRead(ctx context.Context, recipientID, noti
 		UPDATE notifications SET is_read = 1
 		WHERE recipient_id = $1 AND is_read = 0 AND is_expired = 0
 	`
-	_, err := r.DB.Database.ExecContext(ctx, query, recipientID)
+	_, err := r.DB.Database.Exec(query, recipientID)
 	return 0, err
 }
 
 // ExpireNotification marks a notification as expired for a recipient
-func (r *Repository) ExpireNotification(ctx context.Context, recipientID, notificationID int64) error {
+func (r *Repository) ExpireNotification(recipientID, notificationID int64) error {
 	query := `
 		UPDATE notifications SET is_expired = 1
 		WHERE id = $1 AND recipient_id = $2 AND is_expired = 0
 	`
-	_, err := r.DB.Database.ExecContext(ctx, query, notificationID, recipientID)
+	_, err := r.DB.Database.Exec(query, notificationID, recipientID)
 	return err
 }
 
 // GetNotification returns a single notification if it belongs to the recipient
-func (r *Repository) GetNotification(ctx context.Context, recipientID, notificationID int64) (*models.Notification, error) {
+func (r *Repository) GetNotification(recipientID, notificationID int64) (*models.Notification, error) {
 	query := `
 		SELECT ` + notificationSelectColumns + `
 		FROM notifications n
 		LEFT JOIN users u ON u.id = n.actor_id
 		WHERE n.id = $1 AND n.recipient_id = $2
 	`
-	return r.scanNotification(r.DB.Database.QueryRowContext(ctx, query, notificationID, recipientID))
+	return r.scanNotification(r.DB.Database.QueryRow(query, notificationID, recipientID))
 }
 
 // GetNotificationByActorType finds a notification by recipient + actor + type
-func (r *Repository) GetNotificationByActorType(ctx context.Context, recipientID, actorID int64, notifType string) (*models.Notification, error) {
+func (r *Repository) GetNotificationByActorType(recipientID, actorID int64, notifType string) (*models.Notification, error) {
 	query := `
 		SELECT ` + notificationSelectColumns + `
 		FROM notifications n
@@ -127,16 +125,16 @@ func (r *Repository) GetNotificationByActorType(ctx context.Context, recipientID
 		ORDER BY n.created_at DESC, n.id DESC
 		LIMIT 1
 	`
-	return r.scanNotification(r.DB.Database.QueryRowContext(ctx, query, recipientID, actorID, notifType))
+	return r.scanNotification(r.DB.Database.QueryRow(query, recipientID, actorID, notifType))
 }
 
 // ExpireNotificationsByType marks all unread, non-expired notifications of a type as expired
-func (r *Repository) ExpireNotificationsByType(ctx context.Context, recipientID int64, notifType string) error {
+func (r *Repository) ExpireNotificationsByType(recipientID int64, notifType string) error {
 	query := `
 		UPDATE notifications SET is_expired = 1
 		WHERE recipient_id = $1 AND type = $2 AND is_read = 0 AND is_expired = 0
 	`
-	_, err := r.DB.Database.ExecContext(ctx, query, recipientID, notifType)
+	_, err := r.DB.Database.Exec(query, recipientID, notifType)
 	return err
 }
 
@@ -159,4 +157,3 @@ func (r *Repository) scanNotification(row rowScanner) (*models.Notification, err
 	}
 	return &n, nil
 }
-

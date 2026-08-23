@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"context"
 	"database/sql"
 	"strconv"
 	"strings"
@@ -10,7 +9,7 @@ import (
 )
 
 // GetUserByID fetches a complete user profile by its primary key integer
-func (r *Repository) GetUserByID(ctx context.Context, userID int64) (*models.User, error) {
+func (r *Repository) GetUserByID(userID int64) (*models.User, error) {
 	var user models.User
 
 	query := `
@@ -20,7 +19,7 @@ func (r *Repository) GetUserByID(ctx context.Context, userID int64) (*models.Use
         LIMIT 1
     `
 
-	err := r.DB.Database.QueryRowContext(ctx, query, userID).Scan(
+	err := r.DB.Database.QueryRow(query, userID).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
@@ -41,7 +40,7 @@ func (r *Repository) GetUserByID(ctx context.Context, userID int64) (*models.Use
 }
 
 // GetUserByUsername fetches a complete user profile by its unique username
-func (r *Repository) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
+func (r *Repository) GetUserByUsername(username string) (*models.User, error) {
 	var user models.User
 
 	query := `
@@ -51,7 +50,7 @@ func (r *Repository) GetUserByUsername(ctx context.Context, username string) (*m
         LIMIT 1
     `
 
-	err := r.DB.Database.QueryRowContext(ctx, query, username).Scan(
+	err := r.DB.Database.QueryRow(query, username).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
@@ -70,27 +69,27 @@ func (r *Repository) GetUserByUsername(ctx context.Context, username string) (*m
 
 	return &user, nil
 }
-func (r *Repository) IsPrivate(ctx context.Context, id int64) (bool, error) {
+func (r *Repository) IsPrivate(id int64) (bool, error) {
 	// var user models.User
-	var is_public  int
+	var is_public int
 	query := `
         SELECT is_public
         FROM users 
         WHERE id = $1
     `
-	err := r.DB.Database.QueryRowContext(ctx, query, id).Scan(
+	err := r.DB.Database.QueryRow(query, id).Scan(
 		&is_public,
 	)
 	if err != nil {
 		return false, err // Returns sql.ErrNoRows if the username doesn't exist
 	}
-	if (is_public==1){
-		return  false,nil
+	if is_public == 1 {
+		return false, nil
 	}
 	return true, nil
 }
 
-func (r *Repository) CreateUser(ctx context.Context, payload models.InputRegisterPayload, hashedPassword string) (*models.User, error) {
+func (r *Repository) CreateUser(payload models.InputRegisterPayload, hashedPassword string) (*models.User, error) {
 	var user models.User
 
 	query := `
@@ -101,8 +100,8 @@ func (r *Repository) CreateUser(ctx context.Context, payload models.InputRegiste
 		RETURNING id, username, email, first_name, last_name, gender, date_of_birth, is_public, avatar, about_me, created_at
 	`
 
-	err := r.DB.Database.QueryRowContext(
-		ctx, query,
+	err := r.DB.Database.QueryRow(
+		query,
 		strings.TrimSpace(payload.Username),
 		strings.ToLower(strings.TrimSpace(payload.Email)),
 		payload.FirstName,
@@ -144,7 +143,7 @@ func (r *Repository) CreateUser(ctx context.Context, payload models.InputRegiste
 }
 
 // UpdateUserProfile updates the public/private state of a user profile
-func (r *Repository) UpdateUserProfile(ctx context.Context, userID int64, payload models.UpdateProfilePayload) (*models.User, error) {
+func (r *Repository) UpdateUserProfile(userID int64, payload models.UpdateProfilePayload) (*models.User, error) {
 	var user models.User
 
 	query := `
@@ -155,8 +154,8 @@ func (r *Repository) UpdateUserProfile(ctx context.Context, userID int64, payloa
 		          is_public, avatar, about_me, created_at
 	`
 
-	err := r.DB.Database.QueryRowContext(
-		ctx, query,
+	err := r.DB.Database.QueryRow(
+		query,
 		payload.IsPublic,
 		userID,
 	).Scan(
@@ -181,7 +180,7 @@ func (r *Repository) UpdateUserProfile(ctx context.Context, userID int64, payloa
 
 // GetUserPosts retrieves a user's posts (excluding group posts) with author metadata
 // viewerID is the ID of the user viewing the posts (for visibility checks)
-func (r *Repository) GetUserPosts(ctx context.Context, targetUserID int64, viewerID int64) ([]models.Post, error) {
+func (r *Repository) GetUserPosts(targetUserID int64, viewerID int64) ([]models.Post, error) {
 	query := `
 		SELECT p.id, p.user_id, p.group_id, p.title, p.content, p.privacy, p.image_url, p.created_at,
 			(SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comments_count,
@@ -203,7 +202,7 @@ func (r *Repository) GetUserPosts(ctx context.Context, targetUserID int64, viewe
 		)
 		ORDER BY p.created_at DESC, p.id DESC
 	`
-	rows, err := r.DB.Database.QueryContext(ctx, query, targetUserID, viewerID)
+	rows, err := r.DB.Database.Query(query, targetUserID, viewerID)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +224,7 @@ func (r *Repository) GetUserPosts(ctx context.Context, targetUserID int64, viewe
 }
 
 // GetFollowStats returns accepted follower and following counts for a user
-func (r *Repository) GetFollowStats(ctx context.Context, userID int64) (*models.FollowStats, error) {
+func (r *Repository) GetFollowStats(userID int64) (*models.FollowStats, error) {
 	var stats models.FollowStats
 
 	query := `
@@ -233,7 +232,7 @@ func (r *Repository) GetFollowStats(ctx context.Context, userID int64) (*models.
 			(SELECT COUNT(*) FROM follows WHERE following_id = $1 AND status = 'accepted') AS followers_count,
 			(SELECT COUNT(*) FROM follows WHERE follower_id = $1 AND status = 'accepted') AS following_count
 	`
-	err := r.DB.Database.QueryRowContext(ctx, query, userID).Scan(&stats.FollowersCount, &stats.FollowingCount)
+	err := r.DB.Database.QueryRow(query, userID).Scan(&stats.FollowersCount, &stats.FollowingCount)
 	if err != nil {
 		return nil, err
 	}
@@ -241,33 +240,33 @@ func (r *Repository) GetFollowStats(ctx context.Context, userID int64) (*models.
 }
 
 // InsertFollowRelation inserts or updates a follow relation with appropriate status
-func (r *Repository) InsertFollowRelation(ctx context.Context, followerID, targetID int64, status string) error {
+func (r *Repository) InsertFollowRelation(followerID, targetID int64, status string) error {
 	query := `
 		INSERT INTO follows (follower_id, following_id, status)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (follower_id, following_id) 
 		DO UPDATE SET status = EXCLUDED.status
 	`
-	_, err := r.DB.Database.ExecContext(ctx, query, followerID, targetID, status)
+	_, err := r.DB.Database.Exec(query, followerID, targetID, status)
 	return err
 }
 
 // RemoveFollowRelation removes the follower relationship
-func (r *Repository) RemoveFollowRelation(ctx context.Context, followerID, targetID int64) error {
+func (r *Repository) RemoveFollowRelation(followerID, targetID int64) error {
 	query := `DELETE FROM follows WHERE follower_id = $1 AND following_id = $2`
-	_, err := r.DB.Database.ExecContext(ctx, query, followerID, targetID)
+	_, err := r.DB.Database.Exec(query, followerID, targetID)
 	return err
 }
 
 // AcceptAllPendingFollows accepts all pending follow requests for a target user,
 // returning the list of follower IDs that were accepted.
-func (r *Repository) AcceptAllPendingFollows(ctx context.Context, targetUserID int64) ([]int64, error) {
+func (r *Repository) AcceptAllPendingFollows(targetUserID int64) ([]int64, error) {
 	query := `
 		UPDATE follows SET status = 'accepted'
 		WHERE following_id = $1 AND status = 'pending'
 		RETURNING follower_id
 	`
-	rows, err := r.DB.Database.QueryContext(ctx, query, targetUserID)
+	rows, err := r.DB.Database.Query(query, targetUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -285,13 +284,13 @@ func (r *Repository) AcceptAllPendingFollows(ctx context.Context, targetUserID i
 }
 
 // UpdateFollowStatus changes request status ('pending' -> 'accepted')
-func (r *Repository) UpdateFollowStatus(ctx context.Context, followerID, targetID int64, status string) error {
+func (r *Repository) UpdateFollowStatus(followerID, targetID int64, status string) error {
 	query := `
 		UPDATE follows 
 		SET status = $1 
 		WHERE follower_id = $2 AND following_id = $3
 	`
-	res, err := r.DB.Database.ExecContext(ctx, query, status, followerID, targetID)
+	res, err := r.DB.Database.Exec(query, status, followerID, targetID)
 	if err != nil {
 		return err
 	}
@@ -306,10 +305,10 @@ func (r *Repository) UpdateFollowStatus(ctx context.Context, followerID, targetI
 }
 
 // GetFollowRelation fetches current relation status if any
-func (r *Repository) GetFollowRelation(ctx context.Context, followerID, targetID int64) (string, error) {
+func (r *Repository) GetFollowRelation(followerID, targetID int64) (string, error) {
 	var status string
 	query := `SELECT status FROM follows WHERE follower_id = $1 AND following_id = $2 LIMIT 1`
-	err := r.DB.Database.QueryRowContext(ctx, query, followerID, targetID).Scan(&status)
+	err := r.DB.Database.QueryRow(query, followerID, targetID).Scan(&status)
 	if err != nil {
 		return "", err
 	}
@@ -318,7 +317,7 @@ func (r *Repository) GetFollowRelation(ctx context.Context, followerID, targetID
 
 // CanChat reports whether two users share an accepted follow relation in
 // either direction (a chat eligibility check, not a login state).
-func (r *Repository) CanChat(ctx context.Context, userA, userB int64) (bool, error) {
+func (r *Repository) CanChat(userA, userB int64) (bool, error) {
 	query := `
 		SELECT EXISTS(
 			SELECT 1 FROM follows
@@ -328,7 +327,7 @@ func (r *Repository) CanChat(ctx context.Context, userA, userB int64) (bool, err
 		)
 	`
 	var connected bool
-	err := r.DB.Database.QueryRowContext(ctx, query, userA, userB).Scan(&connected)
+	err := r.DB.Database.QueryRow(query, userA, userB).Scan(&connected)
 	if err != nil {
 		return false, err
 	}
@@ -336,7 +335,7 @@ func (r *Repository) CanChat(ctx context.Context, userA, userB int64) (bool, err
 }
 
 // GetFollowers retrieves all users following a target user (accepted status only)
-func (r *Repository) GetFollowers(ctx context.Context, targetUserID int64) ([]models.UserFollowView, error) {
+func (r *Repository) GetFollowers(targetUserID int64) ([]models.UserFollowView, error) {
 	query := `
 		SELECT u.id, u.username, u.first_name, u.last_name, u.avatar
 		FROM follows f
@@ -344,11 +343,11 @@ func (r *Repository) GetFollowers(ctx context.Context, targetUserID int64) ([]mo
 		WHERE f.following_id = $1 AND f.status = 'accepted'
 		ORDER BY f.created_at DESC
 	`
-	return r.scanUserFollowViews(ctx, query, targetUserID)
+	return r.scanUserFollowViews(query, targetUserID)
 }
 
 // GetFollowing retrieves all users followed by target user (accepted status only)
-func (r *Repository) GetFollowing(ctx context.Context, userID int64) ([]models.UserFollowView, error) {
+func (r *Repository) GetFollowing(userID int64) ([]models.UserFollowView, error) {
 	query := `
 		SELECT u.id, u.username, u.first_name, u.last_name, u.avatar
 		FROM follows f
@@ -356,11 +355,11 @@ func (r *Repository) GetFollowing(ctx context.Context, userID int64) ([]models.U
 		WHERE f.follower_id = $1 AND f.status = 'accepted'
 		ORDER BY f.created_at DESC
 	`
-	return r.scanUserFollowViews(ctx, query, userID)
+	return r.scanUserFollowViews(query, userID)
 }
 
 // GetPendingFollowRequests retrieves follow requests waiting for target user's approval
-func (r *Repository) GetPendingFollowRequests(ctx context.Context, targetUserID int64) ([]models.UserFollowView, error) {
+func (r *Repository) GetPendingFollowRequests(targetUserID int64) ([]models.UserFollowView, error) {
 	query := `
 		SELECT u.id, u.username, u.first_name, u.last_name, u.avatar
 		FROM follows f
@@ -368,17 +367,17 @@ func (r *Repository) GetPendingFollowRequests(ctx context.Context, targetUserID 
 		WHERE f.following_id = $1 AND f.status = 'pending'
 		ORDER BY f.created_at DESC
 	`
-	return r.scanUserFollowViews(ctx, query, targetUserID)
+	return r.scanUserFollowViews(query, targetUserID)
 }
 
 // GetAllUsers retrieves lightweight metadata for every user (used by group invites)
-func (r *Repository) GetAllUsers(ctx context.Context) ([]models.UserFollowView, error) {
+func (r *Repository) GetAllUsers() ([]models.UserFollowView, error) {
 	query := `
 		SELECT u.id, u.username, u.first_name, u.last_name, u.avatar
 		FROM users u
 		ORDER BY u.username ASC
 	`
-	rows, err := r.DB.Database.QueryContext(ctx, query)
+	rows, err := r.DB.Database.Query(query)
 	if err != nil {
 		return nil, err
 	}
@@ -397,7 +396,7 @@ func (r *Repository) GetAllUsers(ctx context.Context) ([]models.UserFollowView, 
 
 // GetSuggestedUsers returns users the viewer does not follow (and has no
 // pending request to), ranked by accepted follower count descending.
-func (r *Repository) GetSuggestedUsers(ctx context.Context, viewerID int64, limit int) ([]models.UserFollowView, error) {
+func (r *Repository) GetSuggestedUsers(viewerID int64, limit int) ([]models.UserFollowView, error) {
 	query := `
 	SELECT u.id, u.username, u.first_name, u.last_name, u.avatar
 		FROM users u
@@ -408,7 +407,7 @@ func (r *Repository) GetSuggestedUsers(ctx context.Context, viewerID int64, limi
 		) DESC, u.id ASC
 		LIMIT $2
 	`
-	rows, err := r.DB.Database.QueryContext(ctx, query, viewerID, limit)
+	rows, err := r.DB.Database.Query(query, viewerID, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -426,8 +425,8 @@ func (r *Repository) GetSuggestedUsers(ctx context.Context, viewerID int64, limi
 	return users, rows.Err()
 }
 
-func (r *Repository) scanUserFollowViews(ctx context.Context, query string, arg int64) ([]models.UserFollowView, error) {
-	rows, err := r.DB.Database.QueryContext(ctx, query, arg)
+func (r *Repository) scanUserFollowViews(query string, arg int64) ([]models.UserFollowView, error) {
+	rows, err := r.DB.Database.Query(query, arg)
 	if err != nil {
 		return nil, err
 	}

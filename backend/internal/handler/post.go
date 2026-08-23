@@ -31,7 +31,7 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := h.Service.CreatePost(r.Context(), user.ID, payload)
+	post, err := h.Service.CreatePost(user.ID, payload)
 	if err != nil {
 		if errors.Is(err, service.ErrAccessDenied) {
 			helper.Error(w, http.StatusForbidden, err.Error())
@@ -40,7 +40,7 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	
+
 	helper.Success(w, http.StatusCreated, "Post created successfully", post)
 }
 
@@ -75,7 +75,7 @@ func (h *Handler) GetFeed(w http.ResponseWriter, r *http.Request) {
 		cursor = &parsed
 	}
 
-	posts, hasMore, err := h.Service.GetFeed(r.Context(), user.ID, limit, cursor)
+	posts, hasMore, err := h.Service.GetFeed(user.ID, limit, cursor)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -107,7 +107,7 @@ func (h *Handler) GetPost(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	post, err := h.Service.GetPost(r.Context(), user.ID, postID)
+	post, err := h.Service.GetPost(user.ID, postID)
 	if err != nil {
 		if errors.Is(err, service.ErrAccessDenied) {
 			helper.Error(w, http.StatusForbidden, err.Error())
@@ -155,7 +155,7 @@ func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	comment, err := h.Service.AddComment(r.Context(), user.ID, payload)
+	comment, err := h.Service.AddComment(user.ID, payload)
 	if err != nil {
 		if errors.Is(err, service.ErrAccessDenied) {
 			helper.Error(w, http.StatusForbidden, err.Error())
@@ -183,7 +183,7 @@ func (h *Handler) GetComments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	comments, err := h.Service.GetComments(r.Context(), user.ID, postID)
+	comments, err := h.Service.GetComments(user.ID, postID)
 	if err != nil {
 		if errors.Is(err, service.ErrAccessDenied) {
 			helper.Error(w, http.StatusForbidden, err.Error())

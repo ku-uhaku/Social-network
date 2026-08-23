@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"strings"
@@ -18,19 +17,19 @@ var (
 	ErrChatTooLong      = errors.New("message too long")
 )
 
-func (s *Service) SaveDirectMessage(ctx context.Context, senderID, receiverID int64, content string) (*models.DirectMessage, error) {
+func (s *Service) SaveDirectMessage(senderID, receiverID int64, content string) (*models.DirectMessage, error) {
 	if senderID == receiverID {
 		return nil, ErrChatSelf
 	}
 
-	if _, err := s.Repo.GetUserByID(ctx, receiverID); err != nil {
+	if _, err := s.Repo.GetUserByID(receiverID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("receiver does not exist")
 		}
 		return nil, err
 	}
 
-	connected, err := s.Repo.CanChat(ctx, senderID, receiverID)
+	connected, err := s.Repo.CanChat(senderID, receiverID)
 	if err != nil {
 		return nil, err
 	}
@@ -46,25 +45,25 @@ func (s *Service) SaveDirectMessage(ctx context.Context, senderID, receiverID in
 		return nil, ErrChatTooLong
 	}
 
-	return s.Repo.SaveDirectMessage(ctx, senderID, receiverID, content)
+	return s.Repo.SaveDirectMessage(senderID, receiverID, content)
 }
 
-func (s *Service) SaveGroupMessage(ctx context.Context, senderID, groupID int64, content string) (*models.GroupMessage, error) {
-	status, err := s.Repo.GetMemberStatus(ctx, groupID, senderID)
+func (s *Service) SaveGroupMessage(senderID, groupID int64, content string) (*models.GroupMessage, error) {
+	status, err := s.Repo.GetMemberStatus(groupID, senderID)
 	if err != nil || status != "accepted" {
 		return nil, errors.New("unauthorized group access")
 	}
-	return s.Repo.SaveGroupMessage(ctx, senderID, groupID, content)
+	return s.Repo.SaveGroupMessage(senderID, groupID, content)
 }
 
 // GetDirectHistory authorizes the conversation, returns a page of messages and
 // marks it read when the newest page is requested.
-func (s *Service) GetDirectHistory(ctx context.Context, userA, userB int64, limit, offset int) ([]models.DirectMessage, error) {
+func (s *Service) GetDirectHistory(userA, userB int64, limit, offset int) ([]models.DirectMessage, error) {
 	if userA == userB {
 		return nil, ErrChatSelf
 	}
 
-	connected, err := s.Repo.CanChat(ctx, userA, userB)
+	connected, err := s.Repo.CanChat(userA, userB)
 	if err != nil {
 		return nil, err
 	}
@@ -73,35 +72,35 @@ func (s *Service) GetDirectHistory(ctx context.Context, userA, userB int64, limi
 	}
 
 	if offset == 0 {
-		if err := s.Repo.MarkChatRead(ctx, userA, userB); err != nil {
+		if err := s.Repo.MarkChatRead(userA, userB); err != nil {
 			return nil, err
 		}
 	}
 
-	return s.Repo.GetDirectHistory(ctx, userA, userB, limit, offset)
+	return s.Repo.GetDirectHistory(userA, userB, limit, offset)
 }
 
 // MarkChatRead marks a conversation as read up to its latest message.
-func (s *Service) MarkChatRead(ctx context.Context, userA, userB int64) error {
+func (s *Service) MarkChatRead(userA, userB int64) error {
 	if userA == userB {
 		return ErrChatSelf
 	}
-	return s.Repo.MarkChatRead(ctx, userA, userB)
+	return s.Repo.MarkChatRead(userA, userB)
 }
 
 // GetConversations lists all chat-able users for the viewer with their latest DM.
-func (s *Service) GetConversations(ctx context.Context, userID int64) ([]models.ConversationMetadata, error) {
-	return s.Repo.ListConversations(ctx, userID)
+func (s *Service) GetConversations(userID int64) ([]models.ConversationMetadata, error) {
+	return s.Repo.ListConversations(userID)
 }
 
-func (s *Service) GetGroupHistory(ctx context.Context, userID, groupID int64, limit, offset int) ([]models.GroupMessage, error) {
-	status, err := s.Repo.GetMemberStatus(ctx, groupID, userID)
+func (s *Service) GetGroupHistory(userID, groupID int64, limit, offset int) ([]models.GroupMessage, error) {
+	status, err := s.Repo.GetMemberStatus(groupID, userID)
 	if err != nil || status != "accepted" {
 		return nil, errors.New("unauthorized group access")
 	}
-	return s.Repo.GetGroupHistory(ctx, groupID, limit, offset)
+	return s.Repo.GetGroupHistory(groupID, limit, offset)
 }
 
-func (s *Service) GetGroupMemberIDs(ctx context.Context, groupID int64) ([]int64, error) {
-	return s.Repo.GetGroupMemberIDs(ctx, groupID)
+func (s *Service) GetGroupMemberIDs(groupID int64) ([]int64, error) {
+	return s.Repo.GetGroupMemberIDs(groupID)
 }

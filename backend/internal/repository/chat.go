@@ -1,20 +1,18 @@
 package repository
 
 import (
-	"context"
-
 	"kuu/internal/models"
 )
 
 // SaveDirectMessage persists a 1-on-1 message
-func (r *Repository) SaveDirectMessage(ctx context.Context, senderID, receiverID int64, content string) (*models.DirectMessage, error) {
+func (r *Repository) SaveDirectMessage(senderID, receiverID int64, content string) (*models.DirectMessage, error) {
 	query := `
 INSERT INTO direct_messages (sender_id, receiver_id, content)
 VALUES ($1, $2, $3)
 RETURNING id, sender_id, receiver_id, content, created_at
 `
 	var msg models.DirectMessage
-	err := r.DB.Database.QueryRowContext(ctx, query, senderID, receiverID, content).
+	err := r.DB.Database.QueryRow(query, senderID, receiverID, content).
 		Scan(&msg.ID, &msg.SenderID, &msg.ReceiverID, &msg.Content, &msg.CreatedAt)
 	if err != nil {
 		return nil, err
@@ -24,7 +22,7 @@ RETURNING id, sender_id, receiver_id, content, created_at
 
 // SaveGroupMessage persists a group message and returns it joined with the
 // sender's username/avatar so realtime recipients can render it immediately.
-func (r *Repository) SaveGroupMessage(ctx context.Context, senderID, groupID int64, content string) (*models.GroupMessage, error) {
+func (r *Repository) SaveGroupMessage(senderID, groupID int64, content string) (*models.GroupMessage, error) {
 	query := ` INSERT INTO group_messages (group_id, sender_id, content)
 VALUES ($1, $2, $3)
 RETURNING id, group_id, sender_id, content, created_at,
@@ -32,7 +30,7 @@ RETURNING id, group_id, sender_id, content, created_at,
           (SELECT avatar FROM users WHERE id = sender_id)
 `
 	var msg models.GroupMessage
-	err := r.DB.Database.QueryRowContext(ctx, query, groupID, senderID, content).
+	err := r.DB.Database.QueryRow(query, groupID, senderID, content).
 		Scan(&msg.ID, &msg.GroupID, &msg.SenderID, &msg.Content, &msg.CreatedAt, &msg.Username, &msg.Avatar)
 	if err != nil {
 		return nil, err
@@ -41,7 +39,7 @@ RETURNING id, group_id, sender_id, content, created_at,
 }
 
 // GetDirectHistory returns a page of DMs between two users, newest first.
-func (r *Repository) GetDirectHistory(ctx context.Context, userA, userB int64, limit, offset int) ([]models.DirectMessage, error) {
+func (r *Repository) GetDirectHistory(userA, userB int64, limit, offset int) ([]models.DirectMessage, error) {
 	query := `
 SELECT id, sender_id, receiver_id, content, created_at
 FROM direct_messages
@@ -49,7 +47,7 @@ WHERE (sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id =
 ORDER BY id DESC
 LIMIT $3 OFFSET $4
 `
-	rows, err := r.DB.Database.QueryContext(ctx, query, userA, userB, limit, offset)
+	rows, err := r.DB.Database.Query(query, userA, userB, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +65,7 @@ LIMIT $3 OFFSET $4
 }
 
 // MarkChatRead records that the viewer has read the conversation up to its latest message.
-func (r *Repository) MarkChatRead(ctx context.Context, viewerID, otherUserID int64) error {
+func (r *Repository) MarkChatRead(viewerID, otherUserID int64) error {
 	query := `
 INSERT INTO chat_reads (user_id, other_user_id, last_read_message_id)
 VALUES ($1, $2, COALESCE((
@@ -79,7 +77,7 @@ ON CONFLICT(user_id, other_user_id) DO UPDATE SET
 last_read_message_id = excluded.last_read_message_id,
 updated_at = CURRENT_TIMESTAMP
 `
-	_, err := r.DB.Database.ExecContext(ctx, query, viewerID, otherUserID)
+	_, err := r.DB.Database.Exec(query, viewerID, otherUserID)
 	return err
 }
 
@@ -87,7 +85,7 @@ updated_at = CURRENT_TIMESTAMP
 // either direction) with the timestamp of their latest DM and their unread message
 // count, ordered by most recent message first and alphabetically for conversations
 // with no messages yet.
-func (r *Repository) ListConversations(ctx context.Context, viewerID int64) ([]models.ConversationMetadata, error) {
+func (r *Repository) ListConversations(viewerID int64) ([]models.ConversationMetadata, error) {
 	query := `
 SELECT u.id, u.username, u.avatar, dm.created_at,
        (SELECT COUNT(*)
@@ -113,7 +111,7 @@ OR (f.follower_id = u.id AND f.following_id = $1))
   )
 ORDER BY (dm.created_at IS NULL) ASC, dm.created_at DESC, u.username ASC
 `
-	rows, err := r.DB.Database.QueryContext(ctx, query, viewerID)
+	rows, err := r.DB.Database.Query(query, viewerID)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +129,7 @@ ORDER BY (dm.created_at IS NULL) ASC, dm.created_at DESC, u.username ASC
 }
 
 // GetGroupHistory retrieves paginated chat history for a group
-func (r *Repository) GetGroupHistory(ctx context.Context, groupID int64, limit, offset int) ([]models.GroupMessage, error) {
+func (r *Repository) GetGroupHistory(groupID int64, limit, offset int) ([]models.GroupMessage, error) {
 	query := `
 SELECT gm.id, gm.group_id, gm.sender_id, u.username, u.avatar, gm.content, gm.created_at
 FROM group_messages gm
@@ -140,7 +138,7 @@ WHERE gm.group_id = $1
 ORDER BY gm.created_at DESC
 LIMIT $2 OFFSET $3
 `
-	rows, err := r.DB.Database.QueryContext(ctx, query, groupID, limit, offset)
+	rows, err := r.DB.Database.Query(query, groupID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -158,9 +156,9 @@ LIMIT $2 OFFSET $3
 }
 
 // GetGroupMemberIDs returns all active user IDs in a group for event routing
-func (r *Repository) GetGroupMemberIDs(ctx context.Context, groupID int64) ([]int64, error) {
+func (r *Repository) GetGroupMemberIDs(groupID int64) ([]int64, error) {
 	query := `SELECT user_id FROM group_members WHERE group_id = $1 AND status = 'accepted'`
-	rows, err := r.DB.Database.QueryContext(ctx, query, groupID)
+	rows, err := r.DB.Database.Query(query, groupID)
 	if err != nil {
 		return nil, err
 	}

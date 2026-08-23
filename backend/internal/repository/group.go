@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"context"
 	"database/sql"
 	"strings"
 	"time"
@@ -10,8 +9,8 @@ import (
 )
 
 // CreateGroup inserts the group AND adds the creator as an accepted member atomically using a transaction
-func (r *Repository) CreateGroup(ctx context.Context, creatorID int64, payload models.CreateGroupPayload) (*models.Group, error) {
-	tx, err := r.DB.Database.BeginTx(ctx, nil)
+func (r *Repository) CreateGroup(creatorID int64, payload models.CreateGroupPayload) (*models.Group, error) {
+	tx, err := r.DB.Database.Begin()
 	if err != nil {
 		return nil, err
 	}
@@ -24,8 +23,8 @@ func (r *Repository) CreateGroup(ctx context.Context, creatorID int64, payload m
 		VALUES ($1, $2, $3, $4)
 		RETURNING id, title, description, creator_id, is_public, created_at
 	`
-	err = tx.QueryRowContext(
-		ctx, groupQuery,
+	err = tx.QueryRow(
+		groupQuery,
 		strings.TrimSpace(payload.Title),
 		strings.TrimSpace(payload.Description),
 		creatorID,
@@ -47,7 +46,7 @@ func (r *Repository) CreateGroup(ctx context.Context, creatorID int64, payload m
 		INSERT INTO group_members (group_id, user_id, status)
 		VALUES ($1, $2, 'accepted')
 	`
-	_, err = tx.ExecContext(ctx, memberQuery, group.ID, creatorID)
+	_, err = tx.Exec(memberQuery, group.ID, creatorID)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +60,7 @@ func (r *Repository) CreateGroup(ctx context.Context, creatorID int64, payload m
 }
 
 // GetGroupByID fetches a single group by ID
-func (r *Repository) GetGroupByID(ctx context.Context, groupID int64) (*models.Group, error) {
+func (r *Repository) GetGroupByID(groupID int64) (*models.Group, error) {
 	var group models.Group
 	query := `
 		SELECT id, title, description, creator_id, is_public, created_at
@@ -69,7 +68,7 @@ func (r *Repository) GetGroupByID(ctx context.Context, groupID int64) (*models.G
 		WHERE id = $1
 		LIMIT 1
 	`
-	err := r.DB.Database.QueryRowContext(ctx, query, groupID).Scan(
+	err := r.DB.Database.QueryRow(query, groupID).Scan(
 		&group.ID,
 		&group.Title,
 		&group.Description,
@@ -85,13 +84,13 @@ func (r *Repository) GetGroupByID(ctx context.Context, groupID int64) (*models.G
 }
 
 // GetAllGroups fetches all groups (can be extended later for pagination/filtering)
-func (r *Repository) GetAllGroups(ctx context.Context) ([]models.Group, error) {
+func (r *Repository) GetAllGroups() ([]models.Group, error) {
 	query := `
 		SELECT id, title, description, creator_id, is_public, created_at
 		FROM groups
 		ORDER BY created_at DESC
 	`
-	rows, err := r.DB.Database.QueryContext(ctx, query)
+	rows, err := r.DB.Database.Query(query)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +109,7 @@ func (r *Repository) GetAllGroups(ctx context.Context) ([]models.Group, error) {
 }
 
 // UpdateGroup modifies group details if the caller is the creator
-func (r *Repository) UpdateGroup(ctx context.Context, groupID int64, payload models.UpdateGroupPayload) (*models.Group, error) {
+func (r *Repository) UpdateGroup(groupID int64, payload models.UpdateGroupPayload) (*models.Group, error) {
 	var group models.Group
 	query := `
 		UPDATE groups
@@ -118,8 +117,8 @@ func (r *Repository) UpdateGroup(ctx context.Context, groupID int64, payload mod
 		WHERE id = $4
 		RETURNING id, title, description, creator_id, is_public, created_at
 	`
-	err := r.DB.Database.QueryRowContext(
-		ctx, query,
+	err := r.DB.Database.QueryRow(
+		query,
 		strings.TrimSpace(payload.Title),
 		strings.TrimSpace(payload.Description),
 		*payload.IsPublic,
@@ -140,9 +139,9 @@ func (r *Repository) UpdateGroup(ctx context.Context, groupID int64, payload mod
 }
 
 // DeleteGroup removes a group and its cascading relations (members, posts, invites)
-func (r *Repository) DeleteGroup(ctx context.Context, groupID int64) error {
+func (r *Repository) DeleteGroup(groupID int64) error {
 	query := `DELETE FROM groups WHERE id = $1`
-	res, err := r.DB.Database.ExecContext(ctx, query, groupID)
+	res, err := r.DB.Database.Exec(query, groupID)
 	if err != nil {
 		return err
 	}
@@ -158,8 +157,8 @@ func (r *Repository) DeleteGroup(ctx context.Context, groupID int64) error {
 	return nil
 }
 
-func (r *Repository) InviteUsersBatch(ctx context.Context, groupID int64, userIDs []int64) error {
-	tx, err := r.DB.Database.BeginTx(ctx, nil)
+func (r *Repository) InviteUsersBatch(groupID int64, userIDs []int64) error {
+	tx, err := r.DB.Database.Begin()
 	if err != nil {
 		return err
 	}
@@ -170,14 +169,14 @@ func (r *Repository) InviteUsersBatch(ctx context.Context, groupID int64, userID
 		VALUES ($1, $2, 'pending')
 		ON CONFLICT (group_id, user_id) DO NOTHING
 	`
-	stmt, err := tx.PrepareContext(ctx, query)
+	stmt, err := tx.Prepare(query)
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
 	for _, uid := range userIDs {
-		if _, err := stmt.ExecContext(ctx, groupID, uid); err != nil {
+		if _, err := stmt.Exec(groupID, uid); err != nil {
 			return err
 		}
 	}
@@ -186,13 +185,13 @@ func (r *Repository) InviteUsersBatch(ctx context.Context, groupID int64, userID
 }
 
 // UpdateMemberStatus updates membership status ('accepted', 'declined', etc.)
-func (r *Repository) UpdateMemberStatus(ctx context.Context, groupID int64, userID int64, status string) error {
+func (r *Repository) UpdateMemberStatus(groupID int64, userID int64, status string) error {
 	query := `
 		UPDATE group_members 
 		SET status = $1 
 		WHERE group_id = $2 AND user_id = $3
 	`
-	res, err := r.DB.Database.ExecContext(ctx, query, status, groupID, userID)
+	res, err := r.DB.Database.Exec(query, status, groupID, userID)
 	if err != nil {
 		return err
 	}
@@ -207,28 +206,28 @@ func (r *Repository) UpdateMemberStatus(ctx context.Context, groupID int64, user
 }
 
 // AddMember directly inserts an accepted member (for public group join)
-func (r *Repository) AddMember(ctx context.Context, groupID int64, userID int64, status string) error {
+func (r *Repository) AddMember(groupID int64, userID int64, status string) error {
 	query := `
 		INSERT INTO group_members (group_id, user_id, status)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (group_id, user_id) DO UPDATE SET status = EXCLUDED.status
 	`
-	_, err := r.DB.Database.ExecContext(ctx, query, groupID, userID, status)
+	_, err := r.DB.Database.Exec(query, groupID, userID, status)
 	return err
 }
 
 // RemoveMember deletes a user membership record (Leave group or Kick user)
-func (r *Repository) RemoveMember(ctx context.Context, groupID int64, userID int64) error {
+func (r *Repository) RemoveMember(groupID int64, userID int64) error {
 	query := `DELETE FROM group_members WHERE group_id = $1 AND user_id = $2`
-	_, err := r.DB.Database.ExecContext(ctx, query, groupID, userID)
+	_, err := r.DB.Database.Exec(query, groupID, userID)
 	return err
 }
 
 // IsMember returns current member status if row exists
-func (r *Repository) GetMemberStatus(ctx context.Context, groupID int64, userID int64) (string, error) {
+func (r *Repository) GetMemberStatus(groupID int64, userID int64) (string, error) {
 	var status string
 	query := `SELECT status FROM group_members WHERE group_id = $1 AND user_id = $2 LIMIT 1`
-	err := r.DB.Database.QueryRowContext(ctx, query, groupID, userID).Scan(&status)
+	err := r.DB.Database.QueryRow(query, groupID, userID).Scan(&status)
 	if err != nil {
 		return "", err
 	}
@@ -236,7 +235,7 @@ func (r *Repository) GetMemberStatus(ctx context.Context, groupID int64, userID 
 }
 
 // GetGroupMembers returns all accepted members of a group with lightweight metadata
-func (r *Repository) GetGroupMembers(ctx context.Context, groupID int64) ([]models.UserFollowView, error) {
+func (r *Repository) GetGroupMembers(groupID int64) ([]models.UserFollowView, error) {
 	query := `
 		SELECT u.id, u.username, u.first_name, u.last_name, u.avatar
 		FROM group_members gm
@@ -244,7 +243,7 @@ func (r *Repository) GetGroupMembers(ctx context.Context, groupID int64) ([]mode
 		WHERE gm.group_id = $1 AND gm.status = 'accepted'
 		ORDER BY u.username ASC
 	`
-	rows, err := r.DB.Database.QueryContext(ctx, query, groupID)
+	rows, err := r.DB.Database.Query(query, groupID)
 	if err != nil {
 		return nil, err
 	}
@@ -262,14 +261,14 @@ func (r *Repository) GetGroupMembers(ctx context.Context, groupID int64) ([]mode
 }
 
 // GetUserPendingInvitations returns all group invitations sent to a user
-func (r *Repository) GetUserPendingInvitations(ctx context.Context, userID int64) ([]models.GroupInvitationView, error) {
+func (r *Repository) GetUserPendingInvitations(userID int64) ([]models.GroupInvitationView, error) {
 	query := `
 		SELECT g.id, g.title, g.creator_id, gm.status, gm.joined_at
 		FROM group_members gm
 		JOIN groups g ON g.id = gm.group_id
 		WHERE gm.user_id = $1 AND gm.status = 'pending'
 	`
-	rows, err := r.DB.Database.QueryContext(ctx, query, userID)
+	rows, err := r.DB.Database.Query(query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -287,14 +286,14 @@ func (r *Repository) GetUserPendingInvitations(ctx context.Context, userID int64
 }
 
 // CreateGroupEvent inserts a new group event
-func (r *Repository) CreateGroupEvent(ctx context.Context, groupID, creatorID int64, payload models.CreateGroupEventPayload) (*models.GroupEvent, error) {
+func (r *Repository) CreateGroupEvent(groupID, creatorID int64, payload models.CreateGroupEventPayload) (*models.GroupEvent, error) {
 	var e models.GroupEvent
 	query := `
 		INSERT INTO group_events (group_id, creator_id, title, description, event_time, status)
 		VALUES ($1, $2, $3, $4, $5, 'upcoming')
 		RETURNING id, group_id, creator_id, title, description, event_time, status, created_at
 	`
-	err := r.DB.Database.QueryRowContext(ctx, query,
+	err := r.DB.Database.QueryRow(query,
 		groupID, creatorID,
 		strings.TrimSpace(payload.Title),
 		strings.TrimSpace(payload.Description),
@@ -307,7 +306,7 @@ func (r *Repository) CreateGroupEvent(ctx context.Context, groupID, creatorID in
 }
 
 // GetEventByID fetches a single group event
-func (r *Repository) GetEventByID(ctx context.Context, eventID int64) (*models.GroupEvent, error) {
+func (r *Repository) GetEventByID(eventID int64) (*models.GroupEvent, error) {
 	var e models.GroupEvent
 	query := `
 		SELECT id, group_id, creator_id, title, description, event_time, status, created_at
@@ -315,7 +314,7 @@ func (r *Repository) GetEventByID(ctx context.Context, eventID int64) (*models.G
 		WHERE id = $1
 		LIMIT 1
 	`
-	err := r.DB.Database.QueryRowContext(ctx, query, eventID).Scan(
+	err := r.DB.Database.QueryRow(query, eventID).Scan(
 		&e.ID, &e.GroupID, &e.CreatorID, &e.Title, &e.Description, &e.EventTime, &e.Status, &e.CreatedAt,
 	)
 	if err != nil {
@@ -327,7 +326,7 @@ func (r *Repository) GetEventByID(ctx context.Context, eventID int64) (*models.G
 // GetGroupEvents lists all events for a group with response tallies and the
 // requesting user's choice. Past upcoming events are reported as 'expired'
 // without writing to the database, keeping this a read-only query.
-func (r *Repository) GetGroupEvents(ctx context.Context, groupID, userID int64) ([]models.GroupEventWithCounts, error) {
+func (r *Repository) GetGroupEvents(groupID, userID int64) ([]models.GroupEventWithCounts, error) {
 	query := `
 		SELECT e.id, e.group_id, e.creator_id, e.title, e.description, e.event_time, e.status, e.created_at,
 			(SELECT COUNT(*) FROM event_responses r WHERE r.event_id = e.id AND r.status = 'going'),
@@ -339,7 +338,7 @@ func (r *Repository) GetGroupEvents(ctx context.Context, groupID, userID int64) 
 		WHERE e.group_id = $2
 		ORDER BY e.event_time ASC, e.id ASC
 	`
-	rows, err := r.DB.Database.QueryContext(ctx, query, userID, groupID)
+	rows, err := r.DB.Database.Query(query, userID, groupID)
 	if err != nil {
 		return nil, err
 	}
@@ -368,7 +367,7 @@ func (r *Repository) GetGroupEvents(ctx context.Context, groupID, userID int64) 
 
 // GetEventWithCounts fetches a single event with response tallies and the
 // caller's choice. Used to return fresh data after recording a response.
-func (r *Repository) GetEventWithCounts(ctx context.Context, eventID, userID int64) (*models.GroupEventWithCounts, error) {
+func (r *Repository) GetEventWithCounts(eventID, userID int64) (*models.GroupEventWithCounts, error) {
 	query := `
 		SELECT e.id, e.group_id, e.creator_id, e.title, e.description, e.event_time, e.status, e.created_at,
 			(SELECT COUNT(*) FROM event_responses r WHERE r.event_id = e.id AND r.status = 'going'),
@@ -381,7 +380,7 @@ func (r *Repository) GetEventWithCounts(ctx context.Context, eventID, userID int
 		LIMIT 1
 	`
 	var ev models.GroupEventWithCounts
-	if err := r.DB.Database.QueryRowContext(ctx, query, userID, eventID).Scan(
+	if err := r.DB.Database.QueryRow(query, userID, eventID).Scan(
 		&ev.ID, &ev.GroupID, &ev.CreatorID, &ev.Title, &ev.Description, &ev.EventTime, &ev.Status, &ev.CreatedAt,
 		&ev.GoingCount, &ev.NotGoingCount, &ev.MyStatus,
 		&ev.CreatorUsername, &ev.CreatorAvatar,
@@ -398,8 +397,8 @@ func (r *Repository) GetEventWithCounts(ctx context.Context, eventID, userID int
 }
 
 // CancelGroupEvent marks an upcoming event as cancelled
-func (r *Repository) CancelGroupEvent(ctx context.Context, eventID int64) error {
-	res, err := r.DB.Database.ExecContext(ctx, `
+func (r *Repository) CancelGroupEvent(eventID int64) error {
+	res, err := r.DB.Database.Exec(`
 		UPDATE group_events SET status = 'cancelled'
 		WHERE id = $1 AND status = 'upcoming'
 	`, eventID)
@@ -417,12 +416,12 @@ func (r *Repository) CancelGroupEvent(ctx context.Context, eventID int64) error 
 }
 
 // SetEventResponse upserts a user's going/not_going choice for an event
-func (r *Repository) SetEventResponse(ctx context.Context, eventID, userID int64, status string) error {
+func (r *Repository) SetEventResponse(eventID, userID int64, status string) error {
 	query := `
 		INSERT INTO event_responses (event_id, user_id, status)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (event_id, user_id) DO UPDATE SET status = EXCLUDED.status
 	`
-	_, err := r.DB.Database.ExecContext(ctx, query, eventID, userID, status)
+	_, err := r.DB.Database.Exec(query, eventID, userID, status)
 	return err
 }

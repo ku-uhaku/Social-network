@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -34,7 +33,7 @@ func (h *Handler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	group, err := h.Service.CreateGroup(r.Context(), user.ID, payload)
+	group, err := h.Service.CreateGroup(user.ID, payload)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -60,7 +59,7 @@ func (h *Handler) GetGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	group, err := h.Service.GetGroupByID(r.Context(), groupID)
+	group, err := h.Service.GetGroupByID(groupID)
 	if err != nil {
 		if errors.Is(err, service.ErrGroupNotFound) {
 			helper.Error(w, http.StatusNotFound, "Group not found")
@@ -70,7 +69,7 @@ func (h *Handler) GetGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	membership, err := h.Service.GetMembershipStatus(r.Context(), groupID, user.ID)
+	membership, err := h.Service.GetMembershipStatus(groupID, user.ID)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -84,7 +83,7 @@ func (h *Handler) GetGroup(w http.ResponseWriter, r *http.Request) {
 
 // GetAllGroups handles GET /api/v1/groups
 func (h *Handler) GetAllGroups(w http.ResponseWriter, r *http.Request) {
-	groups, err := h.Service.GetAllGroups(r.Context())
+	groups, err := h.Service.GetAllGroups()
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -109,7 +108,7 @@ func (h *Handler) GetGroupMembers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Only accepted members may see the member list
-	membership, err := h.Service.GetMembershipStatus(r.Context(), groupID, user.ID)
+	membership, err := h.Service.GetMembershipStatus(groupID, user.ID)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -119,7 +118,7 @@ func (h *Handler) GetGroupMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	members, err := h.Service.GetGroupMembers(r.Context(), groupID)
+	members, err := h.Service.GetGroupMembers(groupID)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -155,7 +154,7 @@ func (h *Handler) UpdateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedGroup, err := h.Service.UpdateGroup(r.Context(), user.ID, groupID, payload)
+	updatedGroup, err := h.Service.UpdateGroup(user.ID, groupID, payload)
 	if err != nil {
 		if errors.Is(err, service.ErrGroupNotFound) {
 			helper.Error(w, http.StatusNotFound, "Group not found")
@@ -187,7 +186,7 @@ func (h *Handler) DeleteGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Service.DeleteGroup(r.Context(), user.ID, groupID)
+	err = h.Service.DeleteGroup(user.ID, groupID)
 	if err != nil {
 		if errors.Is(err, service.ErrGroupNotFound) {
 			helper.Error(w, http.StatusNotFound, "Group not found")
@@ -223,7 +222,7 @@ func (h *Handler) InviteMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Service.InviteUsers(r.Context(), user.ID, payload); err != nil {
+	if err := h.Service.InviteUsers(user.ID, payload); err != nil {
 		if errors.Is(err, service.ErrNotMember) {
 			helper.Error(w, http.StatusForbidden, err.Error())
 			return
@@ -233,7 +232,7 @@ func (h *Handler) InviteMembers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Notify each invited user
-	group, err := h.Service.GetGroupByID(r.Context(), payload.GroupID)
+	group, err := h.Service.GetGroupByID(payload.GroupID)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -243,7 +242,7 @@ func (h *Handler) InviteMembers(w http.ResponseWriter, r *http.Request) {
 		if targetID == user.ID {
 			continue
 		}
-		if _, err := h.DispatchNotification(r.Context(), targetID, &models.Notification{
+		if _, err := h.DispatchNotification(targetID, &models.Notification{
 			RecipientID: targetID,
 			ActorID:     &actorID,
 			Type:        models.NotificationGroupInvitation,
@@ -288,13 +287,13 @@ func (h *Handler) respondInvite(w http.ResponseWriter, r *http.Request, accept b
 		return
 	}
 
-	if err := h.Service.RespondToInvitation(r.Context(), user.ID, payload.GroupID, accept); err != nil {
+	if err := h.Service.RespondToInvitation(user.ID, payload.GroupID, accept); err != nil {
 		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	// Expire the group_invitation notification once acted upon
-	if err := h.Service.ExpireNotificationsByType(r.Context(), user.ID, models.NotificationGroupInvitation); err != nil {
+	if err := h.Service.ExpireNotificationsByType(user.ID, models.NotificationGroupInvitation); err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -319,25 +318,25 @@ func (h *Handler) JoinGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Service.JoinGroup(r.Context(), user.ID, payload.GroupID); err != nil {
+	if err := h.Service.JoinGroup(user.ID, payload.GroupID); err != nil {
 		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	// If a pending join request was created (private group), notify the creator
-	// membership, err := h.Service.GetMembershipStatus(r.Context(), payload.GroupID, user.ID)
+	// membership, err := h.Service.GetMembershipStatus(payload.GroupID, user.ID)
 	// if err != nil {
 	// 	helper.Error(w, http.StatusInternalServerError, err.Error())
 	// 	return
 	// }
 	// if membership == "pending" {
-	group, err := h.Service.GetGroupByID(r.Context(), payload.GroupID)
+	group, err := h.Service.GetGroupByID(payload.GroupID)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	actorID := user.ID
-	if _, err := h.DispatchNotification(r.Context(), group.CreatorID, &models.Notification{
+	if _, err := h.DispatchNotification(group.CreatorID, &models.Notification{
 		RecipientID: group.CreatorID,
 		ActorID:     &actorID,
 		Type:        models.NotificationGroupJoinRequest,
@@ -371,7 +370,7 @@ func (h *Handler) LeaveGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Service.LeaveGroup(r.Context(), user.ID, payload.GroupID); err != nil {
+	if err := h.Service.LeaveGroup(user.ID, payload.GroupID); err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -418,7 +417,7 @@ func (h *Handler) GetGroupFeed(w http.ResponseWriter, r *http.Request) {
 		cursor = &parsed
 	}
 
-	posts, hasMore, err := h.Service.GetGroupFeed(r.Context(), user.ID, groupID, limit, cursor)
+	posts, hasMore, err := h.Service.GetGroupFeed(user.ID, groupID, limit, cursor)
 	if err != nil {
 		if errors.Is(err, service.ErrAccessDenied) {
 			helper.Error(w, http.StatusForbidden, err.Error())
@@ -449,7 +448,7 @@ func (h *Handler) GetMyInvitations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	invites, err := h.Service.GetPendingInvitations(r.Context(), user.ID)
+	invites, err := h.Service.GetPendingInvitations(user.ID)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -473,7 +472,7 @@ func (h *Handler) GetGroupEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	events, err := h.Service.GetGroupEvents(r.Context(), user.ID, groupID)
+	events, err := h.Service.GetGroupEvents(user.ID, groupID)
 	if err != nil {
 		if errors.Is(err, service.ErrAccessDenied) {
 			helper.Error(w, http.StatusForbidden, err.Error())
@@ -505,7 +504,7 @@ func (h *Handler) CreateGroupEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	event, err := h.Service.CreateGroupEvent(r.Context(), user.ID, payload)
+	event, err := h.Service.CreateGroupEvent(user.ID, payload)
 	if err != nil {
 		if errors.Is(err, service.ErrNotMember) {
 			helper.Error(w, http.StatusForbidden, err.Error())
@@ -516,8 +515,8 @@ func (h *Handler) CreateGroupEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Notify other group members about the new event
-	if group, err := h.Service.GetGroupByID(r.Context(), payload.GroupID); err == nil {
-		if err := h.notifyEventCreated(r.Context(), user.ID, group, event); err != nil {
+	if group, err := h.Service.GetGroupByID(payload.GroupID); err == nil {
+		if err := h.notifyEventCreated(user.ID, group, event); err != nil {
 			helper.Error(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -527,8 +526,8 @@ func (h *Handler) CreateGroupEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 // notifyEventCreated dispatches group_event_created notifications to other members
-func (h *Handler) notifyEventCreated(ctx context.Context, actorID int64, group *models.Group, event *models.GroupEvent) error {
-	memberIDs, err := h.Service.GetGroupMemberIDs(ctx, group.ID)
+func (h *Handler) notifyEventCreated(actorID int64, group *models.Group, event *models.GroupEvent) error {
+	memberIDs, err := h.Service.GetGroupMemberIDs(group.ID)
 	if err != nil {
 		return err
 	}
@@ -537,7 +536,7 @@ func (h *Handler) notifyEventCreated(ctx context.Context, actorID int64, group *
 		if memberID == actorID {
 			continue
 		}
-		if _, err := h.DispatchNotification(ctx, memberID, &models.Notification{
+		if _, err := h.DispatchNotification(memberID, &models.Notification{
 			RecipientID: memberID,
 			ActorID:     &actor,
 			Type:        models.NotificationGroupEvent,
@@ -576,7 +575,7 @@ func (h *Handler) CancelGroupEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Service.CancelGroupEvent(r.Context(), user.ID, payload.EventID); err != nil {
+	if err := h.Service.CancelGroupEvent(user.ID, payload.EventID); err != nil {
 		switch {
 		case errors.Is(err, service.ErrEventNotFound):
 			helper.Error(w, http.StatusNotFound, err.Error())
@@ -611,7 +610,7 @@ func (h *Handler) SetEventResponse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updated, err := h.Service.SetEventResponse(r.Context(), user.ID, payload.EventID, payload.Status)
+	updated, err := h.Service.SetEventResponse(user.ID, payload.EventID, payload.Status)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrEventNotFound):
@@ -647,7 +646,7 @@ func (h *Handler) HandleJoinRequestAction(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if err := h.Service.HandleJoinRequest(r.Context(), user.ID, payload.GroupID, payload.TargetUserID, accept); err != nil {
+	if err := h.Service.HandleJoinRequest(user.ID, payload.GroupID, payload.TargetUserID, accept); err != nil {
 		if errors.Is(err, service.ErrNotGroupCreator) {
 			helper.Error(w, http.StatusForbidden, err.Error())
 			return
@@ -658,7 +657,7 @@ func (h *Handler) HandleJoinRequestAction(w http.ResponseWriter, r *http.Request
 	}
 
 	// Expire the join request notification once acted upon
-	if err := h.Service.ExpireNotificationsByType(r.Context(), user.ID, models.NotificationGroupJoinRequest); err != nil {
+	if err := h.Service.ExpireNotificationsByType(user.ID, models.NotificationGroupJoinRequest); err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}

@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -30,7 +29,7 @@ func (h *Handler) NotificationList(w http.ResponseWriter, r *http.Request) {
 		lastID = 0
 	}
 
-	resp, err := h.Service.GetUserNotifications(r.Context(), user.ID, limit, lastID)
+	resp, err := h.Service.GetUserNotifications(user.ID, limit, lastID)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -63,7 +62,7 @@ func (h *Handler) MarkNotificationRead(w http.ResponseWriter, r *http.Request) {
 		notificationID = *payload.NotificationID
 	}
 
-	id, err := h.Service.MarkNotificationRead(r.Context(), user.ID, notificationID)
+	id, err := h.Service.MarkNotificationRead(user.ID, notificationID)
 	if err != nil {
 		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
@@ -97,7 +96,7 @@ func (h *Handler) ExpireNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Service.ExpireNotification(r.Context(), user.ID, payload.NotificationID); err != nil {
+	if err := h.Service.ExpireNotification(user.ID, payload.NotificationID); err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -111,8 +110,8 @@ func (h *Handler) ExpireNotification(w http.ResponseWriter, r *http.Request) {
 }
 
 // DispatchNotification is the single contract phase-2 handlers call to create + broadcast
-func (h *Handler) DispatchNotification(ctx context.Context, recipientID int64, n *models.Notification) (*models.Notification, error) {
-	created, err := h.Service.CreateNotification(ctx, n)
+func (h *Handler) DispatchNotification(recipientID int64, n *models.Notification) (*models.Notification, error) {
+	created, err := h.Service.CreateNotification(n)
 	if err != nil {
 		return nil, err
 	}
@@ -121,8 +120,8 @@ func (h *Handler) DispatchNotification(ctx context.Context, recipientID int64, n
 }
 
 // ExpireAndPush is the single contract phase-2 handlers call to expire + broadcast
-func (h *Handler) ExpireAndPush(ctx context.Context, recipientID, notificationID int64) error {
-	if err := h.Service.ExpireNotification(ctx, recipientID, notificationID); err != nil {
+func (h *Handler) ExpireAndPush(recipientID, notificationID int64) error {
+	if err := h.Service.ExpireNotification(recipientID, notificationID); err != nil {
 		return err
 	}
 	h.Hub.BroadcastToUser(recipientID, ws.EventNotificationExpired, map[string]interface{}{
@@ -133,13 +132,13 @@ func (h *Handler) ExpireAndPush(ctx context.Context, recipientID, notificationID
 
 // TODO: might need to refactor each notification type into its file
 // ExpireFollowRequest finds and expires a follow_request notification for a recipient+requester pair
-func (h *Handler) ExpireFollowRequest(ctx context.Context, recipientID, requesterID int64) error {
-	n, err := h.Service.GetNotificationByActorType(ctx, recipientID, requesterID, models.NotificationFollowRequest)
+func (h *Handler) ExpireFollowRequest(recipientID, requesterID int64) error {
+	n, err := h.Service.GetNotificationByActorType(recipientID, requesterID, models.NotificationFollowRequest)
 	if err != nil {
 		return err
 	}
 	if n == nil {
 		return nil
 	}
-	return h.ExpireAndPush(ctx, recipientID, n.ID)
+	return h.ExpireAndPush(recipientID, n.ID)
 }

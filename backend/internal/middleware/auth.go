@@ -16,6 +16,7 @@ const UserContextKey ContextKey = "current_user"
 
 func GetUserFromContext(ctx context.Context) (*models.User, bool) {
 	user, ok := ctx.Value(UserContextKey).(*models.User)
+
 	return user, ok
 }
 
@@ -30,7 +31,7 @@ func (m *Middleware) RequireAuth(next http.Handler) http.Handler {
 		}
 
 		// 2. Validate session and fetch user in one database step via Service layer
-		user, err := m.Service.ValidateSession(r.Context(), cookie.Value)
+		user, err := m.Service.ValidateSession(cookie.Value)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				// If token is invalid or expired, clear the cookie from their browser

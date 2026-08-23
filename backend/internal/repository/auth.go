@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"strings"
@@ -12,10 +11,9 @@ import (
 )
 
 // AuthenticationUser finds the profile and verifies the bcrypt password hash
-func (r *Repository) AuthenticationUser(ctx context.Context, payload models.InputLoginPayload) (*models.User, error) {
+func (r *Repository) AuthenticationUser(payload models.InputLoginPayload) (*models.User, error) {
 	var user models.User
 	var hashedPassword string
-
 	query := `
 		SELECT id, username, email, first_name, last_name, gender, date_of_birth, 
 		       is_public, password, avatar, about_me, created_at 
@@ -26,7 +24,7 @@ func (r *Repository) AuthenticationUser(ctx context.Context, payload models.Inpu
 
 	trimmedIdentifier := strings.TrimSpace(payload.Login)
 
-	err := r.DB.Database.QueryRowContext(ctx, query, trimmedIdentifier).Scan(
+	err := r.DB.Database.QueryRow(query, trimmedIdentifier).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,

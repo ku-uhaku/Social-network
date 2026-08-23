@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -56,7 +55,6 @@ func writeLoop(client *ws.Client) {
 func (h *Handler) readLoop(client *ws.Client) {
 	defer h.Hub.Unregister(client)
 
-	ctx := context.Background()
 	for {
 		_, raw, err := client.Conn.ReadMessage()
 		if err != nil {
@@ -71,20 +69,20 @@ func (h *Handler) readLoop(client *ws.Client) {
 
 		switch event.Type {
 		case ws.ClientSendDirectMessage:
-			h.sendDirectMessage(ctx, client.UserID, event.Payload)
+			h.sendDirectMessage(client.UserID, event.Payload)
 		case ws.ClientSendGroupMessage:
-			h.sendGroupMessage(ctx, client.UserID, event.Payload)
+			h.sendGroupMessage(client.UserID, event.Payload)
 		}
 	}
 }
 
-func (h *Handler) sendDirectMessage(ctx context.Context, senderID int64, payload interface{}) {
+func (h *Handler) sendDirectMessage(senderID int64, payload interface{}) {
 	req, ok := decodeMessage(payload)
 	if !ok || req.ReceiverID == nil {
 		return
 	}
 
-	msg, err := h.Service.SaveDirectMessage(ctx, senderID, *req.ReceiverID, req.Content)
+	msg, err := h.Service.SaveDirectMessage(senderID, *req.ReceiverID, req.Content)
 	if err != nil {
 		log.Printf("[WS] cannot save direct message: %v", err)
 		return
@@ -94,20 +92,20 @@ func (h *Handler) sendDirectMessage(ctx context.Context, senderID int64, payload
 	h.Hub.BroadcastToUsers([]int64{senderID, *req.ReceiverID}, ws.EventNewDirectMessage, msg)
 }
 
-func (h *Handler) sendGroupMessage(ctx context.Context, senderID int64, payload interface{}) {
+func (h *Handler) sendGroupMessage(senderID int64, payload interface{}) {
 	req, ok := decodeMessage(payload)
 	if !ok || req.GroupID == nil {
 		return
 	}
 
 	// The service checks that the sender belongs to the group.
-	msg, err := h.Service.SaveGroupMessage(ctx, senderID, *req.GroupID, req.Content)
+	msg, err := h.Service.SaveGroupMessage(senderID, *req.GroupID, req.Content)
 	if err != nil {
 		log.Printf("[WS] cannot save group message: %v", err)
 		return
 	}
 
-	memberIDs, err := h.Service.GetGroupMemberIDs(ctx, *req.GroupID)
+	memberIDs, err := h.Service.GetGroupMemberIDs(*req.GroupID)
 	if err != nil {
 		log.Printf("[WS] cannot load members of group %d: %v", *req.GroupID, err)
 		return

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"errors"
 	"strings"
 	"time"
@@ -12,14 +11,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func (s *Service) RegisterUser(ctx context.Context, payload models.InputRegisterPayload) (*models.User, error) {
+func (s *Service) RegisterUser(payload models.InputRegisterPayload) (*models.User, error) {
 	// 1. Hash the incoming plaintext password safely
 	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, errors.New("failed to secure user credentials")
 	}
 	// 2. Pass the record onto the persistence layer
-	user, err := s.Repo.CreateUser(ctx, payload, string(hashedBytes))
+	user, err := s.Repo.CreateUser(payload, string(hashedBytes))
 	if err != nil {
 		// Detect SQLite unique constraint failures for emails/usernames
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
@@ -31,9 +30,9 @@ func (s *Service) RegisterUser(ctx context.Context, payload models.InputRegister
 	return user, nil
 }
 
-func (s *Service) LoginUser(ctx context.Context, payload models.InputLoginPayload) (*models.Session, *models.User, error) {
+func (s *Service) LoginUser(payload models.InputLoginPayload) (*models.Session, *models.User, error) {
 	// 1. Fetch user records and verify bcrypt password inside the repo
-	user, err := s.Repo.AuthenticationUser(ctx, payload)
+	user, err := s.Repo.AuthenticationUser(payload)
 	if err != nil {
 		return nil, nil, errors.New("invalid identifier or password")
 	}
@@ -43,7 +42,7 @@ func (s *Service) LoginUser(ctx context.Context, payload models.InputLoginPayloa
 	duration := 24 * time.Hour
 
 	// 3. Commit session record into database
-	sessionInfo, err := s.Repo.CreateSession(ctx, user.ID, token, duration)
+	sessionInfo, err := s.Repo.CreateSession(user.ID, token, duration)
 	if err != nil {
 		return nil, nil, errors.New("failed to establish session")
 	}
@@ -51,8 +50,8 @@ func (s *Service) LoginUser(ctx context.Context, payload models.InputLoginPayloa
 	return sessionInfo, user, nil
 }
 
-func (s *Service) ValidateSession(ctx context.Context, token string) (*models.User, error) {
-	user, err := s.Repo.GetUserBySessionToken(ctx, token)
+func (s *Service) ValidateSession(token string) (*models.User, error) {
+	user, err := s.Repo.GetUserBySessionToken(token)
 	if err != nil {
 		return nil, err
 	}
@@ -60,6 +59,6 @@ func (s *Service) ValidateSession(ctx context.Context, token string) (*models.Us
 }
 
 // DeleteSession requests the repository layer to drop the session mapping
-func (s *Service) DeleteSession(ctx context.Context, token string) error {
-	return s.Repo.DeleteSession(ctx, token)
+func (s *Service) DeleteSession(token string) error {
+	return s.Repo.DeleteSession(token)
 }

@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -10,8 +9,8 @@ import (
 )
 
 // CreatePost creates a new post in the database
-func (r *Repository) CreatePost(ctx context.Context, userID int64, payload models.CreatePostPayload) (*models.Post, error) {
-	tx, err := r.DB.Database.BeginTx(ctx, nil)
+func (r *Repository) CreatePost(userID int64, payload models.CreatePostPayload) (*models.Post, error) {
+	tx, err := r.DB.Database.Begin()
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
@@ -66,7 +65,7 @@ func (r *Repository) CreatePost(ctx context.Context, userID int64, payload model
 	}
 
 	// Get author metadata
-	author, err := r.getUserMetadata(ctx, userID)
+	author, err := r.getUserMetadata(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +75,7 @@ func (r *Repository) CreatePost(ctx context.Context, userID int64, payload model
 }
 
 // GetPostByID fetches a single post by ID
-func (r *Repository) GetPostByID(ctx context.Context, postID int64) (*models.Post, error) {
+func (r *Repository) GetPostByID(postID int64) (*models.Post, error) {
 	query := `
 		SELECT p.id, p.user_id, p.group_id, p.title, p.content, p.privacy, p.image_url, p.created_at,
 			(SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comments_count,
@@ -87,7 +86,7 @@ func (r *Repository) GetPostByID(ctx context.Context, postID int64) (*models.Pos
 		LIMIT 1
 	`
 	var p models.Post
-	err := r.DB.Database.QueryRowContext(ctx, query, postID).Scan(
+	err := r.DB.Database.QueryRow(query, postID).Scan(
 		&p.ID, &p.UserID, &p.GroupID, &p.Title, &p.Content, &p.Privacy, &p.ImageURL, &p.CreatedAt,
 		&p.CommentsCount,
 		&p.User.ID, &p.User.Username, &p.User.FirstName, &p.User.LastName, &p.User.Avatar,
@@ -100,7 +99,7 @@ func (r *Repository) GetPostByID(ctx context.Context, postID int64) (*models.Pos
 
 // GetFeedPosts retrieves posts from the current user and users they follow (accepted status),
 // plus group posts for groups they belong to. Paginated by cursor (last post id) and limit.
-func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64, limit int, cursor *int64) ([]models.Post, bool, error) {
+func (r *Repository) GetFeedPosts(currentUserID int64, limit int, cursor *int64) ([]models.Post, bool, error) {
 	query := `
 		SELECT p.id, p.user_id, p.group_id, p.title, p.content, p.privacy, p.image_url, p.created_at,
 			(SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comments_count,
@@ -133,7 +132,7 @@ func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64, limi
 	query += fmt.Sprintf(` LIMIT $%d`, len(args)+1)
 	args = append(args, limit+1)
 
-	rows, err := r.DB.Database.QueryContext(ctx, query, args...)
+	rows, err := r.DB.Database.Query(query, args...)
 	if err != nil {
 		fmt.Println(err)
 		return nil, false, err
@@ -164,7 +163,7 @@ func (r *Repository) GetFeedPosts(ctx context.Context, currentUserID int64, limi
 // GetGroupFeedPosts retrieves posts belonging to a single group.
 // Caller must verify the requesting user is an accepted group member.
 // Paginated by cursor (last post id) and limit.
-func (r *Repository) GetGroupFeedPosts(ctx context.Context, groupID int64, limit int, cursor *int64) ([]models.Post, bool, error) {
+func (r *Repository) GetGroupFeedPosts(groupID int64, limit int, cursor *int64) ([]models.Post, bool, error) {
 	query := `
 		SELECT p.id, p.user_id, p.group_id, p.title, p.content, p.privacy, p.image_url, p.created_at,
 			(SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comments_count,
@@ -182,7 +181,7 @@ func (r *Repository) GetGroupFeedPosts(ctx context.Context, groupID int64, limit
 	query += fmt.Sprintf(` LIMIT $%d`, len(args)+1)
 	args = append(args, limit+1)
 
-	rows, err := r.DB.Database.QueryContext(ctx, query, args...)
+	rows, err := r.DB.Database.Query(query, args...)
 	if err != nil {
 		return nil, false, err
 	}
@@ -209,21 +208,21 @@ func (r *Repository) GetGroupFeedPosts(ctx context.Context, groupID int64, limit
 }
 
 // CreateComment inserts a new post comment
-func (r *Repository) CreateComment(ctx context.Context, userID int64, payload models.CreateCommentPayload) (*models.Comment, error) {
+func (r *Repository) CreateComment(userID int64, payload models.CreateCommentPayload) (*models.Comment, error) {
 	query := `
 		INSERT INTO comments (post_id, user_id, title, content, image_url)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, post_id, user_id, title, content, image_url, created_at
 	`
 	var c models.Comment
-	err := r.DB.Database.QueryRowContext(ctx, query, payload.PostID, userID, payload.Title, payload.Content, payload.ImageURL).Scan(
+	err := r.DB.Database.QueryRow(query, payload.PostID, userID, payload.Title, payload.Content, payload.ImageURL).Scan(
 		&c.ID, &c.PostID, &c.UserID, &c.Title, &c.Content, &c.ImageURL, &c.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	author, err := r.getUserMetadata(ctx, c.UserID)
+	author, err := r.getUserMetadata(c.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +232,7 @@ func (r *Repository) CreateComment(ctx context.Context, userID int64, payload mo
 }
 
 // GetPostComments retrieves comments for a post
-func (r *Repository) GetPostComments(ctx context.Context, postID int64) ([]models.Comment, error) {
+func (r *Repository) GetPostComments(postID int64) ([]models.Comment, error) {
 	query := `
 		SELECT c.id, c.post_id, c.user_id, c.title, c.content, c.image_url, c.created_at,
 			u.id, u.username, u.first_name, u.last_name, u.avatar
@@ -242,7 +241,7 @@ func (r *Repository) GetPostComments(ctx context.Context, postID int64) ([]model
 		WHERE c.post_id = $1
 		ORDER BY c.created_at ASC
 	`
-	rows, err := r.DB.Database.QueryContext(ctx, query, postID)
+	rows, err := r.DB.Database.Query(query, postID)
 	if err != nil {
 		return nil, err
 	}
@@ -263,14 +262,14 @@ func (r *Repository) GetPostComments(ctx context.Context, postID int64) ([]model
 }
 
 // getUserMetadata fetches author metadata for a post or comment
-func (r *Repository) getUserMetadata(ctx context.Context, userID int64) (*models.UserMetadata, error) {
+func (r *Repository) getUserMetadata(userID int64) (*models.UserMetadata, error) {
 	query := `
 		SELECT id, username, first_name, last_name, avatar
 		FROM users
 		WHERE id = $1
 	`
 	var u models.UserMetadata
-	err := r.DB.Database.QueryRowContext(ctx, query, userID).Scan(
+	err := r.DB.Database.QueryRow(query, userID).Scan(
 		&u.ID, &u.Username, &u.FirstName, &u.LastName, &u.Avatar,
 	)
 	if err != nil {
@@ -280,8 +279,8 @@ func (r *Repository) getUserMetadata(ctx context.Context, userID int64) (*models
 }
 
 // IsPostViewer checks if a user is allowed to view a post
-func (r *Repository) IsPostViewer(ctx context.Context, postID int64, userID int64) (bool, error) {
-	row := r.DB.Database.QueryRowContext(ctx, "SELECT 1 FROM post_viewers WHERE post_id = $1 AND user_id = $2", postID, userID)
+func (r *Repository) IsPostViewer(postID int64, userID int64) (bool, error) {
+	row := r.DB.Database.QueryRow("SELECT 1 FROM post_viewers WHERE post_id = $1 AND user_id = $2", postID, userID)
 	var found int
 	err := row.Scan(&found)
 	if err != nil {
@@ -294,7 +293,7 @@ func (r *Repository) IsPostViewer(ctx context.Context, postID int64, userID int6
 }
 
 // GetPostViewers fetches the users a private post was explicitly shared with
-func (r *Repository) GetPostViewers(ctx context.Context, postID int64) ([]models.UserMetadata, error) {
+func (r *Repository) GetPostViewers(postID int64) ([]models.UserMetadata, error) {
 	query := `
 		SELECT u.id, u.username, u.first_name, u.last_name, u.avatar
 		FROM post_viewers pv
@@ -302,7 +301,7 @@ func (r *Repository) GetPostViewers(ctx context.Context, postID int64) ([]models
 		WHERE pv.post_id = $1
 		ORDER BY u.username ASC
 	`
-	rows, err := r.DB.Database.QueryContext(ctx, query, postID)
+	rows, err := r.DB.Database.Query(query, postID)
 	if err != nil {
 		return nil, err
 	}
