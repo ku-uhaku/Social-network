@@ -36,10 +36,10 @@ func ParseRegisterPayload(r *http.Request) (models.InputRegisterPayload, error) 
 		deeefaultavatar:="/media/defaulte_avatar.jpeg"
 		payload.Avatar=&deeefaultavatar
 		if file, header, err := r.FormFile("avatar"); err == nil {
-			_,err=helper.IsValidImage([]byte(*payload.Avatar))
-			if err!=nil{
-				return payload, fmt.Errorf("the avatar not good: %w", err)
-			}
+			// _,err=helper.IsValidImage([]byte(*payload.Avatar))
+			// if err!=nil{
+			// 	return payload, fmt.Errorf("the avatar not good: %w", err)
+			// }
 			defer file.Close()
 			if header != nil && header.Size > 0 {
 				avatarName, err := helper.SaveUploadedImage(file, header)

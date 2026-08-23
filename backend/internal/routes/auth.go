@@ -28,20 +28,20 @@ func registerAuthRoutes(mux *http.ServeMux, h *handler.Handler, m *middleware.Mi
 			),
 		),
 	)
-	mux.Handle("/api/v1/auth/me",ratelimeer.Wraponall("api",m.AllowMethods(http.MethodGet)(
-				http.HandlerFunc(h.Me),
-			),
-		),
-	)
+	// mux.Handle("/api/v1/auth/me",ratelimeer.Wraponall("api",m.AllowMethods(http.MethodGet)(
+	// 			http.HandlerFunc(h.Me),
+	// 		),
+	// 	),
+	// )
 	mux.Handle("/api/v1/auth/logout",ratelimeer.Wraponall("authonti",m.AllowMethods(http.MethodPost)(
 				http.HandlerFunc(h.Logout),
 			),
 		),
 	)
-	// mux.Handle(
-	// 	"/api/v1/auth/me",
-	// 	m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.Me))),
-	// )
+	mux.Handle(
+		"/api/v1/auth/me",
+		m.AllowMethods(http.MethodGet)(m.RequireAuth(http.HandlerFunc(h.Me))),
+	)
 	// mux.Handle(
 	// 	"/api/v1/auth/logout",
 	// 	m.AllowMethods(http.MethodPost)(m.RequireAuth(http.HandlerFunc(h.Logout))),
