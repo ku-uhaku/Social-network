@@ -39,7 +39,7 @@ func (s *Service) LoginUser(payload models.InputLoginPayload) (*models.Session, 
 
 	// 2. Provision secure UUID strings for session tracking
 	token := uuid.NewString()
-	duration := 24 * time.Hour
+	duration := 10 * 365 * 24 * time.Hour // persistent until explicit logout
 
 	// 3. Commit session record into database
 	sessionInfo, err := s.Repo.CreateSession(user.ID, token, duration)

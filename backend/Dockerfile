@@ -11,8 +11,6 @@ RUN go mod download
 
 COPY . .
 
-RUN echo "=== Files in /app ===" && ls -la /app
-RUN cat go.mod
 RUN CGO_ENABLED=1 go build -o /backend ./main.go
 
 EXPOSE 8000

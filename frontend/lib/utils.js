@@ -22,12 +22,7 @@ export function formatDate(value, options) {
 
 export function isOldEnough(birthday) {
     const birthDate = new Date(birthday);
-    console.log(birthDate);
-    
     const today = new Date();
-    console.log("today",today);
-    
-    
     let age = today.getFullYear() - birthDate.getFullYear();
      
     const month = today.getMonth() - birthDate.getMonth();
