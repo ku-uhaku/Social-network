@@ -58,7 +58,7 @@ func (s *Service) ValidateSession(token string) (*models.User, error) {
 	return user, nil
 }
 
-// DeleteSession requests the repository layer to drop the session mapping
+// Deletes a session
 func (s *Service) DeleteSession(token string) error {
 	return s.Repo.DeleteSession(token)
 }

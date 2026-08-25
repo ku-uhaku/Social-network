@@ -11,9 +11,7 @@ func (s *Service) CreateNotification(n *models.Notification) (*models.Notificati
 	return s.Repo.CreateNotification(n)
 }
 
-// GetUserNotifications returns a paginated stack with the unread count.
-// lastID acts as a cursor: 0 loads the newest page, otherwise only
-// notifications with a lower id are returned.
+// Paginated notifications + unread count; lastID is the cursor
 func (s *Service) GetUserNotifications(recipientID int64, limit int, lastID int64) (*models.NotificationListResponse, error) {
 	notifications, hasMore, err := s.Repo.GetUserNotifications(recipientID, limit, lastID)
 	if err != nil {
@@ -30,7 +28,7 @@ func (s *Service) GetUserNotifications(recipientID int64, limit int, lastID int6
 	}, nil
 }
 
-// MarkNotificationRead marks a single notification or all as read for a recipient
+// Marks one notification or all as read
 func (s *Service) MarkNotificationRead(recipientID, notificationID int64) (int64, error) {
 	if notificationID > 0 {
 		n, err := s.Repo.GetNotification(recipientID, notificationID)
@@ -56,7 +54,7 @@ func (s *Service) GetNotificationByActorType(recipientID, actorID int64, notifTy
 	return s.Repo.GetNotificationByActorType(recipientID, actorID, notifType)
 }
 
-// ExpireNotificationsByType marks all unread, non-expired notifications of a type as expired
+// Expires unread notifications of a type
 func (s *Service) ExpireNotificationsByType(recipientID int64, notifType string) error {
 	return s.Repo.ExpireNotificationsByType(recipientID, notifType)
 }

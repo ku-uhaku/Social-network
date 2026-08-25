@@ -52,27 +52,9 @@ func (h *Handler) GetFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	limit := 10
-	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-		parsed, err := strconv.Atoi(limitStr)
-		if err != nil || parsed < 1 {
-			helper.Error(w, http.StatusBadRequest, "Invalid limit parameter")
-			return
-		}
-		limit = parsed
-		if limit > 50 {
-			limit = 50
-		}
-	}
-
-	var cursor *int64
-	if cursorStr := r.URL.Query().Get("cursor"); cursorStr != "" {
-		parsed, err := strconv.ParseInt(cursorStr, 10, 64)
-		if err != nil || parsed < 1 {
-			helper.Error(w, http.StatusBadRequest, "Invalid cursor parameter")
-			return
-		}
-		cursor = &parsed
+	limit, cursor, ok := parseFeedParams(w, r)
+	if !ok {
+		return
 	}
 
 	posts, hasMore, err := h.Service.GetFeed(user.ID, limit, cursor)

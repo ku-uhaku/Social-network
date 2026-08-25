@@ -1,33 +1,27 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"kuu/internal/helper"
-	"kuu/internal/middleware"
 	"kuu/internal/models"
 	"kuu/internal/requests"
 )
 
-// UpdateProfile reads active session context data and applies new settings
+// UpdateProfile updates the current user's profile
 func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Authentication context missing")
 		return
 	}
 
 	var payload models.UpdateProfilePayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		helper.Error(w, http.StatusBadRequest, "Malformed JSON request body")
+	if !decodeJSON(w, r, &payload) {
 		return
 	}
-	defer r.Body.Close()
 
-	if validationErrs := requests.ValidateUpdateProfile(payload); len(validationErrs) > 0 {
-		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, validationErrs)
+	if writeValidationErrors(w, requests.ValidateUpdateProfile(payload)) {
 		return
 	}
 
@@ -36,8 +30,7 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 			helper.Error(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		if err := h.Service.ExpireNotificationsByType(user.ID, models.NotificationFollowRequest); err != nil {
-			helper.Error(w, http.StatusInternalServerError, err.Error())
+		if !h.expireNotificationsByType(w, user.ID, models.NotificationFollowRequest) {
 			return
 		}
 	}
@@ -53,10 +46,8 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 // GetUserProfile GET /api/v1/user/profile?username=john
 func (h *Handler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
-
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -65,21 +56,6 @@ func (h *Handler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusBadRequest, "Invalid username parameter")
 		return
 	}
-	// targetUser, err := h.Service.GetUserProfile(user.ID, username)
-	// if err != nil {
-	// 	helper.Error(w, http.StatusInternalServerError, err.Error())
-	// 	return
-	// }
-
-	// // Only the owner, public profiles, or accepted followers can view posts
-	// if targetUser.FollowStatus != "self" && targetUser.IsPublic == 0 && targetUser.FollowStatus != "accepted" {
-	// 	// helper.Error(w, http.StatusForbidden, "This account is private")
-	// 	helper.ValidationErrorResponse(w, http.StatusForbidden, models.ErrorMsg{
-	// 		Code:    403,
-	// 		Message: "This account is private",
-	// 	})
-	// 	return
-	// }
 
 	profile, err := h.Service.GetUserProfile(user.ID, username)
 	if err != nil {
@@ -91,9 +67,8 @@ func (h *Handler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 
 // GetUserPosts GET /api/v1/user/posts?username=john
 func (h *Handler) GetUserPosts(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -109,7 +84,7 @@ func (h *Handler) GetUserPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Only the owner, public profiles, or accepted followers can view posts
+	// Private posts: owner or accepted followers only
 	if targetUser.FollowStatus != "self" && targetUser.IsPublic == 0 && targetUser.FollowStatus != "accepted" {
 		helper.Error(w, http.StatusForbidden, "This account is private")
 		return
@@ -126,19 +101,16 @@ func (h *Handler) GetUserPosts(w http.ResponseWriter, r *http.Request) {
 
 // FollowUser POST /api/v1/user/follow
 func (h *Handler) FollowUser(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 	var payload models.FollowActionPayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+	if !decodeJSON(w, r, &payload) {
 		return
 	}
 
-	if errs := requests.ValidateFollowAction(payload); len(errs) > 0 {
-		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, errs)
+	if writeValidationErrors(w, requests.ValidateFollowAction(payload)) {
 		return
 	}
 
@@ -151,7 +123,7 @@ func (h *Handler) FollowUser(w http.ResponseWriter, r *http.Request) {
 	msg := "Successfully followed user"
 	if status == "pending" {
 		msg = "Follow request sent successfully"
-		// Avoid duplicate follow_request notifications from spam/retries.
+		// Avoid duplicate follow request notifications
 		existing, _ := h.Service.GetNotificationByActorType(
 			payload.TargetUserID, user.ID, models.NotificationFollowRequest,
 		)
@@ -163,12 +135,7 @@ func (h *Handler) FollowUser(w http.ResponseWriter, r *http.Request) {
 				Type:        models.NotificationFollowRequest,
 				Title:       "New follow request",
 				Message:     helper.DisplayName(user) + " wants to follow you",
-				Actions: models.JSONText{
-					"buttons": []interface{}{
-						map[string]interface{}{"action": "accept", "label": "Accept"},
-						map[string]interface{}{"action": "decline", "label": "Decline"},
-					},
-				},
+				Actions:     acceptDeclineActions(),
 			})
 			if err != nil {
 				helper.Error(w, http.StatusInternalServerError, err.Error())
@@ -181,15 +148,13 @@ func (h *Handler) FollowUser(w http.ResponseWriter, r *http.Request) {
 
 // UnfollowUser POST /api/v1/user/unfollow
 func (h *Handler) UnfollowUser(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	var payload models.FollowActionPayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+	if !decodeJSON(w, r, &payload) {
 		return
 	}
 
@@ -212,15 +177,13 @@ func (h *Handler) DeclineFollowRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) respondToFollowRequest(w http.ResponseWriter, r *http.Request, accept bool) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	var payload models.FollowActionPayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+	if !decodeJSON(w, r, &payload) {
 		return
 	}
 
@@ -229,9 +192,8 @@ func (h *Handler) respondToFollowRequest(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	// Expire all follow_request notifications for this requester
-	if err := h.Service.ExpireNotificationsByType(user.ID, models.NotificationFollowRequest); err != nil {
-		helper.Error(w, http.StatusInternalServerError, err.Error())
+	// Expire follow request notifications
+	if !h.expireNotificationsByType(w, user.ID, models.NotificationFollowRequest) {
 		return
 	}
 
@@ -253,47 +215,35 @@ func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	helper.Success(w, http.StatusOK, "Users retrieved successfully", users)
 }
 
-// GetFollowers GET /api/v1/user/followers?id=123
-func (h *Handler) GetFollowers(w http.ResponseWriter, r *http.Request) {
-	userIDStr := r.URL.Query().Get("id")
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
-	if err != nil || userID <= 0 {
-		helper.Error(w, http.StatusBadRequest, "Invalid user ID")
+func (h *Handler) userList(w http.ResponseWriter, r *http.Request, fetch func(int64) ([]models.UserFollowView, error), message string) {
+	userID, ok := queryPositiveInt64(w, r, "id", "Invalid user ID")
+	if !ok {
 		return
 	}
 
-	followers, err := h.Service.GetFollowers(userID)
+	users, err := fetch(userID)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	helper.Success(w, http.StatusOK, "Followers retrieved successfully", followers)
+	helper.Success(w, http.StatusOK, message, users)
+}
+
+// GetFollowers GET /api/v1/user/followers?id=123
+func (h *Handler) GetFollowers(w http.ResponseWriter, r *http.Request) {
+	h.userList(w, r, h.Service.GetFollowers, "Followers retrieved successfully")
 }
 
 // GetFollowing GET /api/v1/user/following?id=123
 func (h *Handler) GetFollowing(w http.ResponseWriter, r *http.Request) {
-	userIDStr := r.URL.Query().Get("id")
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
-	if err != nil || userID <= 0 {
-		helper.Error(w, http.StatusBadRequest, "Invalid user ID")
-		return
-	}
-
-	following, err := h.Service.GetFollowing(userID)
-	if err != nil {
-		helper.Error(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	helper.Success(w, http.StatusOK, "Following list retrieved successfully", following)
+	h.userList(w, r, h.Service.GetFollowing, "Following list retrieved successfully")
 }
 
 // GetFollowRequests GET /api/v1/user/follow/requests
 func (h *Handler) GetFollowRequests(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -308,9 +258,8 @@ func (h *Handler) GetFollowRequests(w http.ResponseWriter, r *http.Request) {
 
 // GetSuggestedUsers GET /api/v1/user/suggestions?limit=5
 func (h *Handler) GetSuggestedUsers(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 

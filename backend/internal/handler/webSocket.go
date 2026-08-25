@@ -16,7 +16,7 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-// WebSocket upgrades the request and keeps the connection open for the session.
+// Upgrades the request to a WebSocket connection
 func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
 	user, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
@@ -40,19 +40,18 @@ func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
 	go h.readLoop(client)
 }
 
-// writeLoop pushes queued events to the browser until the hub closes Send.
+// Pushes queued events to the browser
 func writeLoop(client *ws.Client) {
 	for msg := range client.Send {
 		if err := client.Conn.WriteMessage(websocket.TextMessage, msg); err != nil {
-			// The connection is broken: close it so readLoop unblocks and
-			// unregisters the client instead of leaving it in the hub.
+			// Connection broken: close to unblock readLoop
 			client.Conn.Close()
 			return
 		}
 	}
 }
 
-// readLoop handles what the browser sends until the connection drops.
+// Handles browser messages until disconnect
 func (h *Handler) readLoop(client *ws.Client) {
 	defer h.Hub.Unregister(client)
 
@@ -87,7 +86,7 @@ func (h *Handler) sendDirectMessage(senderID int64, payload interface{}) {
 		return
 	}
 
-	// The sender gets it back too, so their other tabs stay in sync.
+	// Echo to sender's other tabs
 	h.Hub.BroadcastToUsers([]int64{senderID, *req.ReceiverID}, ws.EventNewDirectMessage, msg)
 }
 
@@ -97,7 +96,6 @@ func (h *Handler) sendGroupMessage(senderID int64, payload interface{}) {
 		return
 	}
 
-	// The service checks that the sender belongs to the group.
 	msg, err := h.Service.SaveGroupMessage(senderID, *req.GroupID, req.Content)
 	if err != nil {
 		return
@@ -111,7 +109,7 @@ func (h *Handler) sendGroupMessage(senderID int64, payload interface{}) {
 	h.Hub.BroadcastToUsers(memberIDs, ws.EventNewGroupMessage, msg)
 }
 
-// decodeMessage re-reads the generic payload as a message and rejects empty text.
+// Re-reads payload as a message; rejects empty text
 func decodeMessage(payload interface{}) (models.SendMessagePayload, bool) {
 	var req models.SendMessagePayload
 

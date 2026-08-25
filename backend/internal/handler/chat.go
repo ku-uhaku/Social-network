@@ -11,7 +11,7 @@ import (
 	"kuu/internal/service"
 )
 
-// pageSize is how many messages one history page holds.
+// Messages per history page
 const pageSize = 30
 
 // GetDirectHistory GET /api/v1/chat/direct?user_id=123&page=1

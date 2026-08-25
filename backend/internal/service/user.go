@@ -13,18 +13,17 @@ var (
 	ErrFollowReqNotFound = errors.New("no pending follow request found")
 )
 
-// UpdateProfile orchestrates incoming structural profile changes
+// Updates the user's profile
 func (s *Service) UpdateProfile(userID int64, payload models.UpdateProfilePayload) (*models.User, error) {
 	return s.Repo.UpdateUserProfile(userID, payload)
 }
 
-// AcceptAllPendingFollows accepts all pending follow requests for a user
+// Accepts all pending follow requests
 func (s *Service) AcceptAllPendingFollows(targetUserID int64) ([]int64, error) {
 	return s.Repo.AcceptAllPendingFollows(targetUserID)
 }
 
-// GetUserProfile fetches a user profile by username, enriched with follow stats
-// and the requesting viewer's relationship to the target user.
+// Profile by username with follow stats + viewer relationship
 func (s *Service) GetUserProfile(viewerID int64, username string) (*models.UserProfileView, error) {
 	user, err := s.Repo.GetUserByUsername(username)
 	if err != nil {
@@ -76,7 +75,7 @@ func (s *Service) GetUserProfile(viewerID int64, username string) (*models.UserP
 	return view, nil
 }
 
-// GetUserPosts retrieves a user's posts (excluding group posts) with author metadata
+// User's posts, excluding group posts
 func (s *Service) GetUserPosts(targetUserID int64, viewerID int64) ([]models.Post, error) {
 	return s.Repo.GetUserPosts(targetUserID, viewerID)
 }
@@ -114,13 +113,12 @@ func (s *Service) FollowUser(followerID, targetID int64) (string, error) {
 	return initialStatus, nil
 }
 
-// UnfollowUser handles unfollowing or cancelling a pending request
+// Unfollows or cancels a pending request
 func (s *Service) UnfollowUser(followerID, targetID int64) error {
 	return s.Repo.RemoveFollowRelation(followerID, targetID)
 }
 
-// HandleFollowRequest accepts or declines an incoming request (called by target user).
-// if already accepted, returns nil; if no row exists, returns nil.
+// Target user accepts/declines; no-op if none/accepted
 func (s *Service) HandleFollowRequest(targetUserID, requesterID int64, accept bool) error {
 	status, err := s.Repo.GetFollowRelation(requesterID, targetUserID)
 	if err != nil {
@@ -159,7 +157,6 @@ func (s *Service) GetAllUsers() ([]models.UserFollowView, error) {
 	return s.Repo.GetAllUsers()
 }
 
-// GetSuggestedUsers returns a shortlist of users for the viewer to follow
 func (s *Service) GetSuggestedUsers(viewerID int64, limit int) ([]models.UserFollowView, error) {
 	return s.Repo.GetSuggestedUsers(viewerID, limit)
 }

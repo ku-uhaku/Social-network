@@ -24,7 +24,7 @@ import (
 
 var autoUsernameRe = regexp.MustCompile(`^user_[0-9a-f]{8}$`)
 
-// DisplayName returns the nickname when the user picked one, otherwise their real name.
+// Nickname if set, else full name
 func DisplayName(u *models.User) string {
 	if u == nil {
 		return "Kuu user"
@@ -39,7 +39,7 @@ func DisplayName(u *models.User) string {
 	return name
 }
 
-// GetParamInt64 extracts a query parameter from the URL string and parses it to int64
+// Parses a query parameter as int64
 func GetParamInt64(r *http.Request, key string) (int64, error) {
 	valStr := r.URL.Query().Get(key)
 	if valStr == "" {
@@ -59,10 +59,9 @@ const (
 	maxImageDimension  = 8000     // max width/height per side, guards against decompression bombs
 )
 
-// MediaDir is where uploaded images are stored and served from.
+// Uploaded images directory
 const MediaDir = "media"
 
-// imageExtensions maps a decoded image format to its stored file extension.
 var imageExtensions = map[string]string{
 	"jpeg": ".jpg",
 	"png":  ".png",
@@ -76,8 +75,7 @@ func IsValidImage(data []byte) (string, error) {
 		return "", errors.New("empttty  image data")
 	}
 
-	// DecodeConfig validates the header and reports the format without
-	// alllocating a fullll pixel buffer
+	// DecodeConfig validates the header without decoding pixels
 	cfg, format, err := image.DecodeConfig(bytes.NewReader(data))
 	if err != nil {
 		return "", fmt.Errorf("not a valid image: %w", err)
@@ -91,7 +89,7 @@ func IsValidImage(data []byte) (string, error) {
 		return "", fmt.Errorf("unsupported image format %q: only PNG, JPEG, and GIF are allowed", format)
 	}
 
-	// Fully decode to reject files with a valid header but a corrupt body.
+	// Full decode rejects corrupt bodies
 	if _, _, err := image.Decode(bytes.NewReader(data)); err != nil {
 		return "", fmt.Errorf("corrupt image data: %w", err)
 	}

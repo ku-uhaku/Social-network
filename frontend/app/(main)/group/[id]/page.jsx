@@ -1,21 +1,21 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
-import { notFound } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
-import { getGroup, getGroupFeed, joinGroup, leaveGroup, inviteUsers, getAllUsers, getGroupMembers } from "@/lib/api/groups";
+import { getGroup, getGroupFeed, joinGroup, leaveGroup } from "@/lib/api/groups";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGroupChat } from "@/contexts/GroupChatContext";
 import PostCard from "@/components/posts/PostCard";
 import NailButton from "@/components/shared/NailButton";
-import UsersSelect from "@/components/shared/UsersSelect";
+import UsersModal from "@/components/groups/UsersModal";
 import GroupChat from "@/components/chat/GroupChat";
 import "@/css/groups.css";
 
 const pageLimit = 10;
 
-export default function GroupDetailPage({ params }) {
-  const { id } = use(params);
+export default function GroupDetailPage() {
+  const { id } = useParams();
   const { user } = useAuth();
   const { unread } = useGroupChat();
   const [group, setGroup] = useState(null);
@@ -164,18 +164,11 @@ export default function GroupDetailPage({ params }) {
       {actionError && <div className="postsError">{actionError}</div>}
 
       {inviteOpen && membership === "accepted" && (
-        <InviteModal
-          groupId={groupId}
-          onClose={() => setInviteOpen(false)}
-          onInvited={() => setActionError("")}
-        />
+        <UsersModal groupId={groupId} inviteMode onClose={() => setInviteOpen(false)} />
       )}
 
       {membersOpen && membership === "accepted" && (
-        <MembersModal
-          groupId={groupId}
-          onClose={() => setMembersOpen(false)}
-        />
+        <UsersModal groupId={groupId} onClose={() => setMembersOpen(false)} />
       )}
 
       {membership === "accepted" ? (
@@ -217,125 +210,6 @@ export default function GroupDetailPage({ params }) {
         />
       )}
     </section>
-  );
-}
-
-function InviteModal({ groupId, onClose, onInvited }) {
-  const [users, setUsers] = useState([]);
-  const [selected, setSelected] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const [usersRes, membersRes] = await Promise.all([
-          getAllUsers(),
-          getGroupMembers(groupId),
-        ]);
-        if (cancelled) return;
-        const allUsers = usersRes?.data || [];
-        const memberIds = new Set((membersRes?.data || []).map((m) => m.id));
-        // Skip users that are already members of the group
-        setUsers(allUsers.filter((u) => !memberIds.has(u.id)));
-      } catch (err) {
-        if (!cancelled) setError(err?.message || "Could not load users.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [groupId]);
-
-  function toggleUser(userId, checked) {
-    setSelected((prev) =>
-      checked ? [...prev, userId] : prev.filter((id) => id !== userId)
-    );
-  }
-
-  async function handleInvite() {
-    if (selected.length === 0) {
-      setError("Select at least one user to invite.");
-      return;
-    }
-    setError("");
-    setSubmitting(true);
-    try {
-      await inviteUsers(groupId, selected);
-      onInvited();
-      onClose();
-    } catch (err) {
-      setError(err?.message || "Could not send invitations.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  return (
-    <div className="groupInviteOverlay">
-      <div className="groupInvitePanel">
-        <h2 className="groupInviteTitle">Invite members</h2>
-        {error && <div className="postsError">{error}</div>}
-
-        <div className="groupInviteList">
-          <UsersSelect
-            users={users}
-            loading={loading}
-            selected={selected}
-            onToggle={toggleUser}
-          />
-        </div>
-
-        <div className="groupInviteActions">
-          <NailButton onClick={handleInvite} disabled={submitting || loading}>
-            {submitting ? "Sending..." : "Invite"}
-          </NailButton>
-          <NailButton onClick={onClose}>Cancel</NailButton>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MembersModal({ groupId, onClose }) {
-  const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-    getGroupMembers(groupId)
-      .then((res) => {
-        if (!cancelled) setMembers(res?.data || []);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err?.message || "Could not load members.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [groupId]);
-
-  return (
-    <div className="groupInviteOverlay">
-      <div className="groupInvitePanel">
-        <h2 className="groupInviteTitle">Members</h2>
-        {error && <div className="postsError">{error}</div>}
-
-        <UsersSelect users={members} loading={loading} selectable={false} />
-
-        <div className="groupInviteActions">
-          <NailButton onClick={onClose}>Close</NailButton>
-        </div>
-      </div>
-    </div>
   );
 }
 

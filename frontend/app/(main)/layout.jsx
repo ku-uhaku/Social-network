@@ -38,7 +38,7 @@ export default function MainLayout({ children }) {
 
   // Keep height in sync so the settings
   // panel can anchor itself
-  useEffect(() => { // TODO: this whole function stinks
+  useEffect(() => {
     if (loading || !user) return;
 
     const header = headerRef.current;

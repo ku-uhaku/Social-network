@@ -73,8 +73,7 @@ func (s *Service) DeleteGroup(userID int64, groupID int64) error {
 	return s.Repo.DeleteGroup(groupID)
 }
 
-// InviteUsers ensures requester is an accepted member then issues batch invitations.
-// Any member of the group may invite other users.
+// Invites users; requester must be an accepted member
 func (s *Service) InviteUsers(requesterID int64, payload models.InviteMembersPayload) error {
 	status, err := s.Repo.GetMemberStatus(payload.GroupID, requesterID)
 	if err != nil || status != "accepted" {
@@ -84,7 +83,7 @@ func (s *Service) InviteUsers(requesterID int64, payload models.InviteMembersPay
 	return s.Repo.InviteUsersBatch(payload.GroupID, payload.TargetUserIDs)
 }
 
-// RespondToInvitation handles accepting or declining group invites by the target user
+// Accepts or declines a group invite
 func (s *Service) RespondToInvitation(userID int64, groupID int64, accept bool) error {
 	status, err := s.Repo.GetMemberStatus(groupID, userID)
 	if err != nil || status != "pending" {
@@ -97,7 +96,7 @@ func (s *Service) RespondToInvitation(userID int64, groupID int64, accept bool) 
 	return s.Repo.RemoveMember(groupID, userID)
 }
 
-// JoinGroup handles public join or requesting join for private groups
+// Public: join; private: request to join
 func (s *Service) JoinGroup(userID int64, groupID int64) error {
 	group, err := s.Repo.GetGroupByID(groupID)
 	if err != nil {
@@ -120,7 +119,7 @@ func (s *Service) JoinGroup(userID int64, groupID int64) error {
 	return s.Repo.AddMember(groupID, userID, "pending")
 }
 
-// HandleJoinRequest lets creator approve or reject pending requests to private groups
+// Creator approves or rejects join requests
 func (s *Service) HandleJoinRequest(creatorID int64, groupID int64, targetUserID int64, approve bool) error {
 	group, err := s.Repo.GetGroupByID(groupID)
 	if err != nil {
@@ -135,7 +134,6 @@ func (s *Service) HandleJoinRequest(creatorID int64, groupID int64, targetUserID
 	return s.Repo.RemoveMember(groupID, targetUserID)
 }
 
-// LeaveGroup allows a member to leave
 func (s *Service) LeaveGroup(userID int64, groupID int64) error {
 	return s.Repo.RemoveMember(groupID, userID)
 }
@@ -144,8 +142,7 @@ func (s *Service) GetPendingInvitations(userID int64) ([]models.GroupInvitationV
 	return s.Repo.GetUserPendingInvitations(userID)
 }
 
-// GetMembershipStatus returns the current user's membership status in a group.
-// Values: 'accepted', 'pending', or 'none' when no row exists.
+// Membership status: accepted, pending, or none
 func (s *Service) GetMembershipStatus(groupID int64, userID int64) (string, error) {
 	status, err := s.Repo.GetMemberStatus(groupID, userID)
 	if err != nil {
@@ -157,12 +154,11 @@ func (s *Service) GetMembershipStatus(groupID int64, userID int64) (string, erro
 	return status, nil
 }
 
-// GetGroupMembers returns all accepted members of a group
 func (s *Service) GetGroupMembers(groupID int64) ([]models.UserFollowView, error) {
 	return s.Repo.GetGroupMembers(groupID)
 }
 
-// GetGroupFeed returns the posts of a single group. Non-members get ErrAccessDenied.
+// Group posts; non-members get ErrAccessDenied
 func (s *Service) GetGroupFeed(userID int64, groupID int64, limit int, cursor *int64) ([]models.Post, bool, error) {
 	status, err := s.Repo.GetMemberStatus(groupID, userID)
 	if err != nil || status != "accepted" {
@@ -172,7 +168,7 @@ func (s *Service) GetGroupFeed(userID int64, groupID int64, limit int, cursor *i
 	return s.Repo.GetGroupFeedPosts(groupID, limit, cursor)
 }
 
-// CreateGroupEvent allows any accepted member to create an event
+// Accepted members can create events
 func (s *Service) CreateGroupEvent(userID int64, payload models.CreateGroupEventPayload) (*models.GroupEvent, error) {
 	status, err := s.Repo.GetMemberStatus(payload.GroupID, userID)
 	if err != nil || status != "accepted" {
@@ -181,7 +177,7 @@ func (s *Service) CreateGroupEvent(userID int64, payload models.CreateGroupEvent
 	return s.Repo.CreateGroupEvent(payload.GroupID, userID, payload)
 }
 
-// GetGroupEvents lists events for a group (members only)
+// Group events (members only)
 func (s *Service) GetGroupEvents(userID, groupID int64) ([]models.GroupEventWithCounts, error) {
 	status, err := s.Repo.GetMemberStatus(groupID, userID)
 	if err != nil || status != "accepted" {
@@ -190,7 +186,7 @@ func (s *Service) GetGroupEvents(userID, groupID int64) ([]models.GroupEventWith
 	return s.Repo.GetGroupEvents(groupID, userID)
 }
 
-// CancelGroupEvent allows only the creator to cancel an upcoming event
+// Creator cancels an upcoming event
 func (s *Service) CancelGroupEvent(userID, eventID int64) error {
 	event, err := s.Repo.GetEventByID(eventID)
 	if err != nil {
@@ -205,7 +201,7 @@ func (s *Service) CancelGroupEvent(userID, eventID int64) error {
 	return s.Repo.CancelGroupEvent(eventID)
 }
 
-// SetEventResponse lets a member choose going/not_going for an upcoming event
+// Member picks going/not_going for an upcoming event
 func (s *Service) SetEventResponse(userID, eventID int64, status string) (*models.GroupEventWithCounts, error) {
 	event, err := s.Repo.GetEventByID(eventID)
 	if err != nil {

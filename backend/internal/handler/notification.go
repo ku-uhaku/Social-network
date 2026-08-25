@@ -109,7 +109,7 @@ func (h *Handler) ExpireNotification(w http.ResponseWriter, r *http.Request) {
 	helper.Success(w, http.StatusOK, "Notification expired", nil)
 }
 
-// DispatchNotification is the single contract phase-2 handlers call to create + broadcast
+// Creates a notification and broadcasts it
 func (h *Handler) DispatchNotification(recipientID int64, n *models.Notification) (*models.Notification, error) {
 	created, err := h.Service.CreateNotification(n)
 	if err != nil {
@@ -119,7 +119,7 @@ func (h *Handler) DispatchNotification(recipientID int64, n *models.Notification
 	return created, nil
 }
 
-// ExpireAndPush is the single contract phase-2 handlers call to expire + broadcast
+// Expires a notification and broadcasts it
 func (h *Handler) ExpireAndPush(recipientID, notificationID int64) error {
 	if err := h.Service.ExpireNotification(recipientID, notificationID); err != nil {
 		return err
@@ -130,8 +130,7 @@ func (h *Handler) ExpireAndPush(recipientID, notificationID int64) error {
 	return nil
 }
 
-// TODO: might need to refactor each notification type into its file
-// ExpireFollowRequest finds and expires a follow_request notification for a recipient+requester pair
+// Finds and expires a follow request notification
 func (h *Handler) ExpireFollowRequest(recipientID, requesterID int64) error {
 	n, err := h.Service.GetNotificationByActorType(recipientID, requesterID, models.NotificationFollowRequest)
 	if err != nil {
@@ -141,4 +140,22 @@ func (h *Handler) ExpireFollowRequest(recipientID, requesterID int64) error {
 		return nil
 	}
 	return h.ExpireAndPush(recipientID, n.ID)
+}
+
+func acceptDeclineActions() models.JSONText {
+	return models.JSONText{
+		"buttons": []interface{}{
+			map[string]interface{}{"action": "accept", "label": "Accept"},
+			map[string]interface{}{"action": "decline", "label": "Decline"},
+		},
+	}
+}
+
+// Expires unread notifications of a type; 500 + false on error
+func (h *Handler) expireNotificationsByType(w http.ResponseWriter, userID int64, notifType string) bool {
+	if err := h.Service.ExpireNotificationsByType(userID, notifType); err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return false
+	}
+	return true
 }
