@@ -45,7 +45,7 @@ export default function UsersSelect({
                 />
               )}
               <span className="userSelectName">
-                {user.username} ({user.first_name} {user.last_name})
+                {user.first_name} {user.last_name}
               </span>
             </div>
           </label>

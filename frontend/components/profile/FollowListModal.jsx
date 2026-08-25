@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Avatar from "@/components/shared/Avatar";
+import { isAutoUsername } from "@/lib/utils";
 import { getFollowers, getFollowing } from "@/lib/api/user";
 
 export default function FollowListModal({ userId, type, onClose }) {
@@ -68,7 +69,9 @@ export default function FollowListModal({ userId, type, onClose }) {
                 <Avatar avatar={u.avatar} username={u.username} size={40} />
                 <div className="followListItemInfo">
                   <span className="followListItemName">{u.first_name} {u.last_name}</span>
-                  <span className="followListItemUsername">@{u.username}</span>
+                  {!isAutoUsername(u.username) && (
+                    <span className="followListItemUsername">@{u.username}</span>
+                  )}
                 </div>
               </Link>
             ))}

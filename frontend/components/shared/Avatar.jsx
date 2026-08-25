@@ -12,7 +12,9 @@ export default function Avatar({ avatar, username, size = 64 }) {
       {src ? (
         <img className="avatar-image__img" src={src} alt={username} />
       ) : (
-        <span className="avatar-image__fallback">{username}</span>
+        <span className="avatar-image__fallback" style={{ fontSize: Math.round(size * 0.45) }}>
+          {(username || "?").slice(0, 1).toUpperCase()}
+        </span>
       )}
     </div>
   );

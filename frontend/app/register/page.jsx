@@ -88,8 +88,8 @@ function RegisterForm() {
       <form className="card" onSubmit={handleSubmit}>
         <h1 className="title">Create an account</h1>
         <div className="field">
-          <label className="label" htmlFor="username">Nickname</label>
-          <input id="username" name="username" className="input" type="text" value={values.username} onChange={handleChange} required minLength={3} maxLength={20} />
+          <label className="label" htmlFor="username">Nickname (optional)</label>
+          <input id="username" name="username" className="input" type="text" value={values.username} onChange={handleChange} minLength={3} maxLength={20} />
         </div>
 
         <div className="field">

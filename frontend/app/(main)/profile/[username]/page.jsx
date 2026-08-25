@@ -8,7 +8,7 @@ import PostCard from "@/components/posts/PostCard";
 import Avatar from "@/components/shared/Avatar";
 import CharmToggle from "@/components/shared/CharmToggle";
 import FollowListModal from "@/components/profile/FollowListModal";
-import { formatDate } from "@/lib/utils";
+import { formatDate, displayName } from "@/lib/utils";
 
 export default function ProfilePage() {
   const { username } = useParams();
@@ -23,14 +23,14 @@ export default function ProfilePage() {
   const [modalType, setModalType] = useState(null); // 'followers' | 'following' | null
 
   const isOwner = currentUser && profile && currentUser.id === profile.id;
-  const isPrivate = profile && profile.is_public === 0;
+  const isPrivate = profile &&  profile.is_public === 0;
 
   const fetchProfile = useCallback(async () => {
     try {
       const response = await getUserProfile(username);
       setProfile(response?.data || response);
-    } catch {
-      notFound();
+    } catch(err) {
+        notFound();
     }
   }, [username]);
 
@@ -122,8 +122,9 @@ export default function ProfilePage() {
     return "Follow";
   })();
 
-  const showPosts = isOwner || !isPrivate || profile?.follow_status === "accepted";
-
+  const showPosts = isOwner || (profile && profile.is_public==1) || profile?.follow_status === "accepted";
+  // console.log("profile:::::",profile);
+  
   return (
     <section className="profilePage">
       <div className="profileCard">
@@ -141,21 +142,27 @@ export default function ProfilePage() {
           )}
         </div>
 
-        <h1 className="profileUsername">{profile.username}</h1>
-        <p className="profileFullName">{profile.first_name} {profile.last_name}</p>
-        <p className="profileEmail">{profile.email}</p>
+        <h1 className="profileUsername">{displayName(profile)}</h1>
 
         <img className="profileSeparator" src="/images/profile_separator.png" alt="" />
-
-        <div className="profileDetails">
-          <div className="profileDetail"><strong>Gender:</strong> {profile.gender}</div>
-          <div className="profileDetail"><strong>Date of Birth:</strong> {profile.date_of_birth}</div>
-          {profile.about_me && (
-            <div className="profileDetail"><strong>About me:</strong> {profile.about_me}</div>
-          )}
-          <div className="profileDetail"><strong>Joined:</strong> {formatDate(profile.created_at)}</div>
-        </div>
-
+        {
+          (!loading && showPosts ) ? (
+            <div className="profileDetails">
+              <div className="profileDetail"><strong>FullName:</strong> {profile.first_name} {profile.last_name}</div>
+              <div className="profileDetail"><strong>Email:</strong> {profile.email}</div>
+              <div className="profileDetail"><strong>Gender:</strong> {profile.gender}</div>
+              <div className="profileDetail"><strong>Date of Birth:</strong> {profile.date_of_birth}</div>
+              {profile.about_me && (
+                <div className="profileDetail"><strong>About me:</strong> {profile.about_me}</div>
+              )}
+              <div className="profileDetail"><strong>Joined:</strong> {formatDate(profile.created_at)}</div>
+            </div>
+          ):(
+             <div className="profilePrivateNotice">
+            This account is private.
+          </div>
+          )
+        }
         <div className="profileStats">
           <button
             type="button"
@@ -188,7 +195,7 @@ export default function ProfilePage() {
       <img className="postCommentSeparator" src="/images/post_comment_separator.png" alt="" />
 
       <div className="profilePosts">
-        <h2 className="profilePostsTitle">Posts by {username}</h2>
+        <h2 className="profilePostsTitle">Posts by {displayName(profile)}</h2>
         {postsLoading && <div className="profilePlaceholder">Loading posts...</div>}
         {!postsLoading && showPosts && posts.length === 0 && (
           <div className="profilePlaceholder">No posts yet.</div>
