@@ -37,7 +37,7 @@ export default function GroupsPage() {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
         if (!cancelled) setError(err?.message || "Could not load groups.");

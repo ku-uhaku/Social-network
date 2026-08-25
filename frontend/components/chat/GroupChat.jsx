@@ -54,7 +54,7 @@ export default function GroupChat({ groupId, title, meId, onClose }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }})
       .finally(() => {

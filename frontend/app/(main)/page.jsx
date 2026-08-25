@@ -69,7 +69,7 @@ export default function HomePage() {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
       setError(err?.message || "Could not load more posts.");

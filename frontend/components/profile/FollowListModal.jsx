@@ -31,7 +31,7 @@ export default function FollowListModal({ userId, type, onClose }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
         setError(err?.message || "Could not load list.");

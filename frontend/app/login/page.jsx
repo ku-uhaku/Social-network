@@ -49,7 +49,7 @@ const toooasst=useToast()
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
       // setError(err?.message || "Login failed");

@@ -29,7 +29,7 @@ export default function SuggestedFollows() {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
         //theee error defiandeed right nooow 

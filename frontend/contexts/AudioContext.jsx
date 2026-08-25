@@ -34,7 +34,7 @@ export function AudioProvider({ children }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }});
       }

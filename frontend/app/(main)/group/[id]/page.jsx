@@ -54,7 +54,7 @@ export default function GroupDetailPage({ params }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
         if (err?.message === "Group not found") {
@@ -94,7 +94,7 @@ export default function GroupDetailPage({ params }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
         if (!cancelled) setActionError(err?.message || "Could not load group feed.");
@@ -120,7 +120,7 @@ export default function GroupDetailPage({ params }) {
         err.status >= 500
       ) {
         router.push(
-          `/error?message=${encodeURIComponent(err.statusText)}`
+          `/error?message=${(err.statusText)}`
         );
       }
       setActionError(err?.message || "Could not load more posts.");
@@ -144,7 +144,7 @@ export default function GroupDetailPage({ params }) {
         err.status >= 500
       ) {
         router.push(
-          `/error?message=${encodeURIComponent(err.statusText)}`
+          `/error?message=${(err.statusText)}`
         );
       }
       setActionError(err?.message || "Could not join group.");
@@ -309,7 +309,7 @@ function InviteModal({ groupId, onClose, onInvited }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
         if (!cancelled) setError(err?.message || "Could not load users.");
@@ -348,7 +348,7 @@ function InviteModal({ groupId, onClose, onInvited }) {
         err.status >= 500
       ) {
         router.push(
-          `/error?message=${encodeURIComponent(err.statusText)}`
+          `/error?message=${(err.statusText)}`
         );
       }
       setError(err?.message || "Could not send invitations.");
@@ -402,7 +402,7 @@ function MembersModal({ groupId, onClose }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
         if (!cancelled) setError(err?.message || "Could not load members.");

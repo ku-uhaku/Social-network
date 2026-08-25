@@ -43,7 +43,7 @@ export default function PostDetailPage({ params }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
         if (
@@ -53,7 +53,7 @@ export default function PostDetailPage({ params }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
         if (err?.message === "Post not found") {
@@ -81,7 +81,7 @@ export default function PostDetailPage({ params }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
         if (
@@ -91,7 +91,7 @@ export default function PostDetailPage({ params }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
         setCommentsError(err?.message || "Could not load comments.");

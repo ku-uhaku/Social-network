@@ -48,7 +48,7 @@ export default function GroupEventsPage({ params }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
         if (
@@ -58,7 +58,7 @@ export default function GroupEventsPage({ params }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
         if (err?.message === "Group not found") notFound();
@@ -94,7 +94,7 @@ export default function GroupEventsPage({ params }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
         if (
@@ -104,7 +104,7 @@ export default function GroupEventsPage({ params }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
       toast.error(err?.message || "Could not create event.", { action: { label: "Go Home", href: "/" } });
@@ -150,7 +150,7 @@ export default function GroupEventsPage({ params }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
         if (
@@ -160,7 +160,7 @@ export default function GroupEventsPage({ params }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
       setEvents((list) => list.map((ev) => (ev.id === eventId ? prev : ev)));
@@ -180,7 +180,7 @@ export default function GroupEventsPage({ params }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         }
         if (
@@ -190,7 +190,7 @@ export default function GroupEventsPage({ params }) {
           err.status >= 500
         ) {
           router.push(
-            `/error?message=${encodeURIComponent(err.statusText)}`
+            `/error?message=${(err.statusText)}`
           );
         } toast.error(err?.message || "Could not cancel event."); }
   }
