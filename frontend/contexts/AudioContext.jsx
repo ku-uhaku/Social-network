@@ -1,13 +1,14 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const AudioCtx = createContext(null);
 
 export function AudioProvider({ children }) {
   const musicRef = useRef(null);
   const mutedRef = useRef(false);
-
+  const router=useRouter()
   const [musicSrc, setMusicSrc] = useState(null);
   const [isMusicMuted, setIsMusicMuted] = useState(false);
   const [isSfxMuted, setIsSfxMuted] = useState(false);
@@ -26,7 +27,16 @@ export function AudioProvider({ children }) {
       const el = musicRef.current;
       if (el && el.src) {
         el.muted = mutedRef.current;
-        el.play().catch(() => {});
+        el.play().catch((err) => {if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${encodeURIComponent(err.statusText)}`
+          );
+        }});
       }
       window.removeEventListener("pointerdown", unlock);
       window.removeEventListener("keydown", unlock);

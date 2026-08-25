@@ -12,7 +12,7 @@ import "@/css/chat.css";
 
 const pageSize = 30;
 
-export function useChat() {
+export  function useChat() {
   const { user } = useAuth();
   const { send, subscribe } = useWebSocket();
   const { playSfx } = useAudio();
@@ -33,7 +33,6 @@ export function useChat() {
   const [loading, setLoading] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [draft, setDraft] = useState("");
-
   // Conversation list, with the unread counts the server remembers.
   useEffect(() => {
     if (!user) return;
@@ -45,7 +44,9 @@ export function useChat() {
         setConversations(list);
         setUnread(Object.fromEntries(list.map((c) => [c.user_id, c.unread_count || 0])));
       })
-      .catch(() => {});
+      .catch(() => {
+       
+      });
     return () => {
       cancelled = true;
     };

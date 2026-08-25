@@ -10,6 +10,7 @@ const parseUserResponse = (response) => response?.data ?? response?.user ?? null
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  
 
   const refresh = useCallback(async () => {
     try {

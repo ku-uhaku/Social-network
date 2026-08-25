@@ -36,6 +36,26 @@ export default function PostDetailPage({ params }) {
         const response = await getPost(postId);
         setPost(response?.data || null);
       } catch (err) {
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${encodeURIComponent(err.statusText)}`
+          );
+        }
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${encodeURIComponent(err.statusText)}`
+          );
+        }
         if (err?.message === "Post not found") {
           notFound();
         }
@@ -54,6 +74,26 @@ export default function PostDetailPage({ params }) {
         const response = await getComments(postId);
         setComments(response?.data || []);
       } catch (err) {
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${encodeURIComponent(err.statusText)}`
+          );
+        }
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${encodeURIComponent(err.statusText)}`
+          );
+        }
         setCommentsError(err?.message || "Could not load comments.");
       } finally {
         setLoadingComments(false);

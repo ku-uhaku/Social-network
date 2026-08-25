@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { useAuth } from "@/contexts/AuthContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import * as notificationsApi from "@/lib/api/notifications";
+import { useRouter } from "next/navigation";
 
 const NotificationContext = createContext(null);
 
@@ -13,6 +14,7 @@ export function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const router=useRouter()
   // Reset state when the logged-in user changes (covers logout).
   const [prevUserId, setPrevUserId] = useState(user?.id);
   if (user?.id !== prevUserId) {
@@ -51,7 +53,17 @@ export function NotificationProvider({ children }) {
         setNotifications(list);
         setUnreadCount(list.filter((n) => !n.is_read && !n.is_expired).length);
       })
-      .catch(() => {
+      .catch((err) => {
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${encodeURIComponent(err.statusText)}`
+          );
+        }
         // keep existing state on failure
       })
       .finally(() => {

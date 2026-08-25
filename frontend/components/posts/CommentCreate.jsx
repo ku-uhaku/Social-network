@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createComment } from "@/lib/api/posts";
 import ImageUploadButton from "@/components/shared/ImageUploadButton";
+import { useRouter } from "next/navigation";
 
 export default function CommentCreate({ postId, onCreated }) {
   const [title, setTitle] = useState("");
@@ -11,6 +12,7 @@ export default function CommentCreate({ postId, onCreated }) {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resetKey, setResetKey] = useState(0); // used to force refresh ImageUploadButton to remove preview
+  const router = useRouter()
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -20,18 +22,18 @@ export default function CommentCreate({ postId, onCreated }) {
     try {
       const payload = image
         ? (() => {
-            const formData = new FormData();
-            formData.append("post_id", postId);
-            formData.append("title", title.trim());
-            formData.append("content", content.trim());
-            formData.append("image", image);
-            return formData;
-          })()
+          const formData = new FormData();
+          formData.append("post_id", postId);
+          formData.append("title", title.trim());
+          formData.append("content", content.trim());
+          formData.append("image", image);
+          return formData;
+        })()
         : {
-            post_id: Number(postId),
-            title: title.trim(),
-            content: content.trim(),
-          };
+          post_id: Number(postId),
+          title: title.trim(),
+          content: content.trim(),
+        };
 
       const response = await createComment(payload);
       const comment = response?.data;
@@ -45,6 +47,16 @@ export default function CommentCreate({ postId, onCreated }) {
         setError("Unexpected response from the server.");
       }
     } catch (err) {
+      if (
+        err.status === 401 ||
+        err.status === 403 ||
+        err.status === 404 ||
+        err.status >= 500
+      ) {
+        router.push(
+          `/error?message=${encodeURIComponent(err.statusText)}`
+        );
+      }
       setError(err?.message || "Could not add comment.");
     } finally {
       setSubmitting(false);

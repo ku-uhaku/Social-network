@@ -9,8 +9,10 @@ import Avatar from "@/components/shared/Avatar";
 import CharmToggle from "@/components/shared/CharmToggle";
 import FollowListModal from "@/components/profile/FollowListModal";
 import { formatDate } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
+  const router=useRouter()
   const { username } = useParams();
   const { user: currentUser, refresh: refreshAuth } = useAuth();
 
@@ -30,6 +32,16 @@ export default function ProfilePage() {
       const response = await getUserProfile(username);
       setProfile(response?.data || response);
     } catch(err) {
+      if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${encodeURIComponent(err.statusText)}`
+          );
+        }
         notFound();
     }
   }, [username]);

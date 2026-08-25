@@ -29,6 +29,17 @@ export default function GroupsPage() {
         const response = await getAllGroups();
         if (!cancelled) setGroups(response?.data || []);
       } catch (err) {
+        
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${encodeURIComponent(err.statusText)}`
+          );
+        }
         if (!cancelled) setError(err?.message || "Could not load groups.");
       } finally {
         if (!cancelled) setLoading(false);
@@ -59,6 +70,17 @@ export default function GroupsPage() {
         setError("Unexpected response from the server.");
       }
     } catch (err) {
+       
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${err.statusText}`
+          );
+        }
       // setError(err?.message || "Could not create group.");
           toooasst.error(err?.message ||"Could not create group.")
     } finally {

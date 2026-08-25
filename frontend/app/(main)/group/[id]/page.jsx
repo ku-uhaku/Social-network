@@ -11,6 +11,7 @@ import NailButton from "@/components/shared/NailButton";
 import UsersSelect from "@/components/shared/UsersSelect";
 import GroupChat from "@/components/chat/GroupChat";
 import "@/css/groups.css";
+import { useRouter } from "next/navigation";
 
 const pageLimit = 10;
 
@@ -31,7 +32,7 @@ export default function GroupDetailPage({ params }) {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-
+  const router = useRouter()
   const groupId = Number(id);
   if (isNaN(groupId)) notFound();
   const unreadCount = unread[groupId] || 0;
@@ -45,6 +46,17 @@ export default function GroupDetailPage({ params }) {
         setGroup(response?.data?.group || null);
         setMembership(response?.data?.membership || "none");
       } catch (err) {
+
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${encodeURIComponent(err.statusText)}`
+          );
+        }
         if (err?.message === "Group not found") {
           notFound();
         }
@@ -74,6 +86,17 @@ export default function GroupDetailPage({ params }) {
         applyFeed(response?.data || {}, false);
         setFeedLoaded(true);
       } catch (err) {
+
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${encodeURIComponent(err.statusText)}`
+          );
+        }
         if (!cancelled) setActionError(err?.message || "Could not load group feed.");
       }
     })();
@@ -89,6 +112,17 @@ export default function GroupDetailPage({ params }) {
       const response = await getGroupFeed(groupId, { limit: pageLimit, cursor: nextCursor });
       applyFeed(response?.data || {}, true);
     } catch (err) {
+
+      if (
+        err.status === 401 ||
+        err.status === 403 ||
+        err.status === 404 ||
+        err.status >= 500
+      ) {
+        router.push(
+          `/error?message=${encodeURIComponent(err.statusText)}`
+        );
+      }
       setActionError(err?.message || "Could not load more posts.");
     } finally {
       setLoadingMore(false);
@@ -102,6 +136,17 @@ export default function GroupDetailPage({ params }) {
       const response = await getGroup(groupId);
       setMembership(response?.data?.membership || "none");
     } catch (err) {
+
+      if (
+        err.status === 401 ||
+        err.status === 403 ||
+        err.status === 404 ||
+        err.status >= 500
+      ) {
+        router.push(
+          `/error?message=${encodeURIComponent(err.statusText)}`
+        );
+      }
       setActionError(err?.message || "Could not join group.");
     }
   }
@@ -110,10 +155,25 @@ export default function GroupDetailPage({ params }) {
     setActionError("");
     try {
       await leaveGroup(groupId);
-      setMembership("none");
-      applyFeed({}, false);
-      setFeedLoaded(false);
+      // setMembership("none");
+      // applyFeed({}, false);
+      // setFeedLoaded(false);
+      router.push(
+          `/group`
+        );
     } catch (err) {
+      console.log("eeeeeeeeeeerrrror", err);
+
+      if (
+        err.status === 401 ||
+        err.status === 403 ||
+        err.status === 404 ||
+        err.status >= 500
+      ) {
+        router.push(
+          `/error?message=${(err.statusText)}&&status=${err.status}`
+        );
+      }
       setActionError(err?.message || "Could not leave group.");
     }
   }
@@ -241,6 +301,17 @@ function InviteModal({ groupId, onClose, onInvited }) {
         // Skip users that are already members of the group
         setUsers(allUsers.filter((u) => !memberIds.has(u.id)));
       } catch (err) {
+
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${encodeURIComponent(err.statusText)}`
+          );
+        }
         if (!cancelled) setError(err?.message || "Could not load users.");
       } finally {
         if (!cancelled) setLoading(false);
@@ -269,6 +340,17 @@ function InviteModal({ groupId, onClose, onInvited }) {
       onInvited();
       onClose();
     } catch (err) {
+
+      if (
+        err.status === 401 ||
+        err.status === 403 ||
+        err.status === 404 ||
+        err.status >= 500
+      ) {
+        router.push(
+          `/error?message=${encodeURIComponent(err.statusText)}`
+        );
+      }
       setError(err?.message || "Could not send invitations.");
     } finally {
       setSubmitting(false);
@@ -313,6 +395,16 @@ function MembersModal({ groupId, onClose }) {
         if (!cancelled) setMembers(res?.data || []);
       })
       .catch((err) => {
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${encodeURIComponent(err.statusText)}`
+          );
+        }
         if (!cancelled) setError(err?.message || "Could not load members.");
       })
       .finally(() => {

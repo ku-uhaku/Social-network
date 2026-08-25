@@ -7,10 +7,12 @@ import { getFeed } from "@/lib/api/posts";
 import PostCard from "@/components/posts/PostCard";
 import NailButton from "@/components/shared/NailButton";
 import SuggestedFollows from "@/components/sidebar/SuggestedFollows";
+import { useRouter } from "next/navigation";
 
 const PAGE_LIMIT = 10;
 
 export default function HomePage() {
+  const router=useRouter()
   const { user } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,9 +23,7 @@ export default function HomePage() {
 
   const applyFeed = useCallback((data, append) => {
     //i will check first if the useer is exict 
-    console.log("thhhe user availaible",user)
-    if (!user )return
-
+    if (!user) return
     setPosts((prev) => (append ? [...prev, ...(data.posts || [])] : data.posts || []));
     setNextCursor(data.next_cursor || null);
     setHasMore(Boolean(data.has_more));
@@ -35,6 +35,17 @@ export default function HomePage() {
         const response = await getFeed({ limit: PAGE_LIMIT });
         applyFeed(response?.data || {}, false);
       } catch (err) {
+       
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${err.statusText}`
+          );
+        }
         setError(err?.message || "Could not load feed.");
       } finally {
         setLoading(false);
@@ -50,6 +61,17 @@ export default function HomePage() {
       const response = await getFeed({ limit: PAGE_LIMIT, cursor: nextCursor });
       applyFeed(response?.data || {}, true);
     } catch (err) {
+        
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${encodeURIComponent(err.statusText)}`
+          );
+        }
       setError(err?.message || "Could not load more posts.");
     } finally {
       setLoadingMore(false);

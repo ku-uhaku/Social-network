@@ -22,8 +22,9 @@ export default function CreatePostPage() {
   const [followers, setFollowers] = useState([]);
   const [selectedViewers, setSelectedViewers] = useState([]);
   const [loadingFollowers, setLoadingFollowers] = useState(false);
-  const toooasst=useToast()
-  console.log("that is the toastt",toooasst)
+  const toooasst = useToast()
+  
+  
 
   const params = useSearchParams();
   const groupId = params.get("group_id") ? Number(params.get("group_id")) : null;
@@ -36,10 +37,20 @@ export default function CreatePostPage() {
       .then((response) => {
         if (!cancelled) setFollowers(response.data || []);
       })
-      .catch(() =>
-        
+      .catch((err) => {
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${encodeURIComponent(err.statusText)}`
+          );
+        }
         // setError("Failed to load followers list")
-      toooasst.error(err?.message ||"Failed to load followers list")
+        toooasst.error(err?.message || "Failed to load followers list")
+      }
       )
       .finally(() => {
         if (!cancelled) setLoadingFollowers(false);
@@ -58,7 +69,7 @@ export default function CreatePostPage() {
       // Validate private posts
       if (privacy === "private" && selectedViewers.length === 0) {
         // setError("Private posts must specify at least one viewer");
-            toooasst.error(err?.message ||"Private posts must specify at least one viewer");
+        toooasst.error(err?.message || "Private posts must specify at least one viewer");
         setSubmitting(false);
         return;
       }
@@ -84,11 +95,31 @@ export default function CreatePostPage() {
         router.push(groupId ? `/group/${groupId}` : `/`);
       } else {
         // setError("Unexpected response from the server.");
-            toooasst.error(err?.message ||"Unexpected response from the server.");
+        toooasst.error(err?.message || "Unexpected response from the server.");
       }
     } catch (err) {
+      if (
+        err.status === 401 ||
+        err.status === 403 ||
+        err.status === 404 ||
+        err.status >= 500
+      ) {
+        router.push(
+          `/error?message=${encodeURIComponent(err.statusText)}`
+        );
+      }
+      if (
+        err.status === 401 ||
+        err.status === 403 ||
+        err.status === 404 ||
+        err.status >= 500
+      ) {
+        router.push(
+          `/error?message=${encodeURIComponent(err.statusText)}`
+        );
+      }
       // setError(err?.message || "Could not create post.");
-            toooasst.error(err?.message || "Could not create post.");
+      toooasst.error(err?.message || "Could not create post.");
     } finally {
       setSubmitting(false);
     }
@@ -125,30 +156,30 @@ export default function CreatePostPage() {
           </div>
 
           <div className="row">
-            
-              {groupId ? (<></>) : (
-                <div className="field">
-                  <label htmlFor="privacy">Privacy</label>
-                  <select
-                    id="privacy"
-                    value={privacy}
-                    onChange={(event) => {
-                      const next = event.target.value;
-                      setPrivacy(next);
-                      setLoadingFollowers(next === "private");
-                      if (next !== "private") {
-                        setSelectedViewers([]);
-                        setFollowers([]);
-                      }
-                    }}
-                  >
-                    <option value="public">Public</option>
-                    <option value="almost private">Almost Private</option>
-                    <option value="private">Private</option>
-                  </select>
-                </div>
-              )}
-            
+
+            {groupId ? (<></>) : (
+              <div className="field">
+                <label htmlFor="privacy">Privacy</label>
+                <select
+                  id="privacy"
+                  value={privacy}
+                  onChange={(event) => {
+                    const next = event.target.value;
+                    setPrivacy(next);
+                    setLoadingFollowers(next === "private");
+                    if (next !== "private") {
+                      setSelectedViewers([]);
+                      setFollowers([]);
+                    }
+                  }}
+                >
+                  <option value="public">Public</option>
+                  <option value="almost private">Almost Private</option>
+                  <option value="private">Private</option>
+                </select>
+              </div>
+            )}
+
             <div className="field">
               <ImageUploadButton
                 label="Image (optional)"

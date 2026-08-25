@@ -7,9 +7,8 @@ COPY package.json package-lock.json ./
 COPY . /app/frontend
 
 # clean install
-RUN npm ci 
-RUN npm run build
+RUN npm install
 
 EXPOSE 3000
 
-CMD ["npm","start"]
+CMD ["npm","run","dev"]
