@@ -78,7 +78,7 @@ func (s *Service) checkPostVisibility(userID int64, post *models.Post) error {
 	if err != nil {
 		return ErrAccessDenied
 	}
-	// Group posts are visible only to accepted group members, regardless of privacy
+	// Group posts: members only, regardless of privacy
 	if post.GroupID != nil && *post.GroupID > 0 {
 		status, err := s.Repo.GetMemberStatus(*post.GroupID, userID)
 		if err == nil && status == "accepted" {

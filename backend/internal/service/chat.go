@@ -65,8 +65,7 @@ func (s *Service) SaveGroupMessage(senderID, groupID int64, content string) (*mo
 	return s.Repo.SaveGroupMessage(senderID, groupID, content)
 }
 
-// GetDirectHistory authorizes the conversation, returns a page of messages and
-// marks it read when the newest page is requested.
+// Authorizes chat, returns a page, marks read on latest page
 func (s *Service) GetDirectHistory(userA, userB int64, limit, offset int) ([]models.DirectMessage, error) {
 	if userA == userB {
 		return nil, ErrChatSelf
@@ -89,7 +88,7 @@ func (s *Service) GetDirectHistory(userA, userB int64, limit, offset int) ([]mod
 	return s.Repo.GetDirectHistory(userA, userB, limit, offset)
 }
 
-// MarkChatRead marks a conversation as read up to its latest message.
+// Marks a conversation as read
 func (s *Service) MarkChatRead(userA, userB int64) error {
 	if userA == userB {
 		return ErrChatSelf
@@ -97,7 +96,7 @@ func (s *Service) MarkChatRead(userA, userB int64) error {
 	return s.Repo.MarkChatRead(userA, userB)
 }
 
-// GetConversations lists all chat-able users for the viewer with their latest DM.
+// Chat-able users with their latest DM
 func (s *Service) GetConversations(userID int64) ([]models.ConversationMetadata, error) {
 	return s.Repo.ListConversations(userID)
 }

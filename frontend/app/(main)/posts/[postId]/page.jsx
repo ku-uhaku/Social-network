@@ -1,7 +1,7 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
-import { useRouter, notFound } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useParams, notFound } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPost, getComments } from "@/lib/api/posts";
 import PostCard from "@/components/posts/PostCard";
@@ -9,8 +9,8 @@ import CommentCard from "@/components/posts/CommentCard";
 import CommentCreate from "@/components/posts/CommentCreate";
 import UsersSelect from "@/components/shared/UsersSelect";
 
-export default function PostDetailPage({ params }) {
-  const { postId } = use(params); // params require await
+export default function PostDetailPage() {
+  const { postId } = useParams();
   const router = useRouter();
   const { user, loading } = useAuth();
 
@@ -77,7 +77,6 @@ export default function PostDetailPage({ params }) {
   }
 
   if (error) {
-    // TODO: make inline error into a component since it is used in many places (search postsError)
     return <div className="postsError">{error}</div>;
   }
 

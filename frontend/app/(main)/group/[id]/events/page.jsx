@@ -1,14 +1,13 @@
 "use client";
-import { use, useEffect, useRef, useState } from "react";
-import { notFound } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useParams, notFound } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { getGroup, getGroupEvents, createGroupEvent, cancelGroupEvent, setEventResponse } from "@/lib/api/groups";
 import NailButton from "@/components/shared/NailButton";
 import "@/css/groups.css";
 
-// TODO: optimize for size
-export default function GroupEventsPage({ params }) {
-  const { id } = use(params);
+export default function GroupEventsPage() {
+  const { id } = useParams();
   const { user: currentUser } = useAuth();
   const groupId = Number(id);
   if (isNaN(groupId)) notFound();

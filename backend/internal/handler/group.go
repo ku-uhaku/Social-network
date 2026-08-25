@@ -1,35 +1,28 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"kuu/internal/helper"
-	"kuu/internal/middleware"
 	"kuu/internal/models"
 	"kuu/internal/requests"
 	"kuu/internal/service"
 )
 
-// CreateGroup handles POST /api/v1/groups
+// CreateGroup POST /api/v1/groups
 func (h *Handler) CreateGroup(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Authentication context missing")
 		return
 	}
 
 	var payload models.CreateGroupPayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		helper.Error(w, http.StatusBadRequest, "Malformed JSON request body")
+	if !decodeJSON(w, r, &payload) {
 		return
 	}
-	defer r.Body.Close()
 
-	if validationErrs := requests.ValidateCreateGroup(payload); len(validationErrs) > 0 {
-		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, validationErrs)
+	if writeValidationErrors(w, requests.ValidateCreateGroup(payload)) {
 		return
 	}
 
@@ -42,20 +35,15 @@ func (h *Handler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	helper.Success(w, http.StatusCreated, "Group created successfully", group)
 }
 
-// GetGroup handles GET /api/v1/groups/detail?id=123
-// Returns { group, membership } where membership is the requesting user's
-// status in the group ('accepted', 'pending', or 'none').
+// GetGroup GET /api/v1/groups/detail?id=123
 func (h *Handler) GetGroup(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Authentication context missing")
 		return
 	}
 
-	groupIDStr := r.URL.Query().Get("id")
-	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
-	if err != nil || groupID <= 0 {
-		helper.Error(w, http.StatusBadRequest, "Invalid or missing group ID parameter")
+	groupID, ok := queryPositiveInt64(w, r, "id", "Invalid or missing group ID parameter")
+	if !ok {
 		return
 	}
 
@@ -81,7 +69,7 @@ func (h *Handler) GetGroup(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// GetAllGroups handles GET /api/v1/groups
+// GetAllGroups GET /api/v1/groups
 func (h *Handler) GetAllGroups(w http.ResponseWriter, r *http.Request) {
 	groups, err := h.Service.GetAllGroups()
 	if err != nil {
@@ -94,20 +82,16 @@ func (h *Handler) GetAllGroups(w http.ResponseWriter, r *http.Request) {
 
 // GetGroupMembers GET /api/v1/groups/members?id=123 (accepted members only)
 func (h *Handler) GetGroupMembers(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
-	groupIDStr := r.URL.Query().Get("id")
-	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
-	if err != nil || groupID <= 0 {
-		helper.Error(w, http.StatusBadRequest, "Invalid or missing group ID parameter")
+	groupID, ok := queryPositiveInt64(w, r, "id", "Invalid or missing group ID parameter")
+	if !ok {
 		return
 	}
 
-	// Only accepted members may see the member list
 	membership, err := h.Service.GetMembershipStatus(groupID, user.ID)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
@@ -127,30 +111,24 @@ func (h *Handler) GetGroupMembers(w http.ResponseWriter, r *http.Request) {
 	helper.Success(w, http.StatusOK, "Group members retrieved", members)
 }
 
-// UpdateGroup handles PUT /api/v1/groups?id=123
+// UpdateGroup PUT /api/v1/groups?id=123
 func (h *Handler) UpdateGroup(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Authentication context missing")
 		return
 	}
 
-	groupIDStr := r.URL.Query().Get("id")
-	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
-	if err != nil || groupID <= 0 {
-		helper.Error(w, http.StatusBadRequest, "Invalid or missing group ID parameter")
+	groupID, ok := queryPositiveInt64(w, r, "id", "Invalid or missing group ID parameter")
+	if !ok {
 		return
 	}
 
 	var payload models.UpdateGroupPayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		helper.Error(w, http.StatusBadRequest, "Malformed JSON request body")
+	if !decodeJSON(w, r, &payload) {
 		return
 	}
-	defer r.Body.Close()
 
-	if validationErrs := requests.ValidateUpdateGroup(payload); len(validationErrs) > 0 {
-		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, validationErrs)
+	if writeValidationErrors(w, requests.ValidateUpdateGroup(payload)) {
 		return
 	}
 
@@ -171,22 +149,19 @@ func (h *Handler) UpdateGroup(w http.ResponseWriter, r *http.Request) {
 	helper.Success(w, http.StatusOK, "Group updated successfully", updatedGroup)
 }
 
-// DeleteGroup handles DELETE /api/v1/groups?id=123
+// DeleteGroup DELETE /api/v1/groups?id=123
 func (h *Handler) DeleteGroup(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Authentication context missing")
 		return
 	}
 
-	groupIDStr := r.URL.Query().Get("id")
-	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
-	if err != nil || groupID <= 0 {
-		helper.Error(w, http.StatusBadRequest, "Invalid or missing group ID parameter")
+	groupID, ok := queryPositiveInt64(w, r, "id", "Invalid or missing group ID parameter")
+	if !ok {
 		return
 	}
 
-	err = h.Service.DeleteGroup(user.ID, groupID)
+	err := h.Service.DeleteGroup(user.ID, groupID)
 	if err != nil {
 		if errors.Is(err, service.ErrGroupNotFound) {
 			helper.Error(w, http.StatusNotFound, "Group not found")
@@ -205,20 +180,24 @@ func (h *Handler) DeleteGroup(w http.ResponseWriter, r *http.Request) {
 
 // InviteMembers POST /api/v1/groups/invite
 func (h *Handler) InviteMembers(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	var payload models.InviteMembersPayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+	if !decodeJSON(w, r, &payload) {
 		return
 	}
 
-	if errs := requests.ValidateInviteMembers(payload); len(errs) > 0 {
-		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, errs)
+	if writeValidationErrors(w, requests.ValidateInviteMembers(payload)) {
+		return
+	}
+
+	// Fetch group before notifying
+	group, err := h.Service.GetGroupByID(payload.GroupID)
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -231,12 +210,6 @@ func (h *Handler) InviteMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Notify each invited user
-	group, err := h.Service.GetGroupByID(payload.GroupID)
-	if err != nil {
-		helper.Error(w, http.StatusInternalServerError, err.Error())
-		return
-	}
 	actorID := user.ID
 	for _, targetID := range payload.TargetUserIDs {
 		if targetID == user.ID {
@@ -249,12 +222,7 @@ func (h *Handler) InviteMembers(w http.ResponseWriter, r *http.Request) {
 			Title:       "Group invitation",
 			Message:     helper.DisplayName(user) + " invited you to join " + group.Title,
 			Payload:     models.JSONText{"group_id": group.ID},
-			Actions: models.JSONText{
-				"buttons": []interface{}{
-					map[string]interface{}{"action": "accept", "label": "Accept"},
-					map[string]interface{}{"action": "decline", "label": "Decline"},
-				},
-			},
+			Actions:     acceptDeclineActions(),
 		}); err != nil {
 			helper.Error(w, http.StatusInternalServerError, err.Error())
 			return
@@ -275,15 +243,13 @@ func (h *Handler) DeclineInvitation(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) respondInvite(w http.ResponseWriter, r *http.Request, accept bool) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	var payload models.GroupActionPayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+	if !decodeJSON(w, r, &payload) {
 		return
 	}
 
@@ -292,9 +258,8 @@ func (h *Handler) respondInvite(w http.ResponseWriter, r *http.Request, accept b
 		return
 	}
 
-	// Expire the group_invitation notification once acted upon
-	if err := h.Service.ExpireNotificationsByType(user.ID, models.NotificationGroupInvitation); err != nil {
-		helper.Error(w, http.StatusInternalServerError, err.Error())
+	// Expire invitation notification
+	if !h.expireNotificationsByType(w, user.ID, models.NotificationGroupInvitation) {
 		return
 	}
 
@@ -307,14 +272,12 @@ func (h *Handler) respondInvite(w http.ResponseWriter, r *http.Request, accept b
 
 // JoinGroup POST /api/v1/groups/join
 func (h *Handler) JoinGroup(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 	var payload models.GroupActionPayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+	if !decodeJSON(w, r, &payload) {
 		return
 	}
 
@@ -323,8 +286,7 @@ func (h *Handler) JoinGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Only notify the creator when a pending join request was created
-	// (private group); public joins are accepted immediately.
+	// Notify creator only if join request is pending
 	membership, err := h.Service.GetMembershipStatus(payload.GroupID, user.ID)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
@@ -344,12 +306,7 @@ func (h *Handler) JoinGroup(w http.ResponseWriter, r *http.Request) {
 			Title:       "Group join request",
 			Message:     helper.DisplayName(user) + " requested to join " + group.Title,
 			Payload:     models.JSONText{"group_id": group.ID, "target_user_id": user.ID},
-			Actions: models.JSONText{
-				"buttons": []interface{}{
-					map[string]interface{}{"action": "accept", "label": "Accept"},
-					map[string]interface{}{"action": "decline", "label": "Decline"},
-				},
-			},
+			Actions:     acceptDeclineActions(),
 		}); err != nil {
 			helper.Error(w, http.StatusInternalServerError, err.Error())
 			return
@@ -360,15 +317,13 @@ func (h *Handler) JoinGroup(w http.ResponseWriter, r *http.Request) {
 
 // LeaveGroup POST /api/v1/groups/leave
 func (h *Handler) LeaveGroup(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	var payload models.GroupActionPayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+	if !decodeJSON(w, r, &payload) {
 		return
 	}
 
@@ -381,42 +336,21 @@ func (h *Handler) LeaveGroup(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetGroupFeed GET /api/v1/groups/feed?id=123&limit=10&cursor=456
-// Returns { posts, next_cursor, has_more } like the home feed.
+// Returns { posts, next_cursor, has_more }
 func (h *Handler) GetGroupFeed(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
-	groupIDStr := r.URL.Query().Get("id")
-	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
-	if err != nil || groupID <= 0 {
-		helper.Error(w, http.StatusBadRequest, "Invalid or missing group ID parameter")
+	groupID, ok := queryPositiveInt64(w, r, "id", "Invalid or missing group ID parameter")
+	if !ok {
 		return
 	}
 
-	limit := 10
-	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-		parsed, err := strconv.Atoi(limitStr)
-		if err != nil || parsed < 1 {
-			helper.Error(w, http.StatusBadRequest, "Invalid limit parameter")
-			return
-		}
-		limit = parsed
-		if limit > 50 {
-			limit = 50
-		}
-	}
-
-	var cursor *int64
-	if cursorStr := r.URL.Query().Get("cursor"); cursorStr != "" {
-		parsed, err := strconv.ParseInt(cursorStr, 10, 64)
-		if err != nil || parsed < 1 {
-			helper.Error(w, http.StatusBadRequest, "Invalid cursor parameter")
-			return
-		}
-		cursor = &parsed
+	limit, cursor, ok := parseFeedParams(w, r)
+	if !ok {
+		return
 	}
 
 	posts, hasMore, err := h.Service.GetGroupFeed(user.ID, groupID, limit, cursor)
@@ -444,9 +378,8 @@ func (h *Handler) GetGroupFeed(w http.ResponseWriter, r *http.Request) {
 
 // GetMyInvitations GET /api/v1/groups/invitations
 func (h *Handler) GetMyInvitations(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -461,16 +394,13 @@ func (h *Handler) GetMyInvitations(w http.ResponseWriter, r *http.Request) {
 
 // GetGroupEvents GET /api/v1/groups/events?id=123 (members only)
 func (h *Handler) GetGroupEvents(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
-	groupIDStr := r.URL.Query().Get("id")
-	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
-	if err != nil || groupID <= 0 {
-		helper.Error(w, http.StatusBadRequest, "Invalid or missing group ID parameter")
+	groupID, ok := queryPositiveInt64(w, r, "id", "Invalid or missing group ID parameter")
+	if !ok {
 		return
 	}
 
@@ -489,20 +419,17 @@ func (h *Handler) GetGroupEvents(w http.ResponseWriter, r *http.Request) {
 
 // CreateGroupEvent POST /api/v1/groups/events (members only)
 func (h *Handler) CreateGroupEvent(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	var payload models.CreateGroupEventPayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+	if !decodeJSON(w, r, &payload) {
 		return
 	}
 
-	if errs := requests.ValidateCreateGroupEvent(payload); len(errs) > 0 {
-		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, errs)
+	if writeValidationErrors(w, requests.ValidateCreateGroupEvent(payload)) {
 		return
 	}
 
@@ -527,7 +454,6 @@ func (h *Handler) CreateGroupEvent(w http.ResponseWriter, r *http.Request) {
 	helper.Success(w, http.StatusCreated, "Group event created", event)
 }
 
-// notifyEventCreated dispatches group_event_created notifications to other members
 func (h *Handler) notifyEventCreated(actorID int64, group *models.Group, event *models.GroupEvent) error {
 	memberIDs, err := h.Service.GetGroupMemberIDs(group.ID)
 	if err != nil {
@@ -557,19 +483,30 @@ func (h *Handler) notifyEventCreated(actorID int64, group *models.Group, event *
 	return nil
 }
 
+func writeEventActionError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, service.ErrEventNotFound):
+		helper.Error(w, http.StatusNotFound, err.Error())
+	case errors.Is(err, service.ErrNotGroupCreator), errors.Is(err, service.ErrNotMember):
+		helper.Error(w, http.StatusForbidden, err.Error())
+	case errors.Is(err, service.ErrEventExpired):
+		helper.Error(w, http.StatusBadRequest, err.Error())
+	default:
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+	}
+}
+
 // CancelGroupEvent POST /api/v1/groups/events/cancel (creator only)
 func (h *Handler) CancelGroupEvent(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	var payload struct {
 		EventID int64 `json:"event_id"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+	if !decodeJSON(w, r, &payload) {
 		return
 	}
 	if payload.EventID <= 0 {
@@ -578,16 +515,7 @@ func (h *Handler) CancelGroupEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.Service.CancelGroupEvent(user.ID, payload.EventID); err != nil {
-		switch {
-		case errors.Is(err, service.ErrEventNotFound):
-			helper.Error(w, http.StatusNotFound, err.Error())
-		case errors.Is(err, service.ErrNotGroupCreator):
-			helper.Error(w, http.StatusForbidden, err.Error())
-		case errors.Is(err, service.ErrEventExpired):
-			helper.Error(w, http.StatusBadRequest, err.Error())
-		default:
-			helper.Error(w, http.StatusInternalServerError, err.Error())
-		}
+		writeEventActionError(w, err)
 		return
 	}
 
@@ -596,34 +524,22 @@ func (h *Handler) CancelGroupEvent(w http.ResponseWriter, r *http.Request) {
 
 // SetEventResponse POST /api/v1/groups/events/respond (members only)
 func (h *Handler) SetEventResponse(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	var payload models.EventResponsePayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+	if !decodeJSON(w, r, &payload) {
 		return
 	}
-	if errs := requests.ValidateEventResponse(payload); len(errs) > 0 {
-		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, errs)
+	if writeValidationErrors(w, requests.ValidateEventResponse(payload)) {
 		return
 	}
 
 	updated, err := h.Service.SetEventResponse(user.ID, payload.EventID, payload.Status)
 	if err != nil {
-		switch {
-		case errors.Is(err, service.ErrEventNotFound):
-			helper.Error(w, http.StatusNotFound, err.Error())
-		case errors.Is(err, service.ErrNotMember):
-			helper.Error(w, http.StatusForbidden, err.Error())
-		case errors.Is(err, service.ErrEventExpired):
-			helper.Error(w, http.StatusBadRequest, err.Error())
-		default:
-			helper.Error(w, http.StatusInternalServerError, err.Error())
-		}
+		writeEventActionError(w, err)
 		return
 	}
 
@@ -632,19 +548,16 @@ func (h *Handler) SetEventResponse(w http.ResponseWriter, r *http.Request) {
 
 // HandleJoinRequestAction POST /api/v1/groups/join/accept|decline (creator only)
 func (h *Handler) HandleJoinRequestAction(w http.ResponseWriter, r *http.Request, accept bool) {
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := h.authUser(w, r)
 	if !ok {
-		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	var payload models.GroupActionPayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
+	if !decodeJSON(w, r, &payload) {
 		return
 	}
-	if errs := requests.ValidateJoinRequestAction(payload); len(errs) > 0 {
-		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, errs)
+	if writeValidationErrors(w, requests.ValidateJoinRequestAction(payload)) {
 		return
 	}
 
@@ -657,9 +570,8 @@ func (h *Handler) HandleJoinRequestAction(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Expire the join request notification once acted upon
-	if err := h.Service.ExpireNotificationsByType(user.ID, models.NotificationGroupJoinRequest); err != nil {
-		helper.Error(w, http.StatusInternalServerError, err.Error())
+	// Expire join request notification
+	if !h.expireNotificationsByType(w, user.ID, models.NotificationGroupJoinRequest) {
 		return
 	}
 
