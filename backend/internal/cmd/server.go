@@ -10,7 +10,7 @@ import (
 	"kuu/internal/middleware"
 	"kuu/internal/repository"
 	"kuu/internal/routes"
-	"kuu/internal/service" // 1. Import your brand new service package
+	"kuu/internal/service"
 	"kuu/internal/websocket"
 )
 

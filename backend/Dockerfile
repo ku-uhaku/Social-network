@@ -1,13 +1,17 @@
-FROM golang:1.22-alpine
+FROM golang:1.25.0
+
+# RUN apk add --no-cache gcc musl-dev
 
 WORKDIR /app
 
 COPY go.mod go.sum ./
+
+
 RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /backend ./main.go
+RUN CGO_ENABLED=1 go build -o /backend ./main.go
 
 EXPOSE 8000
 
