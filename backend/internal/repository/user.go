@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"kuu/internal/models"
+
+	"github.com/google/uuid"
 )
 
 // GetUserByID fetches a complete user profile by its primary key integer
@@ -91,6 +93,11 @@ func (r *Repository) IsPrivate(id int64) (bool, error) {
 func (r *Repository) CreateUser(payload models.InputRegisterPayload, hashedPassword string) (*models.User, error) {
 	var user models.User
 
+	username := strings.TrimSpace(payload.Username)
+	if username == "" {
+		username = "user_" + strings.ReplaceAll(uuid.NewString(), "-", "")[:8]
+	}
+
 	query := `
 		INSERT INTO users (
 			username, email, first_name, last_name, gender, 
@@ -101,7 +108,7 @@ func (r *Repository) CreateUser(payload models.InputRegisterPayload, hashedPassw
 
 	err := r.DB.Database.QueryRow(
 		query,
-		strings.TrimSpace(payload.Username),
+		username,
 		strings.ToLower(strings.TrimSpace(payload.Email)),
 		payload.FirstName,
 		payload.LastName,

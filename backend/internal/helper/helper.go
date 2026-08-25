@@ -15,8 +15,29 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
+	"strings"
+
+	"kuu/internal/models"
 )
+
+var autoUsernameRe = regexp.MustCompile(`^user_[0-9a-f]{8}$`)
+
+// DisplayName returns the nickname when the user picked one, otherwise their real name.
+func DisplayName(u *models.User) string {
+	if u == nil {
+		return "Kuu user"
+	}
+	if !autoUsernameRe.MatchString(u.Username) {
+		return u.Username
+	}
+	name := strings.TrimSpace(u.FirstName + " " + u.LastName)
+	if name == "" {
+		return "Kuu user"
+	}
+	return name
+}
 
 // GetParamInt64 extracts a query parameter from the URL string and parses it to int64
 func GetParamInt64(r *http.Request, key string) (int64, error) {

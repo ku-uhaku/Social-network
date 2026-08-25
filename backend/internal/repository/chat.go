@@ -27,11 +27,13 @@ func (r *Repository) SaveGroupMessage(senderID, groupID int64, content string) (
 VALUES ($1, $2, $3)
 RETURNING id, group_id, sender_id, content, created_at,
           (SELECT username FROM users WHERE id = sender_id),
+          (SELECT first_name FROM users WHERE id = sender_id),
+          (SELECT last_name FROM users WHERE id = sender_id),
           (SELECT avatar FROM users WHERE id = sender_id)
 `
 	var msg models.GroupMessage
 	err := r.DB.Database.QueryRow(query, groupID, senderID, content).
-		Scan(&msg.ID, &msg.GroupID, &msg.SenderID, &msg.Content, &msg.CreatedAt, &msg.Username, &msg.Avatar)
+		Scan(&msg.ID, &msg.GroupID, &msg.SenderID, &msg.Content, &msg.CreatedAt, &msg.Username, &msg.FirstName, &msg.LastName, &msg.Avatar)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +89,7 @@ updated_at = CURRENT_TIMESTAMP
 // with no messages yet.
 func (r *Repository) ListConversations(viewerID int64) ([]models.ConversationMetadata, error) {
 	query := `
-SELECT u.id, u.username, u.avatar, dm.created_at,
+SELECT u.id, u.username, u.first_name, u.last_name, u.avatar, dm.created_at,
        (SELECT COUNT(*)
         FROM direct_messages du
         WHERE du.sender_id = u.id
@@ -120,7 +122,7 @@ ORDER BY (dm.created_at IS NULL) ASC, dm.created_at DESC, u.username ASC
 	conversations := []models.ConversationMetadata{}
 	for rows.Next() {
 		var c models.ConversationMetadata
-		if err := rows.Scan(&c.UserID, &c.Username, &c.Avatar, &c.LastMessageAt, &c.UnreadCount); err != nil {
+		if err := rows.Scan(&c.UserID, &c.Username, &c.FirstName, &c.LastName, &c.Avatar, &c.LastMessageAt, &c.UnreadCount); err != nil {
 			return nil, err
 		}
 		conversations = append(conversations, c)
@@ -131,7 +133,7 @@ ORDER BY (dm.created_at IS NULL) ASC, dm.created_at DESC, u.username ASC
 // GetGroupHistory retrieves paginated chat history for a group
 func (r *Repository) GetGroupHistory(groupID int64, limit, offset int) ([]models.GroupMessage, error) {
 	query := `
-SELECT gm.id, gm.group_id, gm.sender_id, u.username, u.avatar, gm.content, gm.created_at
+SELECT gm.id, gm.group_id, gm.sender_id, u.username, u.first_name, u.last_name, u.avatar, gm.content, gm.created_at
 FROM group_messages gm
 JOIN users u ON u.id = gm.sender_id
 WHERE gm.group_id = $1
@@ -147,7 +149,7 @@ LIMIT $2 OFFSET $3
 	var msgs []models.GroupMessage
 	for rows.Next() {
 		var m models.GroupMessage
-		if err := rows.Scan(&m.ID, &m.GroupID, &m.SenderID, &m.Username, &m.Avatar, &m.Content, &m.CreatedAt); err != nil {
+		if err := rows.Scan(&m.ID, &m.GroupID, &m.SenderID, &m.Username, &m.FirstName, &m.LastName, &m.Avatar, &m.Content, &m.CreatedAt); err != nil {
 			return nil, err
 		}
 		msgs = append(msgs, m)

@@ -1,5 +1,17 @@
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+const autoUsernameRe = /^user_[0-9a-f]{8}$/; // user_... means no nickname
+
+// match backend
+export function isAutoUsername(username) {
+  return autoUsernameRe.test(username || "");
+}
+
+export function displayName(user) {
+  if (!autoUsernameRe.test(user?.username || "")) return user.username;
+  return `${user.first_name} ${user.last_name}`;
+}
+
 // formatDate: convert sql DATETIME
 export function formatDate(value, options) {
   if (!value) return "";

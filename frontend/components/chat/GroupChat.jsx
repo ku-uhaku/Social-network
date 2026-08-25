@@ -5,7 +5,7 @@ import { useWebSocket } from "@/contexts/WebSocketContext";
 import { useAudio } from "@/contexts/AudioContext";
 import { useGroupChat } from "@/contexts/GroupChatContext";
 import { getGroupHistory } from "@/lib/api/chat";
-import { formatMessageTime } from "@/lib/utils";
+import { formatMessageTime, displayName } from "@/lib/utils";
 import Avatar from "@/components/shared/Avatar";
 import Composer from "./Composer";
 import "@/css/chat.css";
@@ -126,7 +126,7 @@ export default function GroupChat({ groupId, title, meId, onClose }) {
                 {!mine && (
                   <div className="chatSender">
                     <Avatar avatar={m.avatar} username={m.username} size={22} />
-                    <span className="chatSenderName">{m.username}</span>
+                    <span className="chatSenderName">{displayName(m)}</span>
                   </div>
                 )}
                 <div className={`chatBubble ${mine ? "mine" : "theirs"}`}>

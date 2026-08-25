@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import { useAudio } from "@/contexts/AudioContext";
 import { getConversations, getDirectHistory, markChatRead } from "@/lib/api/chat";
-import { formatMessageTime } from "@/lib/utils";
+import { formatMessageTime, displayName } from "@/lib/utils";
 import Avatar from "@/components/shared/Avatar";
 import Composer from "./Composer";
 import "@/css/chat.css";
@@ -195,7 +195,7 @@ function Contacts({ chat }) {
             >
               <Avatar avatar={c.avatar} username={c.username} />
               <div className="chatContactInfo">
-                <strong className="chatContactName">{c.username}</strong>
+                <strong className="chatContactName">{displayName(c)}</strong>
               </div>
               {chat.unread[c.user_id] > 0 && (
                 <span className="chatContactUnread">{chat.unread[c.user_id]}</span>
@@ -229,7 +229,7 @@ function SingleChat({ chat, contact }) {
         </button>
         <div className="chatThreadTitle">
           <Avatar avatar={contact.avatar} username={contact.username} size={32} />
-          <strong className="chatContactName">{contact.username}</strong>
+          <strong className="chatContactName">{displayName(contact)}</strong>
         </div>
         <button type="button" className="chatCloseButton" onClick={() => chat.setOpen(false)}>
           &times;

@@ -8,7 +8,7 @@ import PostCard from "@/components/posts/PostCard";
 import Avatar from "@/components/shared/Avatar";
 import CharmToggle from "@/components/shared/CharmToggle";
 import FollowListModal from "@/components/profile/FollowListModal";
-import { formatDate } from "@/lib/utils";
+import { formatDate, displayName } from "@/lib/utils";
 
 export default function ProfilePage() {
   const { username } = useParams();
@@ -142,7 +142,7 @@ export default function ProfilePage() {
           )}
         </div>
 
-        <h1 className="profileUsername">{profile.username}</h1>
+        <h1 className="profileUsername">{displayName(profile)}</h1>
 
         <img className="profileSeparator" src="/images/profile_separator.png" alt="" />
         {
@@ -195,7 +195,7 @@ export default function ProfilePage() {
       <img className="postCommentSeparator" src="/images/post_comment_separator.png" alt="" />
 
       <div className="profilePosts">
-        <h2 className="profilePostsTitle">Posts by {username}</h2>
+        <h2 className="profilePostsTitle">Posts by {displayName(profile)}</h2>
         {postsLoading && <div className="profilePlaceholder">Loading posts...</div>}
         {!postsLoading && showPosts && posts.length === 0 && (
           <div className="profilePlaceholder">No posts yet.</div>

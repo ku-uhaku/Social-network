@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { resolveMediaSrc, formatDate } from "@/lib/utils";
+import { resolveMediaSrc, formatDate, displayName } from "@/lib/utils";
 import Avatar from "@/components/shared/Avatar";
 
 const trimLength = 180;
@@ -10,9 +10,7 @@ export default function PostCard({ post, isFeed = true }) {
   const createdAt = formatDate(post.created_at);
   const imageSrc = resolveMediaSrc(post.image_url);
   const author = post.user || {};
-  const authorName = author.username || "Unknown";
-  console.log("the title ", content)
-  console.log("the title fdsgfdgdf ", post.title)
+  const authorName = displayName(author);
 
   const cardContent = (
     <>

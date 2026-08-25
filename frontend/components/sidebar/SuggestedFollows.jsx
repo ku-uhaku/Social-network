@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Avatar from "@/components/shared/Avatar";
+import { isAutoUsername } from "@/lib/utils";
 import { getSuggestedUsers, followUser } from "@/lib/api/user";
 
 export default function SuggestedFollows() {
@@ -63,7 +64,9 @@ export default function SuggestedFollows() {
               <span className="suggestedFollowName">
                 {u.first_name} {u.last_name}
               </span>
-              <span className="suggestedFollowUsername">@{u.username}</span>
+              {!isAutoUsername(u.username) && (
+                <span className="suggestedFollowUsername">@{u.username}</span>
+              )}
             </Link>
             <button
               type="button"

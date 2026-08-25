@@ -162,7 +162,7 @@ func (h *Handler) FollowUser(w http.ResponseWriter, r *http.Request) {
 				ActorID:     &actorID,
 				Type:        models.NotificationFollowRequest,
 				Title:       "New follow request",
-				Message:     user.Username + " wants to follow you",
+				Message:     helper.DisplayName(user) + " wants to follow you",
 				Actions: models.JSONText{
 					"buttons": []interface{}{
 						map[string]interface{}{"action": "accept", "label": "Accept"},

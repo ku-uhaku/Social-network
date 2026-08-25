@@ -247,7 +247,7 @@ func (h *Handler) InviteMembers(w http.ResponseWriter, r *http.Request) {
 			ActorID:     &actorID,
 			Type:        models.NotificationGroupInvitation,
 			Title:       "Group invitation",
-			Message:     user.Username + " invited you to join " + group.Title,
+			Message:     helper.DisplayName(user) + " invited you to join " + group.Title,
 			Payload:     models.JSONText{"group_id": group.ID},
 			Actions: models.JSONText{
 				"buttons": []interface{}{
@@ -342,7 +342,7 @@ func (h *Handler) JoinGroup(w http.ResponseWriter, r *http.Request) {
 			ActorID:     &actorID,
 			Type:        models.NotificationGroupJoinRequest,
 			Title:       "Group join request",
-			Message:     user.Username + " requested to join " + group.Title,
+			Message:     helper.DisplayName(user) + " requested to join " + group.Title,
 			Payload:     models.JSONText{"group_id": group.ID, "target_user_id": user.ID},
 			Actions: models.JSONText{
 				"buttons": []interface{}{

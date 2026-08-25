@@ -10,6 +10,7 @@ import { useNotifications } from "@/contexts/NotificationContext";
 import Avatar from "@/components/shared/Avatar";
 import CharmToggle from "@/components/shared/CharmToggle";
 import IconButton from "@/components/shared/IconButton";
+import { displayName } from "@/lib/utils";
 import NotificationList from "@/components/notifications/NotificationList";
 import Chat, { useChat } from "@/components/chat/Chat";
 
@@ -70,7 +71,7 @@ export default function MainLayout({ children }) {
           <div className="userInfo">
             <Avatar avatar={user?.avatar} username={user.username} size={52} />
             <div>
-              <strong className="userName">{user.username}</strong>
+              <strong className="userName">{displayName(user)}</strong>
             </div>
           </div>
 

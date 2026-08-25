@@ -33,8 +33,6 @@ func ParseRegisterPayload(r *http.Request) (models.InputRegisterPayload, error) 
 		if aboutMe := strings.TrimSpace(r.FormValue("about_me")); aboutMe != "" {
 			payload.AboutMe = &aboutMe
 		}
-		deeefaultavatar:="/media/defaulte_avatar.jpeg"
-		payload.Avatar=&deeefaultavatar
 		if file, header, err := r.FormFile("avatar"); err == nil {
 			// _,err=helper.IsValidImage([]byte(*payload.Avatar))
 			// if err!=nil{
@@ -57,12 +55,7 @@ func ParseRegisterPayload(r *http.Request) (models.InputRegisterPayload, error) 
 func ValidateRegister(payload models.InputRegisterPayload) []ValidationError {
 	var errs []ValidationError
 
-	if strings.TrimSpace(payload.Username) == "" {
-		errs = append(errs, ValidationError{
-			Field:   "username",
-			Message: "username is required",
-		})
-	} else if !usernameRegex.MatchString(payload.Username) {
+	if strings.TrimSpace(payload.Username) != "" && !usernameRegex.MatchString(payload.Username) {
 		errs = append(errs, ValidationError{
 			Field:   "username",
 			Message: "username must be between 3 and 20 alphanumeric characters or underscores",
