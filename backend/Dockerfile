@@ -15,6 +15,6 @@ RUN echo "=== Files in /app ===" && ls -la /app
 RUN cat go.mod
 RUN CGO_ENABLED=1 go build -o /backend ./main.go
 
-EXPOSE 8080
+EXPOSE 8000
 
 CMD ["/backend"]

@@ -61,7 +61,7 @@ The easiest way to run the full stack (Frontend + Backend + Database) is using D
 docker compose up --build
 ```
 - **Frontend**: `http://localhost:3000`
-- **Backend API**: `http://localhost:8080`
+- **Backend API**: `http://localhost:8000`
 
 ### 🛠 Manual Setup
 
@@ -78,7 +78,7 @@ cd frontend
 npm install
 npm run dev
 ```
-*By default, the frontend looks for the API at `http://localhost:8080`.*
+*By default, the frontend looks for the API at `http://localhost:8000`.*
 
 ---
 
@@ -92,7 +92,7 @@ The system uses **HTTP-only cookies** for security.
 
 ### WebSocket Communication
 Real-time features (Chat, Online Status, Notifications) are handled via a single WebSocket connection:
-- **Connection**: `ws://localhost:8080/ws`
+- **Connection**: `ws://localhost:8000/ws`
 - **State**: Managed by `WebSocketContext.jsx` in the frontend, allowing any component to `subscribe` to specific server events or `send` messages.
 
 ---
@@ -112,7 +112,7 @@ Real-time features (Chat, Online Status, Notifications) are handled via a single
 
 ## 📝 Development Notes
 
-- **Database Seeding**: A default seed migration exists in the backend to populate the app with demo users and content. The default password for all seed users is `SecurePassword123!`.
+- **Ports**: Backend runs on `8000`, frontend on `3000` (dev and Docker).
 - **Styling**: The frontend uses plain CSS files located under `frontend/css/` to ensure full control over the design without external UI libraries.
 - **Image Storage**: Images are stored locally in the `backend/media` folder and served via the `/media/` static route.
 

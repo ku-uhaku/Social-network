@@ -18,8 +18,8 @@ func Neewratelimeter(window time.Duration) *RateLimiter {
 	return &RateLimiter{
 		window: window,
 		limits: map[string]int{
-			"api":  10_000,
-			"authonti": 100,
+			"api":      300,
+			"authonti": 20,
 		},
 		requests: make(map[string][]time.Time),
 	}
@@ -34,13 +34,10 @@ func (rl *RateLimiter) Wraponall(limitType string, next http.Handler) http.Handl
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip := clientIP(r)
-
-		if !rl.allow(ip, limit) {
+		if r.Method != http.MethodOptions && !rl.allow(clientIP(r), limit) {
 			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
 			return
 		}
-
 		next.ServeHTTP(w, r)
 	})
 }

@@ -57,7 +57,12 @@ func ParseRegisterPayload(r *http.Request) (models.InputRegisterPayload, error) 
 func ValidateRegister(payload models.InputRegisterPayload) []ValidationError {
 	var errs []ValidationError
 
-	 if strings.TrimSpace(payload.Username) != ""&&!usernameRegex.MatchString(payload.Username) {
+	if strings.TrimSpace(payload.Username) == "" {
+		errs = append(errs, ValidationError{
+			Field:   "username",
+			Message: "username is required",
+		})
+	} else if !usernameRegex.MatchString(payload.Username) {
 		errs = append(errs, ValidationError{
 			Field:   "username",
 			Message: "username must be between 3 and 20 alphanumeric characters or underscores",
@@ -114,10 +119,10 @@ func ValidateRegister(payload models.InputRegisterPayload) []ValidationError {
 			Field:   "date_of_birth",
 			Message: "date of birth must be a valid date (YYYY-MM-DD)",
 		})
-	} else if birth.AddDate(18, 0, 0).After(time.Now()) {
+	} else if birth.AddDate(16, 0, 0).After(time.Now()) {
 		errs = append(errs, ValidationError{
 			Field:   "date_of_birth",
-			Message: "you must be at least 18 years old to register",
+			Message: "you must be at least 16 years old to register",
 		})
 	}
 

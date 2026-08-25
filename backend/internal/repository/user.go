@@ -2,7 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"strconv"
 	"strings"
 
 	"kuu/internal/models"
@@ -126,17 +125,6 @@ func (r *Repository) CreateUser(payload models.InputRegisterPayload, hashedPassw
 	)
 	if err != nil {
 		return nil, err
-	}
-	if user.Username == "" {
-		id := strconv.FormatInt(user.ID, 10)
-		_, err = r.DB.Database.Exec(`
-		UPDATE users 
-		SET username = $1
-		WHERE id=$2
-		`, "user"+id, user.ID)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	return &user, nil

@@ -63,6 +63,16 @@ func (s *Service) GetUserProfile(viewerID int64, username string) (*models.UserP
 		view.FollowStatus = status
 	}
 
+	// Private profiles: strip personal fields unless the viewer is a follower.
+	if user.IsPublic == 0 && view.FollowStatus != "accepted" {
+		view.Email = ""
+		view.FirstName = ""
+		view.LastName = ""
+		view.Gender = ""
+		view.DateOfBirth = ""
+		view.AboutMe = nil
+	}
+
 	return view, nil
 }
 

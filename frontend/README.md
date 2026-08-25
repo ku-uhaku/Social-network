@@ -21,10 +21,10 @@ npm install
 npm run dev       # http://localhost:3000
 ```
 
-The API base URL comes from `NEXT_PUBLIC_API_URL` (defaults to `http://localhost:8080`, see `lib/utils.js`). Set it when the backend is elsewhere:
+The API base URL comes from `NEXT_PUBLIC_API_URL` (defaults to `http://localhost:8000`, see `lib/utils.js`). Set it when the backend is elsewhere:
 
 ```bash
-NEXT_PUBLIC_API_URL=http://localhost:8080 npm run dev
+NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev
 ```
 
 Production build: `npm run build` then `npm start`. Or run the full stack with `docker compose up --build` from the repo root.

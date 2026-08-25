@@ -19,7 +19,7 @@ A REST + WebSocket API for a social network (posts, comments, groups, events, fo
 
 ```bash
 cd backend
-go run .                 # listens on :8080
+go run .                 # listens on :8000
 ```
 
 - The database file is `./internal/database/social.db` (path set in `internal/config/config.go`).
@@ -94,7 +94,7 @@ Every JSON endpoint returns the same shape:
 
 ## API reference
 
-Base URL: `http://localhost:8080` · Everything under `/api/v1/*` (except `/ws` and `/media/`) requires the `session_token` cookie unless marked **public**.
+Base URL: `http://localhost:8000` · Everything under `/api/v1/*` (except `/ws` and `/media/`) requires the `session_token` cookie unless marked **public**.
 
 ### Auth
 
@@ -180,7 +180,7 @@ Base URL: `http://localhost:8080` · Everything under `/api/v1/*` (except `/ws` 
 
 ### WebSocket — `/ws`
 
-Connect with `GET /ws` (session cookie required). The frontend connects to `ws://localhost:8080/ws`.
+Connect with `GET /ws` (session cookie required). The frontend connects to `ws://localhost:8000/ws`.
 
 Events are typed JSON objects: `{ "type": "...", "payload": { ... } }`.
 
