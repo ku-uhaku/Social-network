@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"kuu/internal/models"
 )
@@ -14,7 +15,7 @@ func ValidateCreateGroup(payload models.CreateGroupPayload) []error {
 	if strings.TrimSpace(payload.Title) == "" {
 		errs = append(errs, errors.New("title is required"))
 		return errs
-	} else if len(strings.TrimSpace(payload.Title)) < 3 || len((strings.TrimSpace(payload.Title)))>20{
+	} else if titleLen := utf8.RuneCountInString(strings.TrimSpace(payload.Title)); titleLen < 3 || titleLen > 20 {
 		errs = append(errs, errors.New("title must be at least 3 characters long of less then 20"))
 		return errs
 	}
@@ -22,7 +23,7 @@ func ValidateCreateGroup(payload models.CreateGroupPayload) []error {
 	if strings.TrimSpace(payload.Description) == "" {
 		errs = append(errs, errors.New("description is required"))
 		return  errs
-	}else if len(( strings.TrimSpace(payload.Description)))>200{
+	}else if utf8.RuneCountInString(strings.TrimSpace(payload.Description))>200{
 		errs = append(errs, errors.New("description is too longg "))
 		return  errs
 	}
@@ -96,14 +97,14 @@ func ValidateCreateGroupEvent(payload models.CreateGroupEventPayload) []error {
 	if strings.TrimSpace(payload.Title) == "" {
 		errs = append(errs, errors.New("title is required"))
 	}
-	if len(strings.TrimSpace(payload.Title) )>20{
+	if utf8.RuneCountInString(strings.TrimSpace(payload.Title)) > 20 {
 				errs = append(errs, errors.New("title moore long "))
 				return  errs
 	}
 	if strings.TrimSpace(payload.Description) == "" {
 		errs = append(errs, errors.New("description is required"))
 	}
-	if len(strings.TrimSpace(payload.Description) )>100{
+	if utf8.RuneCountInString(strings.TrimSpace(payload.Description)) > 100 {
 				errs = append(errs, errors.New("description moore long "))
 				return  errs
 	}

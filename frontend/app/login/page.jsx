@@ -36,6 +36,7 @@ const toooasst=useToast()
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+    if (identifier.trim() === "" || password.trim() === "") return;
     setSubmitting(true);
     try {
       await login(identifier, password);
@@ -66,6 +67,7 @@ const toooasst=useToast()
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             required
+            maxLength={254}
           />
         </div>
 
@@ -79,6 +81,7 @@ const toooasst=useToast()
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={8}
+            maxLength={72}
           />
         </div>
 

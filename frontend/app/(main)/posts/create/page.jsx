@@ -37,9 +37,7 @@ export default function CreatePostPage() {
         if (!cancelled) setFollowers(response.data || []);
       })
       .catch(() =>
-        
-        // setError("Failed to load followers list")
-      toooasst.error(err?.message ||"Failed to load followers list")
+        toooasst.error("Failed to load followers list")
       )
       .finally(() => {
         if (!cancelled) setLoadingFollowers(false);
@@ -53,6 +51,12 @@ export default function CreatePostPage() {
     event.preventDefault();
     // setError("");
     setSubmitting(true);
+
+    if (title.trim() === "" || content.trim() === "") {
+      toooasst.error("Title and content cannot be empty or contain only spaces");
+      setSubmitting(false);
+      return;
+    }
 
     try {
       // Validate private posts
@@ -84,7 +88,7 @@ export default function CreatePostPage() {
         router.push(groupId ? `/group/${groupId}` : `/`);
       } else {
         // setError("Unexpected response from the server.");
-            toooasst.error(err?.message ||"Unexpected response from the server.");
+            toooasst.error("Unexpected response from the server.");
       }
     } catch (err) {
       // setError(err?.message || "Could not create post.");
@@ -110,6 +114,8 @@ export default function CreatePostPage() {
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Post title"
               required
+              minLength={1}
+              maxLength={40}
             />
           </div>
 
@@ -121,6 +127,7 @@ export default function CreatePostPage() {
               onChange={(event) => setContent(event.target.value)}
               placeholder="Write your post here..."
               required
+              maxLength={200}
             />
           </div>
 

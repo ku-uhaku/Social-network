@@ -42,6 +42,10 @@ export default function GroupsPage() {
   async function handleCreate(event) {
     event.preventDefault();
     setError("");
+    if (title.trim().length < 3 || title.trim() === "" || description.trim() === "") {
+      toooasst.error("Title must be 3-20 characters and description cannot be empty");
+      return;
+    }
     setSubmitting(true);
     try {
       const response = await createGroup({
@@ -89,6 +93,8 @@ export default function GroupsPage() {
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Group title"
               required
+              minLength={3}
+              maxLength={20}
             />
           </div>
 
@@ -99,6 +105,7 @@ export default function GroupsPage() {
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               required
+              maxLength={200}
             />
           </div>
 

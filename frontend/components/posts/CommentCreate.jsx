@@ -17,6 +17,12 @@ export default function CommentCreate({ postId, onCreated }) {
     setError("");
     setSubmitting(true);
 
+    if (title.trim() === "" || content.trim() === "") {
+      setError("Title and content cannot be empty or contain only spaces");
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const payload = image
         ? (() => {
@@ -63,6 +69,8 @@ export default function CommentCreate({ postId, onCreated }) {
           onChange={(event) => setTitle(event.target.value)}
           placeholder="Comment title"
           required
+          minLength={1}
+          maxLength={40}
         />
       </div>
 
@@ -74,6 +82,7 @@ export default function CommentCreate({ postId, onCreated }) {
           onChange={(event) => setContent(event.target.value)}
           placeholder="Write your comment here..."
           required
+          maxLength={200}
         />
       </div>
 

@@ -59,6 +59,10 @@ export default function GroupEventsPage({ params }) {
   async function handleCreate(e) {
     e.preventDefault();
     if (!dateTime) { toast.error("Choose a date and time for the event."); return; }
+    if (title.trim() === "" || description.trim() === "") {
+      toast.error("Title and description cannot be empty or contain only spaces");
+      return;
+    }
     setSubmitting(true);
     try {
       await createGroupEvent({ group_id: groupId, title, description, event_time: new Date(dateTime).toISOString() });
@@ -136,8 +140,8 @@ export default function GroupEventsPage({ params }) {
         <>
           {formOpen && (
             <form className="groupForm" onSubmit={handleCreate}>
-              <label>Title <input value={title} onChange={(e) => setTitle(e.target.value)} required /></label>
-              <label>Description <textarea value={description} onChange={(e) => setDescription(e.target.value)} required /></label>
+              <label>Title <input value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={20} /></label>
+              <label>Description <textarea value={description} onChange={(e) => setDescription(e.target.value)} required maxLength={100} /></label>
               <label>Date / Time <input type="datetime-local" value={dateTime} onChange={(e) => setDateTime(e.target.value)} required /></label>
               <NailButton type="submit" disabled={submitting}>{submitting ? "Creating..." : "Create event"}</NailButton>
             </form>

@@ -7,12 +7,20 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"kuu/internal/helper"
 	"kuu/internal/models"
 )
 
 var usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9_]{3,20}$`)
+
+const (
+	maxEmailLength     = 254
+	maxNameLength      = 50
+	maxAboutMeLength   = 500
+	maxPasswordLength  = 72 // bcrypt only hashes the first 72 bytes
+)
 
 func ParseRegisterPayload(r *http.Request) (models.InputRegisterPayload, error) {
 	var payload models.InputRegisterPayload
@@ -79,12 +87,36 @@ func ValidateRegister(payload models.InputRegisterPayload) []ValidationError {
 			Field:   "first_name",
 			Message: "first name is required",
 		})
+	} else if utf8.RuneCountInString(payload.FirstName) > maxNameLength {
+		errs = append(errs, ValidationError{
+			Field:   "first_name",
+			Message: fmt.Sprintf("first name cannot be longer than %d characters", maxNameLength),
+		})
 	}
 
 	if strings.TrimSpace(payload.LastName) == "" {
 		errs = append(errs, ValidationError{
 			Field:   "last_name",
 			Message: "last name is required",
+		})
+	} else if utf8.RuneCountInString(payload.LastName) > maxNameLength {
+		errs = append(errs, ValidationError{
+			Field:   "last_name",
+			Message: fmt.Sprintf("last name cannot be longer than %d characters", maxNameLength),
+		})
+	}
+
+	if utf8.RuneCountInString(payload.Email) > maxEmailLength {
+		errs = append(errs, ValidationError{
+			Field:   "email",
+			Message: fmt.Sprintf("email cannot be longer than %d characters", maxEmailLength),
+		})
+	}
+
+	if payload.AboutMe != nil && utf8.RuneCountInString(*payload.AboutMe) > maxAboutMeLength {
+		errs = append(errs, ValidationError{
+			Field:   "about_me",
+			Message: fmt.Sprintf("about me cannot be longer than %d characters", maxAboutMeLength),
 		})
 	}
 
@@ -120,10 +152,20 @@ func ValidateRegister(payload models.InputRegisterPayload) []ValidationError {
 	}
 
 
-	if len(payload.Password) < 8 {
+	if strings.TrimSpace(payload.Password) == "" {
+		errs = append(errs, ValidationError{
+			Field:   "password",
+			Message: "password is required",
+		})
+	} else if len(payload.Password) < 8 {
 		errs = append(errs, ValidationError{
 			Field:   "password",
 			Message: "password must be at least 8 characters long",
+		})
+	} else if len(payload.Password) > maxPasswordLength {
+		errs = append(errs, ValidationError{
+			Field:   "password",
+			Message: fmt.Sprintf("password cannot be longer than %d bytes", maxPasswordLength),
 		})
 	}
 
@@ -142,6 +184,11 @@ func ValidateLogin(payload models.InputLoginPayload) []ValidationError {
 			Field:   "login",
 			Message: "login is required",
 		})
+	} else if utf8.RuneCountInString(login) > maxEmailLength {
+		errs = append(errs, ValidationError{
+			Field:   "login",
+			Message: fmt.Sprintf("login cannot be longer than %d characters", maxEmailLength),
+		})
 	} else if !isValidEmail && !usernameRegex.MatchString(login) {
 		errs = append(errs, ValidationError{
 			Field:   "login",
@@ -149,7 +196,7 @@ func ValidateLogin(payload models.InputLoginPayload) []ValidationError {
 		})
 	}
 
-	if payload.Password == "" {
+	if strings.TrimSpace(payload.Password) == "" {
 		errs = append(errs, ValidationError{
 			Field:   "password",
 			Message: "password is required",
@@ -158,6 +205,11 @@ func ValidateLogin(payload models.InputLoginPayload) []ValidationError {
 		errs = append(errs, ValidationError{
 			Field:   "password",
 			Message: "password must be at least 8 characters long",
+		})
+	} else if len(payload.Password) > maxPasswordLength {
+		errs = append(errs, ValidationError{
+			Field:   "password",
+			Message: fmt.Sprintf("password cannot be longer than %d bytes", maxPasswordLength),
 		})
 	}
 

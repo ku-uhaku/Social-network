@@ -34,6 +34,7 @@ export default function Composer({ draft, setDraft, onSend }) {
           placeholder="Type..."
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={handleKeyDown}
+          maxLength={2000}
         />
         <button type="button" className="chatSendButton" onClick={onSend}>
           Send
