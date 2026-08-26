@@ -25,16 +25,6 @@ export default function FollowListModal({ userId, type, onClose }) {
         const data = response?.data || response || [];
         setUsers(Array.isArray(data) ? data : []);
       } catch (err) {
-        if (
-          err.status === 401 ||
-          err.status === 403 ||
-          err.status === 404 ||
-          err.status >= 500
-        ) {
-          router.push(
-            `/error?message=${(err.statusText)}`
-          );
-        }
         setError(err?.message || "Could not load list.");
       } finally {
         setLoading(false);

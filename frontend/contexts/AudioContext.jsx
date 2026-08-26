@@ -27,16 +27,7 @@ export function AudioProvider({ children }) {
       const el = musicRef.current;
       if (el && el.src) {
         el.muted = mutedRef.current;
-        el.play().catch((err) => {if (
-          err.status === 401 ||
-          err.status === 403 ||
-          err.status === 404 ||
-          err.status >= 500
-        ) {
-          router.push(
-            `/error?message=${(err.statusText)}`
-          );
-        }});
+        el.play().catch(() => {});
       }
       window.removeEventListener("pointerdown", unlock);
       window.removeEventListener("keydown", unlock);

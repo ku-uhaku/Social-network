@@ -8,15 +8,18 @@ import PostCard from "@/components/posts/PostCard";
 import CommentCard from "@/components/posts/CommentCard";
 import CommentCreate from "@/components/posts/CommentCreate";
 import UsersSelect from "@/components/shared/UsersSelect";
+import { useToast } from "@/contexts/ToastContext";
 
 export default function PostDetailPage() {
   const { postId } = useParams();
   const router = useRouter();
   const { user, loading } = useAuth();
+  const toooasst=useToast();
 
   if (isNaN(Number(postId))) {
     notFound(); // invalid id
   }
+  
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [loadingPost, setLoadingPost] = useState(true);
@@ -36,30 +39,11 @@ export default function PostDetailPage() {
         const response = await getPost(postId);
         setPost(response?.data || null);
       } catch (err) {
-        if (
-          err.status === 401 ||
-          err.status === 403 ||
-          err.status === 404 ||
-          err.status >= 500
-        ) {
-          router.push(
-            `/error?message=${(err.statusText)}`
-          );
-        }
-        if (
-          err.status === 401 ||
-          err.status === 403 ||
-          err.status === 404 ||
-          err.status >= 500
-        ) {
-          router.push(
-            `/error?message=${(err.statusText)}`
-          );
-        }
+        
         if (err?.message === "Post not found") {
           notFound();
         }
-        setError(err?.message || "Could not load post.");
+        setError(err?.message || "you are not allowd or  Could not load post.");
       } finally {
         setLoadingPost(false);
       }
@@ -74,27 +58,8 @@ export default function PostDetailPage() {
         const response = await getComments(postId);
         setComments(response?.data || []);
       } catch (err) {
-        if (
-          err.status === 401 ||
-          err.status === 403 ||
-          err.status === 404 ||
-          err.status >= 500
-        ) {
-          router.push(
-            `/error?message=${(err.statusText)}`
-          );
-        }
-        if (
-          err.status === 401 ||
-          err.status === 403 ||
-          err.status === 404 ||
-          err.status >= 500
-        ) {
-          router.push(
-            `/error?message=${(err.statusText)}`
-          );
-        }
-        setCommentsError(err?.message || "Could not load comments.");
+        // setCommentsError(err?.message || "Could not load comments.");
+                    toooasst.error(err?.message ||"Could not load comments.")
       } finally {
         setLoadingComments(false);
       }
@@ -118,6 +83,7 @@ export default function PostDetailPage() {
 
   if (error) {
     return <div className="postsError">{error}</div>;
+                        // toooasst.error(err?.message ||"Could not load comments.")
   }
 
   if (!post) {

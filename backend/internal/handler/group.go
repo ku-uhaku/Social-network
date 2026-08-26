@@ -466,7 +466,8 @@ func (h *Handler) notifyEventCreated(actorID int64, group *models.Group, event *
 		if memberID == actorID {
 			continue
 		}
-		if _, err := h.DispatchNotification(memberID, &models.Notification{
+		if ntf, err := h.DispatchNotification(memberID, &models.Notification{
+			//  fmt.Println("memberID",memberID)
 			RecipientID: memberID,
 			ActorID:     &actor,
 			Type:        models.NotificationGroupEvent,
@@ -478,8 +479,12 @@ func (h *Handler) notifyEventCreated(actorID int64, group *models.Group, event *
 					map[string]interface{}{"action": "view", "label": "View event"},
 				},
 			},
+			
 		}); err != nil {
 			return err
+		}else{
+
+			fmt.Println("notif",ntf)
 		}
 	}
 	return nil

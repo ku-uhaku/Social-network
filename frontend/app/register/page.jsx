@@ -88,16 +88,14 @@ function RegisterForm() {
       router.push("/login");
     } catch (err) {
         if (
-          err.status === 401 ||
-          err.status === 403 ||
-          err.status === 404 ||
           err.status >= 500
         ) {
           router.push(
             `/error?message=${(err.statusText)}`
           );
         }
-      setError(err?.message || "Registration failed");
+      // setError(err?.message || "Registration failed");
+                        toassst.error(err?.message||"You registereed succesfully now try to login")
     } finally {
       setSubmitting(false);
     }

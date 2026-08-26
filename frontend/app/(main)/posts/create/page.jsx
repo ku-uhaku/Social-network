@@ -38,16 +38,7 @@ export default function CreatePostPage() {
         if (!cancelled) setFollowers(response.data || []);
       })
         .catch((err) => {
-          if (
-            err.status === 401 ||
-            err.status === 403 ||
-            err.status === 404 ||
-            err.status >= 500
-          ) {
-            router.push(
-              `/error?message=${(err.statusText)}`
-            );
-          }
+         
         // setError("Failed to load followers list")
         toooasst.error(err?.message || "Failed to load followers list")
       }
@@ -105,26 +96,8 @@ export default function CreatePostPage() {
         toooasst.error(err?.message || "Unexpected response from the server.");
       }
     } catch (err) {
-      if (
-        err.status === 401 ||
-        err.status === 403 ||
-        err.status === 404 ||
-        err.status >= 500
-      ) {
-        router.push(
-          `/error?message=${(err.statusText)}`
-        );
-      }
-      if (
-        err.status === 401 ||
-        err.status === 403 ||
-        err.status === 404 ||
-        err.status >= 500
-      ) {
-        router.push(
-          `/error?message=${(err.statusText)}`
-        );
-      }
+      
+      
       // setError(err?.message || "Could not create post.");
       toooasst.error(err?.message || "Could not create post.");
     } finally {

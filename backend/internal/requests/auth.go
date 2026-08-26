@@ -16,10 +16,10 @@ import (
 var usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9_]{3,20}$`)
 
 const (
-	maxEmailLength     = 254
-	maxNameLength      = 50
-	maxAboutMeLength   = 500
-	maxPasswordLength  = 72 // bcrypt only hashes the first 72 bytes
+	maxEmailLength    = 254
+	maxNameLength     = 50
+	maxAboutMeLength  = 500
+	maxPasswordLength = 72 // bcrypt only hashes the first 72 bytes
 )
 
 func ParseRegisterPayload(r *http.Request) (models.InputRegisterPayload, error) {
@@ -42,22 +42,30 @@ func ParseRegisterPayload(r *http.Request) (models.InputRegisterPayload, error) 
 			payload.AboutMe = &aboutMe
 		}
 		if file, header, err := r.FormFile("avatar"); err == nil {
-			// _,err=helper.IsValidImage([]byte(*payload.Avatar))
-			// if err!=nil{
+			// _, err = helper.IsValidImage([]byte(*payload.Avatar))
+			// if err != nil {
 			// 	return payload, fmt.Errorf("the avatar not good: %w", err)
 			// }
+			println("------------------------------------------")
+			println("------------------------------------------")
+			println("------------------------------------------")
+			println("------------------------------------------")
+			println("------------------------------------------")
+			println("------------------------------------------")
+			println("------------------------------------------")
+
 			defer file.Close()
-			if header != nil && header.Size > 0 {
+			if header != nil || header.Size > 0 {
 				avatarName, err := helper.SaveUploadedImage(file, header)
 				if err != nil {
 					return payload, fmt.Errorf("failed to save avatar file: %w", err)
 				}
-
 				payload.Avatar = &avatarName
 			}
+			return payload, nil
 		}
 	}
-	return payload, nil
+	return payload, fmt.Errorf("the avatar not good choice an good image")
 }
 
 func ValidateRegister(payload models.InputRegisterPayload) []ValidationError {
@@ -132,7 +140,7 @@ func ValidateRegister(payload models.InputRegisterPayload) []ValidationError {
 			Message: "gender must be either male or female",
 		})
 	}
-	// i would validate usee age 
+	// i would validate usee age
 	dateOfBirth := strings.TrimSpace(payload.DateOfBirth)
 	if dateOfBirth == "" {
 		errs = append(errs, ValidationError{
@@ -150,7 +158,6 @@ func ValidateRegister(payload models.InputRegisterPayload) []ValidationError {
 			Message: "you must be at least 16 years old to register",
 		})
 	}
-
 
 	if strings.TrimSpace(payload.Password) == "" {
 		errs = append(errs, ValidationError{

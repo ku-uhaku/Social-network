@@ -33,16 +33,7 @@ export default function ProfilePage() {
       const response = await getUserProfile(username);
       setProfile(response?.data || response);
     } catch(err) {
-      if (
-          err.status === 401 ||
-          err.status === 403 ||
-          err.status === 404 ||
-          err.status >= 500
-        ) {
-          router.push(
-            `/error?message=${(err.statusText)}`
-          );
-        }
+      
         notFound();
     }
   }, [username]);

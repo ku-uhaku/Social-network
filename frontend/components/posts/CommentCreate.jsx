@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createComment } from "@/lib/api/posts";
 import ImageUploadButton from "@/components/shared/ImageUploadButton";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/contexts/ToastContext";
 
 export default function CommentCreate({ postId, onCreated }) {
   const [title, setTitle] = useState("");
@@ -13,6 +14,7 @@ export default function CommentCreate({ postId, onCreated }) {
   const [submitting, setSubmitting] = useState(false);
   const [resetKey, setResetKey] = useState(0); // used to force refresh ImageUploadButton to remove preview
   const router = useRouter()
+  const toooasst =useToast();
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -50,20 +52,13 @@ export default function CommentCreate({ postId, onCreated }) {
         setResetKey((prev) => prev + 1);
         onCreated?.(comment);
       } else {
-        setError("Unexpected response from the server.");
+        // setError("Unexpected response from the server.");
+                toooasst.error("Unexpected response from the server.")
       }
     } catch (err) {
-      if (
-        err.status === 401 ||
-        err.status === 403 ||
-        err.status === 404 ||
-        err.status >= 500
-      ) {
-        router.push(
-          `/error?message=${(err.statusText)}`
-        );
-      }
-      setError(err?.message || "Could not add comment.");
+     
+      // setError(err?.message || "Could not add comment.");
+                toooasst.error(err?.message ||"Could not load comments.")
     } finally {
       setSubmitting(false);
     }

@@ -23,16 +23,7 @@ export default function SuggestedFollows() {
         const data = response?.data || response || [];
         if (!cancelled) setUsers(Array.isArray(data) ? data : []);
       } catch (err) {
-        if (
-          err.status === 401 ||
-          err.status === 403 ||
-          err.status === 404 ||
-          err.status >= 500
-        ) {
-          router.push(
-            `/error?message=${(err.statusText)}`
-          );
-        }
+
         //theee error defiandeed right nooow 
         if (!cancelled) setError(err?.message || "Could not load suggestions.");
       } finally {

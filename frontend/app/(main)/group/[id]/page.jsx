@@ -47,16 +47,7 @@ export default function GroupDetailPage() {
         setMembership(response?.data?.membership || "none");
       } catch (err) {
 
-        if (
-          err.status === 401 ||
-          err.status === 403 ||
-          err.status === 404 ||
-          err.status >= 500
-        ) {
-          router.push(
-            `/error?message=${(err.statusText)}`
-          );
-        }
+        
         if (err?.message === "Group not found") {
           notFound();
         }
@@ -87,16 +78,6 @@ export default function GroupDetailPage() {
         setFeedLoaded(true);
       } catch (err) {
 
-        if (
-          err.status === 401 ||
-          err.status === 403 ||
-          err.status === 404 ||
-          err.status >= 500
-        ) {
-          router.push(
-            `/error?message=${(err.statusText)}`
-          );
-        }
         if (!cancelled) setActionError(err?.message || "Could not load group feed.");
       }
     })();
@@ -113,16 +94,7 @@ export default function GroupDetailPage() {
       applyFeed(response?.data || {}, true);
     } catch (err) {
 
-      if (
-        err.status === 401 ||
-        err.status === 403 ||
-        err.status === 404 ||
-        err.status >= 500
-      ) {
-        router.push(
-          `/error?message=${(err.statusText)}`
-        );
-      }
+      
       setActionError(err?.message || "Could not load more posts.");
     } finally {
       setLoadingMore(false);
@@ -137,16 +109,7 @@ export default function GroupDetailPage() {
       setMembership(response?.data?.membership || "none");
     } catch (err) {
 
-      if (
-        err.status === 401 ||
-        err.status === 403 ||
-        err.status === 404 ||
-        err.status >= 500
-      ) {
-        router.push(
-          `/error?message=${(err.statusText)}`
-        );
-      }
+     
       setActionError(err?.message || "Could not join group.");
     }
   }
@@ -164,16 +127,6 @@ export default function GroupDetailPage() {
     } catch (err) {
       console.log("eeeeeeeeeeerrrror", err);
 
-      if (
-        err.status === 401 ||
-        err.status === 403 ||
-        err.status === 404 ||
-        err.status >= 500
-      ) {
-        router.push(
-          `/error?message=${(err.statusText)}&&status=${err.status}`
-        );
-      }
       setActionError(err?.message || "Could not leave group.");
     }
   }
@@ -209,7 +162,7 @@ export default function GroupDetailPage() {
               <NailButton onClick={() => setInviteOpen(!inviteOpen)}>
                 {inviteOpen ? "Close invite" : "Invite"}
               </NailButton>
-              <NailButton onClick={handleLeave}>Leave group</NailButton>
+              {/* <NailButton onClick={handleLeave}>Leave group</NailButton> */}
             </>
           )}
           {membership === "pending" && (
@@ -295,16 +248,7 @@ function InviteModal({ groupId, onClose, onInvited }) {
         setUsers(allUsers.filter((u) => !memberIds.has(u.id)));
       } catch (err) {
 
-        if (
-          err.status === 401 ||
-          err.status === 403 ||
-          err.status === 404 ||
-          err.status >= 500
-        ) {
-          router.push(
-            `/error?message=${(err.statusText)}`
-          );
-        }
+      
         if (!cancelled) setError(err?.message || "Could not load users.");
       } finally {
         if (!cancelled) setLoading(false);
@@ -334,16 +278,7 @@ function InviteModal({ groupId, onClose, onInvited }) {
       onClose();
     } catch (err) {
 
-      if (
-        err.status === 401 ||
-        err.status === 403 ||
-        err.status === 404 ||
-        err.status >= 500
-      ) {
-        router.push(
-          `/error?message=${(err.statusText)}`
-        );
-      }
+     
       setError(err?.message || "Could not send invitations.");
     } finally {
       setSubmitting(false);
@@ -388,16 +323,7 @@ function MembersModal({ groupId, onClose }) {
         if (!cancelled) setMembers(res?.data || []);
       })
       .catch((err) => {
-        if (
-          err.status === 401 ||
-          err.status === 403 ||
-          err.status === 404 ||
-          err.status >= 500
-        ) {
-          router.push(
-            `/error?message=${(err.statusText)}`
-          );
-        }
+       
         if (!cancelled) setError(err?.message || "Could not load members.");
       })
       .finally(() => {

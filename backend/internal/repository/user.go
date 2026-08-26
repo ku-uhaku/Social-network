@@ -105,7 +105,7 @@ func (r *Repository) CreateUser(payload models.InputRegisterPayload, hashedPassw
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, 1, $8, $9)
 		RETURNING id, username, email, first_name, last_name, gender, date_of_birth, is_public, avatar, about_me, created_at
 	`
-
+	
 	err := r.DB.Database.QueryRow(
 		query,
 		username,

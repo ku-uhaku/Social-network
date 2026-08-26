@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"database/sql"
 	"net/http"
 	"strconv"
 
@@ -58,6 +59,10 @@ func (h *Handler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	targetUser, err := h.Service.GetUserProfile(user.ID, username)
 	if err != nil {
+		if (err==sql.ErrNoRows){
+			helper.Error(w, http.StatusNotFound, err.Error())
+			return
+		}
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}

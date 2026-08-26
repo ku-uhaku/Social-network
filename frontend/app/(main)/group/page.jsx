@@ -30,16 +30,7 @@ export default function GroupsPage() {
         if (!cancelled) setGroups(response?.data || []);
       } catch (err) {
         
-        if (
-          err.status === 401 ||
-          err.status === 403 ||
-          err.status === 404 ||
-          err.status >= 500
-        ) {
-          router.push(
-            `/error?message=${(err.statusText)}`
-          );
-        }
+       
         if (!cancelled) setError(err?.message || "Could not load groups.");
       } finally {
         if (!cancelled) setLoading(false);
@@ -75,16 +66,6 @@ export default function GroupsPage() {
       }
     } catch (err) {
        
-        if (
-          err.status === 401 ||
-          err.status === 403 ||
-          err.status === 404 ||
-          err.status >= 500
-        ) {
-          router.push(
-            `/error?message=${err.statusText}`
-          );
-        }
       // setError(err?.message || "Could not create group.");
           toooasst.error(err?.message ||"Could not create group.")
     } finally {

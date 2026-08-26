@@ -47,16 +47,7 @@ export default function GroupChat({ groupId, title, meId, onClose }) {
         setMessages(history.slice().reverse()); // server sends newest first
         setHasMore(history.length === pageSize);
       })
-      .catch((err) => {if (
-          err.status === 401 ||
-          err.status === 403 ||
-          err.status === 404 ||
-          err.status >= 500
-        ) {
-          router.push(
-            `/error?message=${(err.statusText)}`
-          );
-        }})
+      .catch(() => {})
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
