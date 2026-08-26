@@ -62,10 +62,9 @@ func ParseRegisterPayload(r *http.Request) (models.InputRegisterPayload, error) 
 				}
 				payload.Avatar = &avatarName
 			}
-			return payload, nil
 		}
 	}
-	return payload, fmt.Errorf("the avatar not good choice an good image")
+	return payload, nil
 }
 
 func ValidateRegister(payload models.InputRegisterPayload) []ValidationError {
