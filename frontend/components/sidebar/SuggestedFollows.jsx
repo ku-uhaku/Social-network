@@ -5,12 +5,14 @@ import Link from "next/link";
 import Avatar from "@/components/shared/Avatar";
 import { isAutoUsername } from "@/lib/utils";
 import { getSuggestedUsers, followUser } from "@/lib/api/user";
+import { useRouter } from "next/navigation";
 
 export default function SuggestedFollows() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState(null);
+  const router=useRouter();
 
   useEffect(() => {
     //tooo check if the component is mounted
@@ -21,6 +23,16 @@ export default function SuggestedFollows() {
         const data = response?.data || response || [];
         if (!cancelled) setUsers(Array.isArray(data) ? data : []);
       } catch (err) {
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${(err.statusText)}`
+          );
+        }
         //theee error defiandeed right nooow 
         if (!cancelled) setError(err?.message || "Could not load suggestions.");
       } finally {

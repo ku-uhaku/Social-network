@@ -1,6 +1,8 @@
 package middleware
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // CORS intercepts requests to handle cross-origin constraints safely
 func CORS(next http.Handler) http.Handler {

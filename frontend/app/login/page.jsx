@@ -43,6 +43,16 @@ const toooasst=useToast()
         toooasst.success("You welcooome again to our social netwooook ")
       router.push("/");
     } catch (err) {
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${(err.statusText)}`
+          );
+        }
       // setError(err?.message || "Login failed");
             toooasst.error(err?.message ||"Failed to load followers list")
     } finally {

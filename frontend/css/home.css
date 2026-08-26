@@ -501,7 +501,6 @@
 .postsPlaceholder,
 .postsError {
   width: 100%;
-  max-width: 760px;
   padding: 32px;
   border-radius: 18px;
   text-align: center;

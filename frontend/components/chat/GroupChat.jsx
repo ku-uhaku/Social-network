@@ -9,6 +9,7 @@ import { formatMessageTime, displayName } from "@/lib/utils";
 import Avatar from "@/components/shared/Avatar";
 import Composer from "./Composer";
 import "@/css/chat.css";
+import { useRouter } from "next/navigation";
 
 const pageSize = 30;
 
@@ -17,6 +18,8 @@ export default function GroupChat({ groupId, title, meId, onClose }) {
   const { playSfx } = useAudio();
   const { openGroup, closeGroup } = useGroupChat();
   const playSfxRef = useRef(playSfx);
+  const router=useRouter()
+
   useEffect(() => {
     playSfxRef.current = playSfx;
   }, [playSfx]);
@@ -44,7 +47,16 @@ export default function GroupChat({ groupId, title, meId, onClose }) {
         setMessages(history.slice().reverse()); // server sends newest first
         setHasMore(history.length === pageSize);
       })
-      .catch(() => {})
+      .catch((err) => {if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${(err.statusText)}`
+          );
+        }})
       .finally(() => {
         if (!cancelled) setLoading(false);
       });

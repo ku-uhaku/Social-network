@@ -11,6 +11,7 @@ import NailButton from "@/components/shared/NailButton";
 import UsersModal from "@/components/groups/UsersModal";
 import GroupChat from "@/components/chat/GroupChat";
 import "@/css/groups.css";
+import { useRouter } from "next/navigation";
 
 const pageLimit = 10;
 
@@ -31,7 +32,7 @@ export default function GroupDetailPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-
+  const router = useRouter()
   const groupId = Number(id);
   if (isNaN(groupId)) notFound();
   const unreadCount = unread[groupId] || 0;
@@ -45,6 +46,17 @@ export default function GroupDetailPage() {
         setGroup(response?.data?.group || null);
         setMembership(response?.data?.membership || "none");
       } catch (err) {
+
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${(err.statusText)}`
+          );
+        }
         if (err?.message === "Group not found") {
           notFound();
         }
@@ -74,6 +86,17 @@ export default function GroupDetailPage() {
         applyFeed(response?.data || {}, false);
         setFeedLoaded(true);
       } catch (err) {
+
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${(err.statusText)}`
+          );
+        }
         if (!cancelled) setActionError(err?.message || "Could not load group feed.");
       }
     })();
@@ -89,6 +112,17 @@ export default function GroupDetailPage() {
       const response = await getGroupFeed(groupId, { limit: pageLimit, cursor: nextCursor });
       applyFeed(response?.data || {}, true);
     } catch (err) {
+
+      if (
+        err.status === 401 ||
+        err.status === 403 ||
+        err.status === 404 ||
+        err.status >= 500
+      ) {
+        router.push(
+          `/error?message=${(err.statusText)}`
+        );
+      }
       setActionError(err?.message || "Could not load more posts.");
     } finally {
       setLoadingMore(false);
@@ -102,6 +136,17 @@ export default function GroupDetailPage() {
       const response = await getGroup(groupId);
       setMembership(response?.data?.membership || "none");
     } catch (err) {
+
+      if (
+        err.status === 401 ||
+        err.status === 403 ||
+        err.status === 404 ||
+        err.status >= 500
+      ) {
+        router.push(
+          `/error?message=${(err.statusText)}`
+        );
+      }
       setActionError(err?.message || "Could not join group.");
     }
   }
@@ -110,10 +155,25 @@ export default function GroupDetailPage() {
     setActionError("");
     try {
       await leaveGroup(groupId);
-      setMembership("none");
-      applyFeed({}, false);
-      setFeedLoaded(false);
+      // setMembership("none");
+      // applyFeed({}, false);
+      // setFeedLoaded(false);
+      router.push(
+          `/group`
+        );
     } catch (err) {
+      console.log("eeeeeeeeeeerrrror", err);
+
+      if (
+        err.status === 401 ||
+        err.status === 403 ||
+        err.status === 404 ||
+        err.status >= 500
+      ) {
+        router.push(
+          `/error?message=${(err.statusText)}&&status=${err.status}`
+        );
+      }
       setActionError(err?.message || "Could not leave group.");
     }
   }
@@ -210,6 +270,157 @@ export default function GroupDetailPage() {
         />
       )}
     </section>
+  );
+}
+
+function InviteModal({ groupId, onClose, onInvited }) {
+  const [users, setUsers] = useState([]);
+  const [selected, setSelected] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [usersRes, membersRes] = await Promise.all([
+          getAllUsers(),
+          getGroupMembers(groupId),
+        ]);
+        if (cancelled) return;
+        const allUsers = usersRes?.data || [];
+        const memberIds = new Set((membersRes?.data || []).map((m) => m.id));
+        // Skip users that are already members of the group
+        setUsers(allUsers.filter((u) => !memberIds.has(u.id)));
+      } catch (err) {
+
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${(err.statusText)}`
+          );
+        }
+        if (!cancelled) setError(err?.message || "Could not load users.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [groupId]);
+
+  function toggleUser(userId, checked) {
+    setSelected((prev) =>
+      checked ? [...prev, userId] : prev.filter((id) => id !== userId)
+    );
+  }
+
+  async function handleInvite() {
+    if (selected.length === 0) {
+      setError("Select at least one user to invite.");
+      return;
+    }
+    setError("");
+    setSubmitting(true);
+    try {
+      await inviteUsers(groupId, selected);
+      onInvited();
+      onClose();
+    } catch (err) {
+
+      if (
+        err.status === 401 ||
+        err.status === 403 ||
+        err.status === 404 ||
+        err.status >= 500
+      ) {
+        router.push(
+          `/error?message=${(err.statusText)}`
+        );
+      }
+      setError(err?.message || "Could not send invitations.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="groupInviteOverlay">
+      <div className="groupInvitePanel">
+        <h2 className="groupInviteTitle">Invite members</h2>
+        {error && <div className="postsError">{error}</div>}
+
+        <div className="groupInviteList">
+          <UsersSelect
+            users={users}
+            loading={loading}
+            selected={selected}
+            onToggle={toggleUser}
+          />
+        </div>
+
+        <div className="groupInviteActions">
+          <NailButton onClick={handleInvite} disabled={submitting || loading}>
+            {submitting ? "Sending..." : "Invite"}
+          </NailButton>
+          <NailButton onClick={onClose}>Cancel</NailButton>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MembersModal({ groupId, onClose }) {
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    getGroupMembers(groupId)
+      .then((res) => {
+        if (!cancelled) setMembers(res?.data || []);
+      })
+      .catch((err) => {
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${(err.statusText)}`
+          );
+        }
+        if (!cancelled) setError(err?.message || "Could not load members.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [groupId]);
+
+  return (
+    <div className="groupInviteOverlay">
+      <div className="groupInvitePanel">
+        <h2 className="groupInviteTitle">Members</h2>
+        {error && <div className="postsError">{error}</div>}
+
+        <UsersSelect users={members} loading={loading} selectable={false} />
+
+        <div className="groupInviteActions">
+          <NailButton onClick={onClose}>Close</NailButton>
+        </div>
+      </div>
+    </div>
   );
 }
 

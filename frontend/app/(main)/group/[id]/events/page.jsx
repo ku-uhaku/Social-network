@@ -6,6 +6,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { getGroup, getGroupEvents, createGroupEvent, cancelGroupEvent, setEventResponse } from "@/lib/api/groups";
 import NailButton from "@/components/shared/NailButton";
 import "@/css/groups.css";
+import { useRouter } from "next/navigation";
 
 export default function GroupEventsPage() {
   const { id } = useParams();
@@ -38,6 +39,26 @@ export default function GroupEventsPage() {
         const ev = await getGroupEvents(groupId);
         if (!cancelled) setEvents(ev?.data || []);
       } catch (err) {
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${(err.statusText)}`
+          );
+        }
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${(err.statusText)}`
+          );
+        }
         if (err?.message === "Group not found") notFound();
         if (err?.message === "you do not have permission to access or post to this context") {
           setMembership("none");
@@ -68,6 +89,26 @@ export default function GroupEventsPage() {
       setTitle(""); setDescription(""); setDateTime(""); setFormOpen(false);
       reloadEvents();
     } catch (err) {
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${(err.statusText)}`
+          );
+        }
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${(err.statusText)}`
+          );
+        }
       toast.error(err?.message || "Could not create event.", { action: { label: "Go Home", href: "/" } });
     }
     finally { setSubmitting(false); }
@@ -104,6 +145,26 @@ export default function GroupEventsPage() {
         setEvents((list) => list.map((ev) => (ev.id === eventId ? updated : ev)));
       }
     } catch (err) {
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${(err.statusText)}`
+          );
+        }
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${(err.statusText)}`
+          );
+        }
       setEvents((list) => list.map((ev) => (ev.id === eventId ? prev : ev)));
       toast.error(err?.message || "Could not update your response.");
     } finally {
@@ -113,7 +174,27 @@ export default function GroupEventsPage() {
 
   async function handleCancel(eventId) {
     try { await cancelGroupEvent(eventId); reloadEvents(); }
-    catch (err) { toast.error(err?.message || "Could not cancel event."); }
+    catch (err) {
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${(err.statusText)}`
+          );
+        }
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${(err.statusText)}`
+          );
+        } toast.error(err?.message || "Could not cancel event."); }
   }
 
   if (loading) return <div className="postsPlaceholder">Loading events...</div>;

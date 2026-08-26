@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"kuu/internal/helper"
@@ -328,6 +329,7 @@ func (h *Handler) LeaveGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.Service.LeaveGroup(user.ID, payload.GroupID); err != nil {
+		fmt.Println("errrr:::",err)
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}

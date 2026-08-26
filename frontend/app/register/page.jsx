@@ -87,6 +87,16 @@ function RegisterForm() {
                   toassst.success("You registereed succesfully now try to login ")
       router.push("/login");
     } catch (err) {
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${(err.statusText)}`
+          );
+        }
       setError(err?.message || "Registration failed");
     } finally {
       setSubmitting(false);

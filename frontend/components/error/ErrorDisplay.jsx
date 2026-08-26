@@ -3,7 +3,7 @@
 import Link from "next/link";
 import "@/css/error.css";
 
-export default function ErrorDisplay({ message, onRetry, homeHref = "/" }) {
+export default function ErrorDisplay({ message, onRetry,status, homeHref = "/" }) {
   return (
     <div className="page">
       <img className="wallpaper" src="/images/loading.gif" alt="" />
@@ -11,6 +11,7 @@ export default function ErrorDisplay({ message, onRetry, homeHref = "/" }) {
       <div className="card">
         <div className="card-content">
           <h1 className="title">Death and decay awaits</h1>
+          <p className="message">{status }</p>
           <p className="message">{message || "An unexpected error occurred."}</p>
 
           <div className="actions">

@@ -5,11 +5,13 @@ import Link from "next/link";
 import Avatar from "@/components/shared/Avatar";
 import { isAutoUsername } from "@/lib/utils";
 import { getFollowers, getFollowing } from "@/lib/api/user";
+import { useRouter } from "next/navigation";
 
 export default function FollowListModal({ userId, type, onClose }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const router=useRouter()
 
   useEffect(() => {
     async function load() {
@@ -23,6 +25,16 @@ export default function FollowListModal({ userId, type, onClose }) {
         const data = response?.data || response || [];
         setUsers(Array.isArray(data) ? data : []);
       } catch (err) {
+        if (
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 404 ||
+          err.status >= 500
+        ) {
+          router.push(
+            `/error?message=${(err.statusText)}`
+          );
+        }
         setError(err?.message || "Could not load list.");
       } finally {
         setLoading(false);
