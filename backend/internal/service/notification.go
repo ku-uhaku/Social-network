@@ -59,7 +59,20 @@ func (s *Service) GetNotificationByActorType(recipientID, actorID int64, notifTy
 	return s.Repo.GetNotificationByActorType(recipientID, actorID, notifType)
 }
 
-// ExpireNotificationsByType expires all unread notifications of a type
-func (s *Service) ExpireNotificationsByType(recipientID int64, notifType string) error {
+// ExpireNotificationsByType expires all unread notifications of a type and
+// returns the ids it expired
+func (s *Service) ExpireNotificationsByType(recipientID int64, notifType string) ([]int64, error) {
 	return s.Repo.ExpireNotificationsByType(recipientID, notifType)
+}
+
+// ExpireNotificationsByActorType expires the notifications one actor raised for
+// a recipient and returns the ids it expired
+func (s *Service) ExpireNotificationsByActorType(recipientID, actorID int64, notifType string) ([]int64, error) {
+	return s.Repo.ExpireNotificationsByActorType(recipientID, actorID, notifType)
+}
+
+// ExpireGroupNotifications expires the notifications of a type raised for one
+// group and returns the ids it expired
+func (s *Service) ExpireGroupNotifications(recipientID, groupID int64, notifType string) ([]int64, error) {
+	return s.Repo.ExpireGroupNotifications(recipientID, groupID, notifType)
 }
