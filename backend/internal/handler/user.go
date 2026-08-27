@@ -59,7 +59,7 @@ func (h *Handler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	targetUser, err := h.Service.GetUserProfile(user.ID, username)
 	if err != nil {
-		if (err==sql.ErrNoRows){
+		if err == sql.ErrNoRows {
 			helper.Error(w, http.StatusNotFound, err.Error())
 			return
 		}
@@ -143,7 +143,6 @@ func (h *Handler) FollowUser(w http.ResponseWriter, r *http.Request) {
 				Type:        models.NotificationFollowRequest,
 				Title:       "New follow request",
 				Message:     helper.DisplayName(user) + " wants to follow you",
-				Actions:     acceptDeclineActions(),
 			})
 			if err != nil {
 				helper.Error(w, http.StatusInternalServerError, err.Error())

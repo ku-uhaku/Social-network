@@ -222,8 +222,7 @@ func (h *Handler) InviteMembers(w http.ResponseWriter, r *http.Request) {
 			Type:        models.NotificationGroupInvitation,
 			Title:       "Group invitation",
 			Message:     helper.DisplayName(user) + " invited you to join " + group.Title,
-			Payload:     models.JSONText{"group_id": group.ID},
-			Actions:     acceptDeclineActions(),
+			Payload:     models.NotificationPayload{GroupID: &group.ID},
 		}); err != nil {
 			helper.Error(w, http.StatusInternalServerError, err.Error())
 			return
@@ -306,8 +305,7 @@ func (h *Handler) JoinGroup(w http.ResponseWriter, r *http.Request) {
 			Type:        models.NotificationGroupJoinRequest,
 			Title:       "Group join request",
 			Message:     helper.DisplayName(user) + " requested to join " + group.Title,
-			Payload:     models.JSONText{"group_id": group.ID, "target_user_id": user.ID},
-			Actions:     acceptDeclineActions(),
+			Payload:     models.NotificationPayload{GroupID: &group.ID},
 		}); err != nil {
 			helper.Error(w, http.StatusInternalServerError, err.Error())
 			return
@@ -329,7 +327,7 @@ func (h *Handler) LeaveGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.Service.LeaveGroup(user.ID, payload.GroupID); err != nil {
-		fmt.Println("errrr:::",err)
+		fmt.Println("errrr:::", err)
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -473,18 +471,12 @@ func (h *Handler) notifyEventCreated(actorID int64, group *models.Group, event *
 			Type:        models.NotificationGroupEvent,
 			Title:       "New group event",
 			Message:     "A new event was created in " + group.Title + ": " + event.Title,
-			Payload:     models.JSONText{"group_id": group.ID, "event_id": event.ID},
-			Actions: models.JSONText{
-				"buttons": []interface{}{
-					map[string]interface{}{"action": "view", "label": "View event"},
-				},
-			},
-			
+			Payload:     models.NotificationPayload{GroupID: &group.ID},
 		}); err != nil {
 			return err
-		}else{
+		} else {
 
-			fmt.Println("notif",ntf)
+			fmt.Println("notif", ntf)
 		}
 	}
 	return nil

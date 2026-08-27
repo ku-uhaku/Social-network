@@ -1,11 +1,6 @@
 package models
 
-import (
-	"database/sql/driver"
-	"encoding/json"
-	"errors"
-	"time"
-)
+import "time"
 
 // Notification types
 const (
@@ -15,43 +10,59 @@ const (
 	NotificationGroupEvent       = "group_event_created"
 )
 
-// JSONText stores arbitrary JSON in a TEXT column; a nil map reads and writes as NULL
-type JSONText map[string]interface{}
-
-func (j JSONText) Value() (driver.Value, error) {
-	if j == nil {
-		return nil, nil
-	}
-	return json.Marshal(j)
+// NotificationPayload is the extra data a notification carries. It is stored as
+// plain columns rather than JSON, and shown to the browser as one object.
+type NotificationPayload struct {
+	GroupID *int64 `json:"group_id,omitempty"`
 }
 
-func (j *JSONText) Scan(value interface{}) error {
-	switch v := value.(type) {
-	case nil:
-		*j = nil
-		return nil
-	case string:
-		return json.Unmarshal([]byte(v), j)
-	case []byte:
-		return json.Unmarshal(v, j)
+// NotificationActions are the buttons a notification offers. They are derived
+// from the type rather than stored, so button labels never live in the database.
+type NotificationActions struct {
+	Buttons []NotificationButton `json:"buttons"`
+}
+
+type NotificationButton struct {
+	Action string `json:"action"`
+	Label  string `json:"label"`
+}
+
+var (
+	acceptDeclineActions = &NotificationActions{Buttons: []NotificationButton{
+		{Action: "accept", Label: "Accept"},
+		{Action: "decline", Label: "Decline"},
+	}}
+	viewEventActions = &NotificationActions{Buttons: []NotificationButton{
+		{Action: "view", Label: "View event"},
+	}}
+)
+
+// NotificationActionsFor returns the buttons a notification type offers, or nil
+// when the type is informational.
+func NotificationActionsFor(notifType string) *NotificationActions {
+	switch notifType {
+	case NotificationFollowRequest, NotificationGroupInvitation, NotificationGroupJoinRequest:
+		return acceptDeclineActions
+	case NotificationGroupEvent:
+		return viewEventActions
 	default:
-		return errors.New("JSONText: unsupported column type")
+		return nil
 	}
 }
 
 // Notification represents a single notification in a user's stack
 type Notification struct {
-	ID          int64     `json:"id"`
-	RecipientID int64     `json:"recipient_id"`
-	ActorID     *int64    `json:"actor_id,omitempty"`
-	Type        string    `json:"type"`
-	Title       string    `json:"title"`
-	Message     string    `json:"message"`
-	Payload     JSONText  `json:"payload"`
-	Actions     JSONText  `json:"actions"`
-	IsRead      int       `json:"is_read"`
-	IsExpired   int       `json:"is_expired"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID          int64                `json:"id"`
+	RecipientID int64                `json:"recipient_id"`
+	ActorID     *int64               `json:"actor_id,omitempty"`
+	Type        string               `json:"type"`
+	Title       string               `json:"title"`
+	Message     string               `json:"message"`
+	Payload     NotificationPayload  `json:"payload"`
+	Actions     *NotificationActions `json:"actions"`
+	IsRead      int                  `json:"is_read"`
+	IsExpired   int                  `json:"is_expired"`
+	CreatedAt   time.Time            `json:"created_at"`
 
 	// Joined actor info for display
 	ActorUsername *string `json:"actor_username,omitempty"`
