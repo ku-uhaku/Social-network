@@ -9,11 +9,19 @@ import (
 var ErrAccessDenied = errors.New("you do not have permission to access or post to this context")
 
 func (s *Service) CreatePost(userID int64, payload models.CreatePostPayload) (*models.Post, error) {
-	// If posting to a group, ensure user is an accepted member
+	// ensure user is an accepted
 	if payload.GroupID != nil && *payload.GroupID > 0 {
 		status, err := s.Repo.GetMemberStatus(*payload.GroupID, userID)
 		if err != nil || status != "accepted" {
 			return nil, ErrAccessDenied
+		}
+	}
+	if payload.Privacy == "private" {
+		for _, viewerID := range payload.VisibleTo {
+			status, err := s.Repo.GetFollowRelation(viewerID, userID)
+			if err != nil || status != "accepted" {
+				return nil, ErrAccessDenied
+			}
 		}
 	}
 	return s.Repo.CreatePost(userID, payload)

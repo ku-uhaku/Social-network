@@ -201,20 +201,18 @@ func (h *Handler) InviteMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Service.InviteUsers(user.ID, payload); err != nil {
+	invited, err := h.Service.InviteUsers(user.ID, payload)
+	if err != nil {
 		if errors.Is(err, service.ErrNotMember) {
 			helper.Error(w, http.StatusForbidden, err.Error())
 			return
 		}
-		helper.Error(w, http.StatusInternalServerError, err.Error())
+		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	actorID := user.ID
-	for _, targetID := range payload.TargetUserIDs {
-		if targetID == user.ID {
-			continue
-		}
+	for _, targetID := range invited {
 		if _, err := h.DispatchNotification(targetID, &models.Notification{
 			RecipientID: targetID,
 			ActorID:     &actorID,
@@ -326,6 +324,10 @@ func (h *Handler) LeaveGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.Service.LeaveGroup(user.ID, payload.GroupID); err != nil {
+		if errors.Is(err, service.ErrCreatorCannotLeave) {
+			helper.Error(w, http.StatusBadRequest, err.Error())
+			return
+		}
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
