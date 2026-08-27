@@ -13,8 +13,8 @@ export function NotificationProvider({ children }) {
   const { user } = useAuth();
   const { subscribe } = useWebSocket();
   const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const unreadCount = notifications.filter((n) => !n.is_read && !n.is_expired).length;
   const router=useRouter()
   const toassst =useToast();
   // Reset state when the logged-in user changes (covers logout).
@@ -22,18 +22,15 @@ export function NotificationProvider({ children }) {
   if (user?.id !== prevUserId) {
     setPrevUserId(user?.id);
     setNotifications([]);
-    setUnreadCount(0);
     setLoading(true);
   }
 
   const markOne = useCallback((id, patch) => {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, ...patch } : n)));
-    setUnreadCount((prev) => Math.max(0, prev - 1));
   }, []);
 
   const markAllReadLocal = useCallback(() => {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: 1 })));
-    setUnreadCount(0);
   }, []);
 
   const runAction = useCallback((apiCall, onSuccess) => {
@@ -53,7 +50,6 @@ export function NotificationProvider({ children }) {
           (n) => n.type !== "group_message"
         );
         setNotifications(list);
-        setUnreadCount(list.filter((n) => !n.is_read && !n.is_expired).length);
       })
       .catch((err) => {
                      toassst.error(err?.message||"something wrong")
@@ -78,7 +74,6 @@ export function NotificationProvider({ children }) {
         if (prev.some((n) => n.id === payload.id)) return prev;
         return [payload, ...prev];
       });
-      setUnreadCount((prev) => prev + 1);
     });
 
     const unsubExpired = subscribe("notification_expired", (payload) => {
