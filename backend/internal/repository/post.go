@@ -10,6 +10,11 @@ import (
 
 // CreatePost creates a new post in the database
 func (r *Repository) CreatePost(userID int64, payload models.CreatePostPayload) (*models.Post, error) {
+	author, err := r.getUserMetadata(userID)
+	if err != nil {
+		return nil, err
+	}
+
 	tx, err := r.DB.Database.Begin()
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
@@ -64,11 +69,6 @@ func (r *Repository) CreatePost(userID int64, payload models.CreatePostPayload) 
 		}
 	}
 
-	// Get author metadata
-	author, err := r.getUserMetadata(userID)
-	if err != nil {
-		return nil, err
-	}
 	post.User = *author
 
 	return &post, nil

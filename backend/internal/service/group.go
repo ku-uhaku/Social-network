@@ -9,15 +9,16 @@ import (
 )
 
 var (
-	ErrGroupNotFound   = errors.New("group not found")
-	ErrUnauthorized    = errors.New("you are not authorized to perform this action on this group")
-	ErrAlreadyMember   = errors.New("user is already a member or has a pending request")
-	ErrNotGroupCreator = errors.New("only group creator can perform this action")
-	ErrNotMember       = errors.New("you must be an accepted member of the group to perform this action")
-	ErrGroupIsPrivate  = errors.New("cannot directly join a private group; request required")
-	ErrNoPendingInvite = errors.New("no pending invitation found")
-	ErrEventNotFound   = errors.New("event not found")
-	ErrEventExpired    = errors.New("event is no longer upcoming")
+	ErrGroupNotFound      = errors.New("group not found")
+	ErrUnauthorized       = errors.New("you are not authorized to perform this action on this group")
+	ErrAlreadyMember      = errors.New("user is already a member or has a pending request")
+	ErrNotGroupCreator    = errors.New("only group creator can perform this action")
+	ErrNotMember          = errors.New("you must be an accepted member of the group to perform this action")
+	ErrNoPendingInvite    = errors.New("no pending invitation or join request found")
+	ErrNothingToInvite    = errors.New("no users to invite: everyone is already a member or pending")
+	ErrCreatorCannotLeave = errors.New("group creator cannot leave; delete the group instead")
+	ErrEventNotFound      = errors.New("event not found")
+	ErrEventExpired       = errors.New("event is no longer upcoming")
 )
 
 func (s *Service) CreateGroup(creatorID int64, payload models.CreateGroupPayload) (*models.Group, error) {
@@ -73,14 +74,32 @@ func (s *Service) DeleteGroup(userID int64, groupID int64) error {
 	return s.Repo.DeleteGroup(groupID)
 }
 
-// Invites users; requester must be an accepted member
-func (s *Service) InviteUsers(requesterID int64, payload models.InviteMembersPayload) error {
+// Invites users; requester must be an accepted member. Self and users already
+// in the group (or pending) are skipped, and only the actually-invited ids are
+// returned.
+func (s *Service) InviteUsers(requesterID int64, payload models.InviteMembersPayload) ([]int64, error) {
 	status, err := s.Repo.GetMemberStatus(payload.GroupID, requesterID)
 	if err != nil || status != "accepted" {
-		return ErrNotMember
+		return nil, ErrNotMember
 	}
 
-	return s.Repo.InviteUsersBatch(payload.GroupID, payload.TargetUserIDs)
+	invited := make([]int64, 0, len(payload.TargetUserIDs))
+	for _, uid := range payload.TargetUserIDs {
+		if uid == requesterID {
+			continue
+		}
+		if memberStatus, err := s.Repo.GetMemberStatus(payload.GroupID, uid); err == nil && memberStatus != "" {
+			continue // already accepted, pending, etc.
+		}
+		invited = append(invited, uid)
+	}
+	if len(invited) == 0 {
+		return nil, ErrNothingToInvite
+	}
+	if err := s.Repo.InviteUsersBatch(payload.GroupID, invited); err != nil {
+		return nil, err
+	}
+	return invited, nil
 }
 
 // Accepts or declines a group invite
@@ -108,7 +127,7 @@ func (s *Service) JoinGroup(userID int64, groupID int64) error {
 	return s.Repo.AddMember(groupID, userID, "pending")
 }
 
-// Creator approves or rejects join requests
+// Creator approves or rejects join requests (only actual pending requests)
 func (s *Service) HandleJoinRequest(creatorID int64, groupID int64, targetUserID int64, approve bool) error {
 	group, err := s.Repo.GetGroupByID(groupID)
 	if err != nil {
@@ -117,13 +136,25 @@ func (s *Service) HandleJoinRequest(creatorID int64, groupID int64, targetUserID
 	if group.CreatorID != creatorID {
 		return ErrNotGroupCreator
 	}
+	targetStatus, err := s.Repo.GetMemberStatus(groupID, targetUserID)
+	if err != nil || targetStatus != "pending" {
+		return ErrNoPendingInvite
+	}
 	if approve {
 		return s.Repo.UpdateMemberStatus(groupID, targetUserID, "accepted")
 	}
 	return s.Repo.RemoveMember(groupID, targetUserID)
 }
 
+// Creator cannot leave (that would delete the whole group); use DeleteGroup.
 func (s *Service) LeaveGroup(userID int64, groupID int64) error {
+	group, err := s.Repo.GetGroupByID(groupID)
+	if err != nil {
+		return err
+	}
+	if group.CreatorID == userID {
+		return ErrCreatorCannotLeave
+	}
 	return s.Repo.RemoveMember(groupID, userID)
 }
 
