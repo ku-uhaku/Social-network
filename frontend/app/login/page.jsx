@@ -43,10 +43,7 @@ const toooasst=useToast()
         toooasst.success("You welcooome again to our social netwooook ")
       router.push("/");
     } catch (err) {
-       
-        console.log(err.status)
-      // setError(err?.message || "Login failed");
-            toooasst.error(err?.message ||"Login failed")
+      toooasst.error(err?.message || "Login failed");
     } finally {
       setSubmitting(false);
     }

@@ -39,7 +39,7 @@ export default function RegisterPage() {
 function RegisterForm() {
   const router = useRouter();
   const { register } = useAuth();
-  const toassst=useToast()
+  const toast = useToast()
 
   const [values, setValues] = useState(initialState);
   const [avatar, setAvatar] = useState(null);
@@ -84,18 +84,11 @@ function RegisterForm() {
       if (avatar) formData.append("avatar", avatar);
 
       await register(formData);
-                  toassst.success("You registereed succesfully now try to login ")
+                  toast.success("You registereed succesfully now try to login ")
       router.push("/login");
     } catch (err) {
-        if (
-          err.status >= 500
-        ) {
-          router.push(
-            `/error?message=${(err.statusText)}`
-          );
-        }
       // setError(err?.message || "Registration failed");
-                        toassst.error(err?.message||"You registereed succesfully now try to login")
+      toast.error(err?.message || "Registration failed");
     } finally {
       setSubmitting(false);
     }
