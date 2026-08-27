@@ -67,22 +67,10 @@ func (h *Handler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Only the owner, public profiles, or accepted followers can view posts
-	if targetUser.FollowStatus != "self" && targetUser.IsPublic == 0 && targetUser.FollowStatus != "accepted" {
-		// helper.Error(w, http.StatusForbidden, "This account is private")
-		helper.ValidationErrorResponse(w, http.StatusOK, models.ErrorMsg{
-			Code:    200,
-			Message: "This account is private",
-		})
-		return
-	}
-
-	profile, err := h.Service.GetUserProfile(user.ID, username)
-	if err != nil {
-		helper.Error(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	helper.Success(w, http.StatusOK, "Profile retrieved successfully", profile)
+	// A private profile is still returned, minus the personal fields the service
+	// strips for non-followers, so the viewer can see it exists and follow it.
+	// The private gate belongs on the posts, not on the profile itself.
+	helper.Success(w, http.StatusOK, "Profile retrieved successfully", targetUser)
 }
 
 // GetUserPosts GET /api/v1/user/posts?username=john
@@ -183,6 +171,12 @@ func (h *Handler) UnfollowUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Cancelling a request takes its notification down with it, so the target is
+	// not left with an Accept button for a request that no longer exists.
+	if !h.expireActorNotifications(w, payload.TargetUserID, user.ID, models.NotificationFollowRequest) {
+		return
+	}
+
 	helper.Success(w, http.StatusOK, "Unfollowed user successfully", nil)
 }
 
@@ -212,8 +206,8 @@ func (h *Handler) respondToFollowRequest(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	// Expire follow request notifications
-	if !h.expireNotificationsByType(w, user.ID, models.NotificationFollowRequest) {
+	// Expire only the answered request, not everyone else's
+	if !h.expireActorNotifications(w, user.ID, payload.TargetUserID, models.NotificationFollowRequest) {
 		return
 	}
 

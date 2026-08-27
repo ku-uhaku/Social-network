@@ -259,8 +259,8 @@ func (h *Handler) respondInvite(w http.ResponseWriter, r *http.Request, accept b
 		return
 	}
 
-	// Expire invitation notification
-	if !h.expireNotificationsByType(w, user.ID, models.NotificationGroupInvitation) {
+	// Expire the invitation to this group only
+	if !h.expireGroupNotifications(w, user.ID, payload.GroupID, models.NotificationGroupInvitation) {
 		return
 	}
 
@@ -577,8 +577,8 @@ func (h *Handler) HandleJoinRequestAction(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Expire join request notification
-	if !h.expireNotificationsByType(w, user.ID, models.NotificationGroupJoinRequest) {
+	// Expire the answered join request only, not the other applicants'
+	if !h.expireActorNotifications(w, user.ID, payload.TargetUserID, models.NotificationGroupJoinRequest) {
 		return
 	}
 

@@ -142,14 +142,57 @@ func (r *Repository) ExpireNotification(recipientID, notificationID int64) error
 	return err
 }
 
-// ExpireNotificationsByType marks all unread, non-expired notifications of a type as expired
-func (r *Repository) ExpireNotificationsByType(recipientID int64, notifType string) error {
+// ExpireNotificationsByType expires every unread notification of a type. Use it
+// only when the recipient really did resolve all of them at once, such as a
+// private account turning public and accepting every pending follow request.
+func (r *Repository) ExpireNotificationsByType(recipientID int64, notifType string) ([]int64, error) {
+	return r.expireNotifications(
+		`recipient_id = $1 AND type = $2 AND is_read = 0`,
+		recipientID, notifType,
+	)
+}
+
+// ExpireNotificationsByActorType expires the notifications one actor raised for
+// a recipient, so answering one request leaves everybody else's untouched.
+func (r *Repository) ExpireNotificationsByActorType(recipientID, actorID int64, notifType string) ([]int64, error) {
+	return r.expireNotifications(
+		`recipient_id = $1 AND actor_id = $2 AND type = $3`,
+		recipientID, actorID, notifType,
+	)
+}
+
+// ExpireGroupNotifications expires the notifications of a type raised for one
+// group, matched on the group_id carried in the payload.
+func (r *Repository) ExpireGroupNotifications(recipientID, groupID int64, notifType string) ([]int64, error) {
+	return r.expireNotifications(
+		`recipient_id = $1 AND type = $2 AND json_extract(payload, '$.group_id') = $3`,
+		recipientID, notifType, groupID,
+	)
+}
+
+// expireNotifications applies an expiry filter and reports the ids it expired,
+// so the caller can push each one to the recipient's open tabs.
+func (r *Repository) expireNotifications(where string, args ...interface{}) ([]int64, error) {
 	query := `
 		UPDATE notifications SET is_expired = 1
-		WHERE recipient_id = $1 AND type = $2 AND is_read = 0 AND is_expired = 0
+		WHERE is_expired = 0 AND ` + where + `
+		RETURNING id
 	`
-	_, err := r.DB.Database.Exec(query, recipientID, notifType)
-	return err
+	rows, err := r.DB.Database.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
 }
 
 func (r *Repository) execAffected(query string, args ...interface{}) (bool, error) {

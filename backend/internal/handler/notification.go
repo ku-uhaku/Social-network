@@ -115,11 +115,37 @@ func (h *Handler) DispatchNotification(recipientID int64, n *models.Notification
 	return created, nil
 }
 
-// expireNotificationsByType expires unread notifications of a type; writes 500 and returns false on error
+// expireNotificationsByType expires every unread notification of a type. Only
+// for events that really do resolve all of them at once.
 func (h *Handler) expireNotificationsByType(w http.ResponseWriter, userID int64, notifType string) bool {
-	if err := h.Service.ExpireNotificationsByType(userID, notifType); err != nil {
+	ids, err := h.Service.ExpireNotificationsByType(userID, notifType)
+	return h.pushExpired(w, userID, ids, err)
+}
+
+// expireActorNotifications expires the notifications one actor raised, so
+// answering one request leaves the other senders' notifications alone.
+func (h *Handler) expireActorNotifications(w http.ResponseWriter, userID, actorID int64, notifType string) bool {
+	ids, err := h.Service.ExpireNotificationsByActorType(userID, actorID, notifType)
+	return h.pushExpired(w, userID, ids, err)
+}
+
+// expireGroupNotifications expires the notifications raised for one group
+func (h *Handler) expireGroupNotifications(w http.ResponseWriter, userID, groupID int64, notifType string) bool {
+	ids, err := h.Service.ExpireGroupNotifications(userID, groupID, notifType)
+	return h.pushExpired(w, userID, ids, err)
+}
+
+// pushExpired reports the expiry to the user's open tabs; writes 500 and
+// returns false if the expiry itself failed.
+func (h *Handler) pushExpired(w http.ResponseWriter, userID int64, ids []int64, err error) bool {
+	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return false
+	}
+	for _, id := range ids {
+		h.Hub.BroadcastToUser(userID, ws.EventNotificationExpired, map[string]interface{}{
+			"notification_id": id,
+		})
 	}
 	return true
 }
