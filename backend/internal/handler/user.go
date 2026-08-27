@@ -128,28 +128,37 @@ func (h *Handler) FollowUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Both outcomes are worth telling the target about: a private account gets a
+	// request to answer, a public one gets told it has a new follower.
+	actorID := user.ID
+	notification := models.Notification{
+		RecipientID: payload.TargetUserID,
+		ActorID:     &actorID,
+		Type:        models.NotificationNewFollower,
+		Title:       "New follower",
+		Message:     helper.DisplayName(user) + " started following you",
+	}
 	msg := "Successfully followed user"
 	if status == "pending" {
 		msg = "Follow request sent successfully"
-		// Avoid duplicate follow request notifications
-		existing, _ := h.Service.GetNotificationByActorType(
-			payload.TargetUserID, user.ID, models.NotificationFollowRequest,
-		)
-		if existing == nil || existing.IsExpired == 1 {
-			actorID := user.ID
-			_, err := h.DispatchNotification(payload.TargetUserID, &models.Notification{
-				RecipientID: payload.TargetUserID,
-				ActorID:     &actorID,
-				Type:        models.NotificationFollowRequest,
-				Title:       "New follow request",
-				Message:     helper.DisplayName(user) + " wants to follow you",
-			})
-			if err != nil {
-				helper.Error(w, http.StatusInternalServerError, err.Error())
-				return
-			}
+		notification.Type = models.NotificationFollowRequest
+		notification.Title = "New follow request"
+		notification.Message = helper.DisplayName(user) + " wants to follow you"
+	}
+
+	// Don't stack a second one on top of a notification still on screen
+	existing, err := h.Service.GetNotificationByActorType(payload.TargetUserID, user.ID, notification.Type)
+	if err != nil {
+		helper.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if existing == nil || existing.IsExpired == 1 {
+		if _, err := h.DispatchNotification(payload.TargetUserID, &notification); err != nil {
+			helper.Error(w, http.StatusInternalServerError, err.Error())
+			return
 		}
 	}
+
 	helper.Success(w, http.StatusOK, msg, map[string]string{"status": status})
 }
 
