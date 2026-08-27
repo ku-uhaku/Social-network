@@ -101,35 +101,75 @@ func (r *Repository) GetPostByID(postID int64) (*models.Post, error) {
 // plus group posts for groups they belong to. Paginated by cursor (last post id) and limit.
 func (r *Repository) GetFeedPosts(currentUserID int64, limit int, cursor *int64) ([]models.Post, bool, error) {
 	query := `
-		SELECT p.id, p.user_id, p.group_id, p.title, p.content, p.privacy, p.image_url, p.created_at,
+		SELECT
+			p.id,
+			p.user_id,
+			p.group_id,
+			p.title,
+			p.content,
+			p.privacy,
+			p.image_url,
+			p.created_at,
 			(SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comments_count,
-			u.id, u.username, u.first_name, u.last_name, u.avatar
+			u.id,
+			u.username,
+			u.first_name,
+			u.last_name,
+			u.avatar
 		FROM posts p
 		JOIN users u ON u.id = p.user_id
 		WHERE
-		p.group_id IS NULL AND 
-			(p.user_id = $1   OR
-			(p.privacy = 'public' AND u.is_public = 1) OR 
-			(p.privacy = 'public' AND u.is_public = 0 AND EXISTS (
-				SELECT 1 FROM follows f
-				WHERE f.following_id = p.user_id AND f.follower_id = $1 AND f.status = 'accepted'
-			)) OR
-			( p.privacy ='almost private' AND EXISTS (
-				SELECT 1 FROM follows f
-				WHERE f.following_id = p.user_id AND f.follower_id = $1 AND f.status = 'accepted'
-			)) OR
-			( p.privacy = 'private' AND EXISTS (
-				SELECT 1 FROM post_viewers pv
-				WHERE pv.post_id = p.id AND pv.user_id = $1
-			)))
-		ORDER BY p.created_at DESC, p.id DESC
+			p.group_id IS NULL
+			AND (
+				p.user_id = $1
+				OR (
+					p.privacy = 'public'
+					AND u.is_public = 1
+				)
+				OR (
+					p.privacy = 'public'
+					AND u.is_public = 0
+					AND EXISTS (
+						SELECT 1
+						FROM follows f
+						WHERE f.following_id = p.user_id
+							AND f.follower_id = $1
+							AND f.status = 'accepted'
+					)
+				)
+				OR (
+					p.privacy = 'almost private'
+					AND EXISTS (
+						SELECT 1
+						FROM follows f
+						WHERE f.following_id = p.user_id
+							AND f.follower_id = $1
+							AND f.status = 'accepted'
+					)
+				)
+				OR (
+					p.privacy = 'private'
+					AND EXISTS (
+						SELECT 1
+						FROM post_viewers pv
+						WHERE pv.post_id = p.id
+							AND pv.user_id = $1
+					)
+				)
+			)
 	`
+
 	args := []interface{}{currentUserID}
+
 	if cursor != nil {
 		query += ` AND p.id < $2`
 		args = append(args, *cursor)
 	}
-	query += fmt.Sprintf(` LIMIT $%d`, len(args)+1)
+
+	query += fmt.Sprintf(
+		` ORDER BY p.created_at DESC, p.id DESC LIMIT $%d`,
+		len(args)+1,
+	)
 	args = append(args, limit+1)
 
 	rows, err := r.DB.Database.Query(query, args...)
@@ -138,23 +178,43 @@ func (r *Repository) GetFeedPosts(currentUserID int64, limit int, cursor *int64)
 	}
 	defer rows.Close()
 
-	var posts []models.Post
+	posts := make([]models.Post, 0, limit+1)
+
 	for rows.Next() {
 		var p models.Post
+
 		if err := rows.Scan(
-			&p.ID, &p.UserID, &p.GroupID, &p.Title, &p.Content, &p.Privacy, &p.ImageURL, &p.CreatedAt,
+			&p.ID,
+			&p.UserID,
+			&p.GroupID,
+			&p.Title,
+			&p.Content,
+			&p.Privacy,
+			&p.ImageURL,
+			&p.CreatedAt,
 			&p.CommentsCount,
-			&p.User.ID, &p.User.Username, &p.User.FirstName, &p.User.LastName, &p.User.Avatar,
+			&p.User.ID,
+			&p.User.Username,
+			&p.User.FirstName,
+			&p.User.LastName,
+			&p.User.Avatar,
 		); err != nil {
 			return nil, false, err
 		}
+
 		posts = append(posts, p)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, false, err
+	}
+
 	hasMore := len(posts) > limit
+
 	if hasMore {
 		posts = posts[:limit]
 	}
+
 	return posts, hasMore, nil
 }
 
