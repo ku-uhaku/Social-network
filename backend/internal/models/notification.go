@@ -5,6 +5,7 @@ import "time"
 // Notification types
 const (
 	NotificationFollowRequest    = "follow_request"
+	NotificationNewFollower      = "new_follower"
 	NotificationGroupInvitation  = "group_invitation"
 	NotificationGroupJoinRequest = "group_join_request"
 	NotificationGroupEvent       = "group_event_created"
