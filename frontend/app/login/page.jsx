@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthBackground from "@/components/shared/AuthBackground";
 import NailButton from "@/components/shared/NailButton";
+import { useToast } from '@/contexts/ToastContext';
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
@@ -25,7 +26,8 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter();
   const { login } = useAuth();
-
+//use tossast 
+const toooasst=useToast()
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -34,12 +36,14 @@ function LoginForm() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+    if (identifier.trim() === "" || password.trim() === "") return;
     setSubmitting(true);
     try {
       await login(identifier, password);
+        toooasst.success("You welcooome again to our social netwooook ")
       router.push("/");
     } catch (err) {
-      setError(err?.message || "Login failed");
+      toooasst.error(err?.message || "Login failed");
     } finally {
       setSubmitting(false);
     }
@@ -62,6 +66,7 @@ function LoginForm() {
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             required
+            maxLength={254}
           />
         </div>
 
@@ -75,6 +80,7 @@ function LoginForm() {
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={8}
+            maxLength={72}
           />
         </div>
 

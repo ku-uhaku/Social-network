@@ -39,7 +39,7 @@ export default function RegisterPage() {
 function RegisterForm() {
   const router = useRouter();
   const { register } = useAuth();
-  const toassst=useToast()
+  const toast = useToast()
 
   const [values, setValues] = useState(initialState);
   const [avatar, setAvatar] = useState(null);
@@ -60,6 +60,17 @@ function RegisterForm() {
       setSubmitting(false);
       return
     }
+    const requiredFilled =
+      values.email.trim() !== "" &&
+      values.first_name.trim() !== "" &&
+      values.last_name.trim() !== "" &&
+      values.gender.trim() !== "" &&
+      values.password.trim() !== "";
+    if (!requiredFilled) {
+      setError("Required fields cannot be empty or contain only spaces");
+      setSubmitting(false);
+      return;
+    }
     try {
       const formData = new FormData();
       formData.append("username", values.username.trim());
@@ -73,10 +84,11 @@ function RegisterForm() {
       if (avatar) formData.append("avatar", avatar);
 
       await register(formData);
-                  toassst.success("You registereed succesfully now try to login ")
+                  toast.success("You registereed succesfully now try to login ")
       router.push("/login");
     } catch (err) {
-      setError(err?.message || "Registration failed");
+      // setError(err?.message || "Registration failed");
+      toast.error(err?.message || "Registration failed");
     } finally {
       setSubmitting(false);
     }
@@ -94,22 +106,22 @@ function RegisterForm() {
 
         <div className="field">
           <label className="label" htmlFor="email">Email</label>
-          <input id="email" name="email" className="input" type="email" value={values.email} onChange={handleChange} required />
+          <input id="email" name="email" className="input" type="email" value={values.email} onChange={handleChange} required maxLength={254} />
         </div>
 
         <div className="field">
           <label className="label" htmlFor="password">Password</label>
-          <input id="password" name="password" className="input" type="password" value={values.password} onChange={handleChange} required minLength={8} />
+          <input id="password" name="password" className="input" type="password" value={values.password} onChange={handleChange} required minLength={8} maxLength={72} />
         </div>
 
         <div className="row">
           <div className="field">
             <label className="label" htmlFor="first_name">First name</label>
-            <input id="first_name" name="first_name" className="input" type="text" value={values.first_name} onChange={handleChange} required />
+            <input id="first_name" name="first_name" className="input" type="text" value={values.first_name} onChange={handleChange} required maxLength={50} />
           </div>
           <div className="field">
             <label className="label" htmlFor="last_name">Last name</label>
-            <input id="last_name" name="last_name" className="input" type="text" value={values.last_name} onChange={handleChange} required />
+            <input id="last_name" name="last_name" className="input" type="text" value={values.last_name} onChange={handleChange} required maxLength={50} />
           </div>
         </div>
 
@@ -133,7 +145,7 @@ function RegisterForm() {
           />
         <div className="field">
           <label className="label" htmlFor="about_me">About me (optional)</label>
-          <textarea id="about_me" name="about_me" className="input" rows={3} value={values.about_me} onChange={handleChange} />
+          <textarea id="about_me" name="about_me" className="input" rows={3} value={values.about_me} onChange={handleChange} maxLength={500} />
         </div>
           {error && <div className="error">{error}</div>}
 
