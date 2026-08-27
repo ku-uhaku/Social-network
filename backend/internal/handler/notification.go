@@ -150,16 +150,6 @@ func (h *Handler) pushExpired(w http.ResponseWriter, userID int64, ids []int64, 
 	return true
 }
 
-// acceptDeclineActions is the standard button pair for request-style notifications
-func acceptDeclineActions() models.JSONText {
-	return models.JSONText{
-		"buttons": []interface{}{
-			map[string]interface{}{"action": "accept", "label": "Accept"},
-			map[string]interface{}{"action": "decline", "label": "Decline"},
-		},
-	}
-}
-
 // notificationLimit reads ?limit, falling back to the default when absent
 func notificationLimit(w http.ResponseWriter, r *http.Request) (int, bool) {
 	raw := r.URL.Query().Get("limit")

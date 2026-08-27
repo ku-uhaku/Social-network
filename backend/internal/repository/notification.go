@@ -9,7 +9,7 @@ import (
 
 const notificationColumns = `
 	n.id, n.recipient_id, n.actor_id, n.type, n.title, n.message,
-	n.payload, n.actions, n.is_read, n.is_expired, n.created_at,
+	n.group_id, n.is_read, n.is_expired, n.created_at,
 	u.username, u.avatar
 `
 
@@ -21,11 +21,11 @@ const notificationFrom = `
 // CreateNotification persists a new notification and returns it with the actor joined in
 func (r *Repository) CreateNotification(n *models.Notification) (*models.Notification, error) {
 	query := `
-		INSERT INTO notifications (recipient_id, actor_id, type, title, message, payload, actions)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO notifications (recipient_id, actor_id, type, title, message, group_id)
+		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 	res, err := r.DB.Database.Exec(query,
-		n.RecipientID, n.ActorID, n.Type, n.Title, n.Message, n.Payload, n.Actions)
+		n.RecipientID, n.ActorID, n.Type, n.Title, n.Message, n.Payload.GroupID)
 	if err != nil {
 		return nil, err
 	}
@@ -66,6 +66,7 @@ func (r *Repository) GetUserNotifications(recipientID int64, limit int, lastID i
 		if err := rows.Scan(notificationFields(&n)...); err != nil {
 			return nil, false, err
 		}
+		n.Actions = models.NotificationActionsFor(n.Type)
 		notifications = append(notifications, n)
 	}
 	if err := rows.Err(); err != nil {
@@ -161,11 +162,10 @@ func (r *Repository) ExpireNotificationsByActorType(recipientID, actorID int64, 
 	)
 }
 
-// ExpireGroupNotifications expires the notifications of a type raised for one
-// group, matched on the group_id carried in the payload.
+// ExpireGroupNotifications expires the notifications of a type raised for one group
 func (r *Repository) ExpireGroupNotifications(recipientID, groupID int64, notifType string) ([]int64, error) {
 	return r.expireNotifications(
-		`recipient_id = $1 AND type = $2 AND json_extract(payload, '$.group_id') = $3`,
+		`recipient_id = $1 AND type = $2 AND group_id = $3`,
 		recipientID, notifType, groupID,
 	)
 }
@@ -213,7 +213,7 @@ func (r *Repository) execAffected(query string, args ...interface{}) (bool, erro
 func notificationFields(n *models.Notification) []interface{} {
 	return []interface{}{
 		&n.ID, &n.RecipientID, &n.ActorID, &n.Type, &n.Title, &n.Message,
-		&n.Payload, &n.Actions, &n.IsRead, &n.IsExpired, &n.CreatedAt,
+		&n.Payload.GroupID, &n.IsRead, &n.IsExpired, &n.CreatedAt,
 		&n.ActorUsername, &n.ActorAvatar,
 	}
 }
@@ -229,5 +229,6 @@ func (r *Repository) queryOneNotification(query string, args ...interface{}) (*m
 	if err != nil {
 		return nil, err
 	}
+	n.Actions = models.NotificationActionsFor(n.Type)
 	return &n, nil
 }
