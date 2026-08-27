@@ -3,18 +3,19 @@ package models
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"time"
 )
 
 // Notification types
 const (
 	NotificationFollowRequest    = "follow_request"
-	NotificationGroupInvitation = "group_invitation"
+	NotificationGroupInvitation  = "group_invitation"
 	NotificationGroupJoinRequest = "group_join_request"
-	NotificationGroupEvent      = "group_event_created"
+	NotificationGroupEvent       = "group_event_created"
 )
 
-// JSONText stores arbitrary JSON in a TEXT column, marshaling NULL/empty to null
+// JSONText stores arbitrary JSON in a TEXT column; a nil map reads and writes as NULL
 type JSONText map[string]interface{}
 
 func (j JSONText) Value() (driver.Value, error) {
@@ -25,27 +26,17 @@ func (j JSONText) Value() (driver.Value, error) {
 }
 
 func (j *JSONText) Scan(value interface{}) error {
-	if value == nil {
+	switch v := value.(type) {
+	case nil:
 		*j = nil
 		return nil
-	}
-	var data []byte
-	switch v := value.(type) {
 	case string:
-		data = []byte(v)
+		return json.Unmarshal([]byte(v), j)
 	case []byte:
-		data = v
+		return json.Unmarshal(v, j)
 	default:
-		return nil
+		return errors.New("JSONText: unsupported column type")
 	}
-	return json.Unmarshal(data, j)
-}
-
-func (j JSONText) MarshalJSON() ([]byte, error) {
-	if j == nil {
-		return []byte("null"), nil
-	}
-	return json.Marshal(map[string]interface{}(j))
 }
 
 // Notification represents a single notification in a user's stack
@@ -55,29 +46,29 @@ type Notification struct {
 	ActorID     *int64    `json:"actor_id,omitempty"`
 	Type        string    `json:"type"`
 	Title       string    `json:"title"`
-	Message    string    `json:"message"`
-	Payload    JSONText  `json:"payload"`
-	Actions    JSONText  `json:"actions"`
-	IsRead     int       `json:"is_read"`
-	IsExpired  int       `json:"is_expired"`
-	CreatedAt  time.Time `json:"created_at"`
+	Message     string    `json:"message"`
+	Payload     JSONText  `json:"payload"`
+	Actions     JSONText  `json:"actions"`
+	IsRead      int       `json:"is_read"`
+	IsExpired   int       `json:"is_expired"`
+	CreatedAt   time.Time `json:"created_at"`
 
 	// Joined actor info for display
 	ActorUsername *string `json:"actor_username,omitempty"`
-	ActorAvatar  *string `json:"actor_avatar,omitempty"`
+	ActorAvatar   *string `json:"actor_avatar,omitempty"`
 }
 
 // NotificationListResponse wraps a page of notifications with the unread count
 type NotificationListResponse struct {
 	Notifications []Notification `json:"notifications"`
-	UnreadCount  int64          `json:"unread_count"`
-	HasMore      bool           `json:"has_more"`
+	UnreadCount   int64          `json:"unread_count"`
+	HasMore       bool           `json:"has_more"`
 }
 
 // MarkNotificationReadPayload marks a single notification or all as read
 type MarkNotificationReadPayload struct {
 	NotificationID *int64 `json:"notification_id,omitempty"`
-	All           bool   `json:"all"`
+	All            bool   `json:"all"`
 }
 
 // ExpireNotificationPayload expires a single notification
