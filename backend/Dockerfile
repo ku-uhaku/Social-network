@@ -13,6 +13,6 @@ COPY . .
 
 RUN CGO_ENABLED=1 go build -o /backend ./main.go
 
-EXPOSE 8000
+EXPOSE 8080
 
 CMD ["/backend"]

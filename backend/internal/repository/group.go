@@ -218,9 +218,32 @@ func (r *Repository) AddMember(groupID int64, userID int64, status string) error
 
 // RemoveMember deletes a user membership record (Leave group or Kick user)
 func (r *Repository) RemoveMember(groupID int64, userID int64) error {
-	query := `DELETE FROM group_members WHERE group_id = $1 AND user_id = $2`
-	_, err := r.DB.Database.Exec(query, groupID, userID)
-	return err
+	tx, err := r.DB.Database.Begin()
+	if err != nil {
+
+		return err
+	}
+
+	defer tx.Rollback()
+
+	_, err = tx.Exec(`
+    DELETE FROM group_members
+    WHERE group_id = $1 AND user_id = $2
+`, groupID, userID)
+	if err != nil {
+
+		return err
+	}
+
+	_, err = tx.Exec(`
+    DELETE FROM groups
+    WHERE id = $1 AND creator_id = $2
+`, groupID, userID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 // IsMember returns current member status if row exists
@@ -293,7 +316,8 @@ func (r *Repository) CreateGroupEvent(groupID, creatorID int64, payload models.C
 		VALUES ($1, $2, $3, $4, $5, 'upcoming')
 		RETURNING id, group_id, creator_id, title, description, event_time, status, created_at
 	`
-	err := r.DB.Database.QueryRow(query,
+	err := r.DB.Database.QueryRow(
+		query,
 		groupID, creatorID,
 		strings.TrimSpace(payload.Title),
 		strings.TrimSpace(payload.Description),
