@@ -42,18 +42,6 @@ func ParseRegisterPayload(r *http.Request) (models.InputRegisterPayload, error) 
 			payload.AboutMe = &aboutMe
 		}
 		if file, header, err := r.FormFile("avatar"); err == nil {
-			// _, err = helper.IsValidImage([]byte(*payload.Avatar))
-			// if err != nil {
-			// 	return payload, fmt.Errorf("the avatar not good: %w", err)
-			// }
-			println("------------------------------------------")
-			println("------------------------------------------")
-			println("------------------------------------------")
-			println("------------------------------------------")
-			println("------------------------------------------")
-			println("------------------------------------------")
-			println("------------------------------------------")
-
 			defer file.Close()
 			if header != nil || header.Size > 0 {
 				avatarName, err := helper.SaveUploadedImage(file, header)

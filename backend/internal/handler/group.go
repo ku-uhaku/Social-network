@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"kuu/internal/helper"
@@ -327,7 +326,6 @@ func (h *Handler) LeaveGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.Service.LeaveGroup(user.ID, payload.GroupID); err != nil {
-		fmt.Println("errrr:::", err)
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -464,8 +462,7 @@ func (h *Handler) notifyEventCreated(actorID int64, group *models.Group, event *
 		if memberID == actorID {
 			continue
 		}
-		if ntf, err := h.DispatchNotification(memberID, &models.Notification{
-			//  fmt.Println("memberID",memberID)
+		if _, err := h.DispatchNotification(memberID, &models.Notification{
 			RecipientID: memberID,
 			ActorID:     &actor,
 			Type:        models.NotificationGroupEvent,
@@ -474,9 +471,6 @@ func (h *Handler) notifyEventCreated(actorID int64, group *models.Group, event *
 			Payload:     models.NotificationPayload{GroupID: &group.ID},
 		}); err != nil {
 			return err
-		} else {
-
-			fmt.Println("notif", ntf)
 		}
 	}
 	return nil

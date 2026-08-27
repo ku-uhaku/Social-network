@@ -1,5 +1,4 @@
 import { API_BASE } from "@/lib/utils";
- import { useRouter } from "next/navigation";
 
  export  async function apiFetch(path, options = {}) {
    const { body, headers, ...rest } = options;
@@ -21,7 +20,6 @@ import { API_BASE } from "@/lib/utils";
           throw res
         }
   }
-  console.log("respoooonse:::", res);
   
   const text = await res.text();
   let data = null;

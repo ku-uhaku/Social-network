@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGroupChat } from "@/contexts/GroupChatContext";
 import PostCard from "@/components/posts/PostCard";
 import NailButton from "@/components/shared/NailButton";
+import UsersSelect from "@/components/shared/UsersSelect";
 import UsersModal from "@/components/groups/UsersModal";
 import GroupChat from "@/components/chat/GroupChat";
 import "@/css/groups.css";

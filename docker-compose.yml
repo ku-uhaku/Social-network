@@ -4,7 +4,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8080:8080"
     volumes:
       - social-db:/app/internal/database
     restart: unless-stopped
@@ -19,7 +19,7 @@ services:
       - ./frontend:/app/frontend
       - /app/frontend/node_modules
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_API_URL: http://localhost:8080
     depends_on:
       - go
     restart: unless-stopped

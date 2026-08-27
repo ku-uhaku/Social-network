@@ -2,7 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
 	"strings"
 	"time"
 
@@ -219,7 +218,6 @@ func (r *Repository) AddMember(groupID int64, userID int64, status string) error
 
 // RemoveMember deletes a user membership record (Leave group or Kick user)
 func (r *Repository) RemoveMember(groupID int64, userID int64) error {
-	fmt.Println("userID:",userID,"groupID:",groupID)
 	tx, err := r.DB.Database.Begin()
 	if err != nil {
 
@@ -242,7 +240,6 @@ func (r *Repository) RemoveMember(groupID int64, userID int64) error {
     WHERE id = $1 AND creator_id = $2
 `, groupID, userID)
 	if err != nil {
-		fmt.Println("error database:::",err)
 		return err
 	}
 
