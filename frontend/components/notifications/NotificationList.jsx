@@ -11,9 +11,10 @@ export default function NotificationList({ open }) {
   useEffect(() => {
     if (!open) return;
     notifications.forEach((n) => {
-      if (n.type === "group_event_created" && !n.is_read) {
-        markRead(n.id);
-      }
+      const hasChoice = n.actions?.buttons?.some(
+        (b) => b.action === "accept" || b.action === "decline"
+      );
+      if (!n.is_read && !hasChoice) markRead(n.id);
     });
   }, [open, notifications, markRead]);
 
