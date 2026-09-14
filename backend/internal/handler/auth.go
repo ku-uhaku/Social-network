@@ -72,8 +72,9 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_token")
 	if err == nil {
-		// Delete session from the database
+		// delete session
 		_ = h.Service.DeleteSession(cookie.Value)
+		h.Hub.DisconnectSession(cookie.Value)
 	}
 
 	// Clear the cookie

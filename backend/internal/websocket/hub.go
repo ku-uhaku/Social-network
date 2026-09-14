@@ -9,6 +9,7 @@ type Hub struct {
 	clients    map[*Client]bool
 	register   chan *Client
 	unregister chan *Client
+	disconnect chan string
 	events     chan Event
 }
 
@@ -17,6 +18,7 @@ func New() *Hub {
 		clients:    make(map[*Client]bool),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
+		disconnect: make(chan string),
 		events:     make(chan Event, 64),
 	}
 }
@@ -31,6 +33,9 @@ func (h *Hub) Run() {
 		case client := <-h.unregister:
 			h.remove(client)
 
+		case sessionID := <-h.disconnect:
+			h.disconnectSession(sessionID)
+
 		case event := <-h.events:
 			h.route(event)
 		}
@@ -40,6 +45,20 @@ func (h *Hub) Run() {
 // Register adds a connection, Unregister drops and closes it.
 func (h *Hub) Register(client *Client)   { h.register <- client }
 func (h *Hub) Unregister(client *Client) { h.unregister <- client }
+
+// DisconnectSession closes every connection bound to the given session token,
+// used when that session is destroyed (e.g. logout).
+func (h *Hub) DisconnectSession(sessionID string) {
+	h.disconnect <- sessionID
+}
+
+func (h *Hub) disconnectSession(sessionID string) {
+	for client := range h.clients {
+		if client.SessionID == sessionID {
+			h.remove(client)
+		}
+	}
+}
 
 // BroadcastToUser sends an event to every open tab of one user.
 func (h *Hub) BroadcastToUser(userID int64, eventType string, payload interface{}) {

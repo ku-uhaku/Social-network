@@ -23,13 +23,10 @@ func Server() {
 	hub := websocket.New()
 	go hub.Run()
 
-	// 2. Build Repository (Takes Database Layer)
 	repo := repository.New(db)
 
-	// 3. Build Service (Takes Repository Layer)
 	svc := service.New(repo)
 
-	// 4. Handlers and Middlewares consume the Service Layer
 	h := handler.New(svc, hub)
 
 	m := middleware.New(svc)
