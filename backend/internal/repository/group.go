@@ -2,13 +2,14 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"strings"
 	"time"
 
 	"kuu/internal/models"
 )
 
-// CreateGroup inserts the group AND adds the creator as an accepted member atomically using a transaction
+// inserts the group AND adds the creator as an accepted member atomically using a transaction
 func (r *Repository) CreateGroup(creatorID int64, payload models.CreateGroupPayload) (*models.Group, error) {
 	tx, err := r.DB.Database.Begin()
 	if err != nil {
@@ -59,7 +60,6 @@ func (r *Repository) CreateGroup(creatorID int64, payload models.CreateGroupPayl
 	return &group, nil
 }
 
-// GetGroupByID fetches a single group by ID
 func (r *Repository) GetGroupByID(groupID int64) (*models.Group, error) {
 	var group models.Group
 	query := `
@@ -77,35 +77,58 @@ func (r *Repository) GetGroupByID(groupID int64) (*models.Group, error) {
 		&group.CreatedAt,
 	)
 	if err != nil {
-		return nil, err // Returns sql.ErrNoRows if not found
+		return nil, err
 	}
 
 	return &group, nil
 }
 
-// GetAllGroups fetches all groups (can be extended later for pagination/filtering)
-func (r *Repository) GetAllGroups() ([]models.Group, error) {
+// fetches groups, paginated by cursor (last group id) and limit,
+// with the same semantics as the post feed (fetch limit+1 to know has_more).
+func (r *Repository) GetAllGroups(limit int, cursor *int64) ([]models.Group, bool, error) {
 	query := `
 		SELECT id, title, description, creator_id, is_public, created_at
 		FROM groups
-		ORDER BY created_at DESC
 	`
-	rows, err := r.DB.Database.Query(query)
+
+	args := []interface{}{}
+
+	if cursor != nil {
+		query += ` WHERE id < $1`
+		args = append(args, *cursor)
+	}
+
+	query += fmt.Sprintf(
+		` ORDER BY created_at DESC, id DESC LIMIT $%d`,
+		len(args)+1,
+	)
+	args = append(args, limit+1)
+
+	rows, err := r.DB.Database.Query(query, args...)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	defer rows.Close()
 
-	groups := []models.Group{}
+	groups := make([]models.Group, 0, limit+1)
 	for rows.Next() {
 		var g models.Group
 		if err := rows.Scan(&g.ID, &g.Title, &g.Description, &g.CreatorID, &g.IsPublic, &g.CreatedAt); err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		groups = append(groups, g)
 	}
 
-	return groups, nil
+	if err := rows.Err(); err != nil {
+		return nil, false, err
+	}
+
+	hasMore := len(groups) > limit
+	if hasMore {
+		groups = groups[:limit]
+	}
+
+	return groups, hasMore, nil
 }
 
 // UpdateGroup modifies group details if the caller is the creator
@@ -138,7 +161,7 @@ func (r *Repository) UpdateGroup(groupID int64, payload models.UpdateGroupPayloa
 	return &group, nil
 }
 
-// DeleteGroup removes a group and its cascading relations (members, posts, invites)
+// removes a group and its cascading relations (members, posts, invites)
 func (r *Repository) DeleteGroup(groupID int64) error {
 	query := `DELETE FROM groups WHERE id = $1`
 	res, err := r.DB.Database.Exec(query, groupID)
@@ -184,7 +207,7 @@ func (r *Repository) InviteUsersBatch(groupID int64, userIDs []int64) error {
 	return tx.Commit()
 }
 
-// UpdateMemberStatus updates membership status ('accepted', 'declined', etc.)
+// updates membership status ('accepted', 'declined', etc.)
 func (r *Repository) UpdateMemberStatus(groupID int64, userID int64, status string) error {
 	query := `
 		UPDATE group_members 

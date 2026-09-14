@@ -8,7 +8,6 @@ import (
 	"kuu/internal/models"
 )
 
-// GetSession retrieves a user session using clean pointer semantics
 func (r *Repository) GetSession(token string) (*models.Session, error) {
 	var session models.Session
 
@@ -35,7 +34,6 @@ func (r *Repository) GetSession(token string) (*models.Session, error) {
 	return &session, nil
 }
 
-// CreateSession inserts a new active session into SQLite
 func (r *Repository) CreateSession(userID int64, token string, duration time.Duration) (*models.Session, error) {
 	var session models.Session
 	expiresAt := time.Now().Add(duration)
@@ -59,7 +57,6 @@ func (r *Repository) CreateSession(userID int64, token string, duration time.Dur
 	return &session, nil
 }
 
-// GetUserBySessionToken joins sessions and users to authenticate active tokens
 func (r *Repository) GetUserBySessionToken(token string) (*models.User, error) {
 	var user models.User
 
@@ -92,7 +89,6 @@ func (r *Repository) GetUserBySessionToken(token string) (*models.User, error) {
 	return &user, nil
 }
 
-// DeleteSession physically removes the session row on logout
 func (r *Repository) DeleteSession(token string) error {
 	query := `DELETE FROM sessions WHERE id = $1`
 	_, err := r.DB.Database.Exec(query, token)

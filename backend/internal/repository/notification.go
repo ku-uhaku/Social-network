@@ -18,7 +18,6 @@ const notificationFrom = `
 	LEFT JOIN users u ON u.id = n.actor_id
 `
 
-// CreateNotification persists a new notification and returns it with the actor joined in
 func (r *Repository) CreateNotification(n *models.Notification) (*models.Notification, error) {
 	query := `
 		INSERT INTO notifications (recipient_id, actor_id, type, title, message, group_id)
@@ -44,9 +43,6 @@ func (r *Repository) CreateNotification(n *models.Notification) (*models.Notific
 	return created, nil
 }
 
-// GetUserNotifications returns a page of notifications for a recipient, newest
-// first, using lastID as a cursor (0 = newest page). Fetches limit+1 rows to
-// report whether a further page exists.
 func (r *Repository) GetUserNotifications(recipientID int64, limit int, lastID int64) ([]models.Notification, bool, error) {
 	query := `
 		SELECT ` + notificationColumns + notificationFrom + `
@@ -80,7 +76,6 @@ func (r *Repository) GetUserNotifications(recipientID int64, limit int, lastID i
 	return notifications, hasMore, nil
 }
 
-// GetNotification returns a single notification owned by the recipient, or nil if there is none
 func (r *Repository) GetNotification(recipientID, notificationID int64) (*models.Notification, error) {
 	query := `
 		SELECT ` + notificationColumns + notificationFrom + `
@@ -89,8 +84,6 @@ func (r *Repository) GetNotification(recipientID, notificationID int64) (*models
 	return r.queryOneNotification(query, notificationID, recipientID)
 }
 
-// GetNotificationByActorType returns the latest notification for a recipient +
-// actor + type, or nil if there is none
 func (r *Repository) GetNotificationByActorType(recipientID, actorID int64, notifType string) (*models.Notification, error) {
 	query := `
 		SELECT ` + notificationColumns + notificationFrom + `
@@ -101,7 +94,6 @@ func (r *Repository) GetNotificationByActorType(recipientID, actorID int64, noti
 	return r.queryOneNotification(query, recipientID, actorID, notifType)
 }
 
-// GetUnreadCount returns the number of unread, non-expired notifications
 func (r *Repository) GetUnreadCount(recipientID int64) (int64, error) {
 	query := `
 		SELECT COUNT(*) FROM notifications
@@ -112,8 +104,6 @@ func (r *Repository) GetUnreadCount(recipientID int64) (int64, error) {
 	return count, err
 }
 
-// MarkNotificationRead marks one notification as read; reports whether the
-// notification exists for that recipient
 func (r *Repository) MarkNotificationRead(recipientID, notificationID int64) (bool, error) {
 	query := `
 		UPDATE notifications SET is_read = 1
@@ -122,7 +112,6 @@ func (r *Repository) MarkNotificationRead(recipientID, notificationID int64) (bo
 	return r.execAffected(query, notificationID, recipientID)
 }
 
-// MarkAllNotificationsRead marks every unread notification of a recipient as read
 func (r *Repository) MarkAllNotificationsRead(recipientID int64) error {
 	query := `
 		UPDATE notifications SET is_read = 1
@@ -132,8 +121,6 @@ func (r *Repository) MarkAllNotificationsRead(recipientID int64) error {
 	return err
 }
 
-// ExpireNotification marks a notification as expired. Expiring an already
-// expired notification is a no-op, so callers can retry safely.
 func (r *Repository) ExpireNotification(recipientID, notificationID int64) error {
 	query := `
 		UPDATE notifications SET is_expired = 1
@@ -143,9 +130,6 @@ func (r *Repository) ExpireNotification(recipientID, notificationID int64) error
 	return err
 }
 
-// ExpireNotificationsByType expires every unread notification of a type. Use it
-// only when the recipient really did resolve all of them at once, such as a
-// private account turning public and accepting every pending follow request.
 func (r *Repository) ExpireNotificationsByType(recipientID int64, notifType string) ([]int64, error) {
 	return r.expireNotifications(
 		`recipient_id = $1 AND type = $2 AND is_read = 0`,
@@ -153,8 +137,6 @@ func (r *Repository) ExpireNotificationsByType(recipientID int64, notifType stri
 	)
 }
 
-// ExpireNotificationsByActorType expires the notifications one actor raised for
-// a recipient, so answering one request leaves everybody else's untouched.
 func (r *Repository) ExpireNotificationsByActorType(recipientID, actorID int64, notifType string) ([]int64, error) {
 	return r.expireNotifications(
 		`recipient_id = $1 AND actor_id = $2 AND type = $3`,
@@ -162,7 +144,6 @@ func (r *Repository) ExpireNotificationsByActorType(recipientID, actorID int64, 
 	)
 }
 
-// ExpireGroupNotifications expires the notifications of a type raised for one group
 func (r *Repository) ExpireGroupNotifications(recipientID, groupID int64, notifType string) ([]int64, error) {
 	return r.expireNotifications(
 		`recipient_id = $1 AND type = $2 AND group_id = $3`,
@@ -170,8 +151,6 @@ func (r *Repository) ExpireGroupNotifications(recipientID, groupID int64, notifT
 	)
 }
 
-// expireNotifications applies an expiry filter and reports the ids it expired,
-// so the caller can push each one to the recipient's open tabs.
 func (r *Repository) expireNotifications(where string, args ...interface{}) ([]int64, error) {
 	query := `
 		UPDATE notifications SET is_expired = 1
@@ -207,9 +186,6 @@ func (r *Repository) execAffected(query string, args ...interface{}) (bool, erro
 	return affected > 0, nil
 }
 
-// notificationFields lists the scan targets for notificationColumns, in the
-// same order. Both the single-row and the paged query scan through it, so the
-// column list and the destinations can only ever change together.
 func notificationFields(n *models.Notification) []interface{} {
 	return []interface{}{
 		&n.ID, &n.RecipientID, &n.ActorID, &n.Type, &n.Title, &n.Message,
@@ -218,8 +194,6 @@ func notificationFields(n *models.Notification) []interface{} {
 	}
 }
 
-// queryOneNotification runs a single-row notification query; no match is
-// reported as (nil, nil) rather than sql.ErrNoRows.
 func (r *Repository) queryOneNotification(query string, args ...interface{}) (*models.Notification, error) {
 	var n models.Notification
 	err := r.DB.Database.QueryRow(query, args...).Scan(notificationFields(&n)...)

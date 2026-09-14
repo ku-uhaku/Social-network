@@ -10,16 +10,16 @@ import (
 )
 
 func registerAuthRoutes(mux *http.ServeMux, h *handler.Handler, m *middleware.Middleware) {
-	ratelimeer := helper.Neewratelimeter(time.Minute)
+	limiter := helper.NewRateLimiter(time.Minute)
 
 	mux.Handle("/api/v1/auth/register",
-		ratelimeer.Wraponall("authonti", m.AllowMethods(http.MethodPost)(http.HandlerFunc(h.Register))),
+		limiter.Wrap("auth", m.AllowMethods(http.MethodPost)(http.HandlerFunc(h.Register))),
 	)
 	mux.Handle("/api/v1/auth/login",
-		ratelimeer.Wraponall("authonti", m.AllowMethods(http.MethodPost)(http.HandlerFunc(h.Login))),
+		limiter.Wrap("auth", m.AllowMethods(http.MethodPost)(http.HandlerFunc(h.Login))),
 	)
 	mux.Handle("/api/v1/auth/logout",
-		ratelimeer.Wraponall("authonti", m.AllowMethods(http.MethodPost)(http.HandlerFunc(h.Logout))),
+		limiter.Wrap("auth", m.AllowMethods(http.MethodPost)(http.HandlerFunc(h.Logout))),
 	)
 	mux.Handle(
 		"/api/v1/auth/me",

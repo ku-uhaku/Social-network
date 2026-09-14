@@ -69,15 +69,30 @@ func (h *Handler) GetGroup(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// GetAllGroups GET /api/v1/groups
+// GetAllGroups GET /api/v1/groups/all?limit=10&cursor=456
 func (h *Handler) GetAllGroups(w http.ResponseWriter, r *http.Request) {
-	groups, err := h.Service.GetAllGroups()
+	limit, cursor, ok := parseFeedParams(w, r)
+	if !ok {
+		return
+	}
+
+	groups, hasMore, err := h.Service.GetAllGroups(limit, cursor)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	helper.Success(w, http.StatusOK, "Groups retrieved successfully", groups)
+	var nextCursor *int64
+	if hasMore && len(groups) > 0 {
+		lastID := groups[len(groups)-1].ID
+		nextCursor = &lastID
+	}
+
+	helper.Success(w, http.StatusOK, "Groups retrieved successfully", map[string]interface{}{
+		"groups":      groups,
+		"next_cursor": nextCursor,
+		"has_more":    hasMore,
+	})
 }
 
 // GetGroupMembers GET /api/v1/groups/members?id=123 (accepted members only)

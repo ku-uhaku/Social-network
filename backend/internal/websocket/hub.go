@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 )
 
-// Hub holds every open connection and routes events to them.
 type Hub struct {
 	clients    map[*Client]bool
 	register   chan *Client
@@ -23,7 +22,6 @@ func New() *Hub {
 	}
 }
 
-// Run owns the clients map: every change to it happens in this one goroutine.
 func (h *Hub) Run() {
 	for {
 		select {
@@ -42,12 +40,9 @@ func (h *Hub) Run() {
 	}
 }
 
-// Register adds a connection, Unregister drops and closes it.
 func (h *Hub) Register(client *Client)   { h.register <- client }
 func (h *Hub) Unregister(client *Client) { h.unregister <- client }
 
-// DisconnectSession closes every connection bound to the given session token,
-// used when that session is destroyed (e.g. logout).
 func (h *Hub) DisconnectSession(sessionID string) {
 	h.disconnect <- sessionID
 }
@@ -60,12 +55,10 @@ func (h *Hub) disconnectSession(sessionID string) {
 	}
 }
 
-// BroadcastToUser sends an event to every open tab of one user.
 func (h *Hub) BroadcastToUser(userID int64, eventType string, payload interface{}) {
 	h.BroadcastToUsers([]int64{userID}, eventType, payload)
 }
 
-// BroadcastToUsers sends an event to every open tab of the given users.
 func (h *Hub) BroadcastToUsers(userIDs []int64, eventType string, payload interface{}) {
 	h.events <- Event{Type: eventType, Payload: payload, UserIDs: userIDs}
 }

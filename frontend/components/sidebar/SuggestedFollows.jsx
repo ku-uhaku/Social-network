@@ -19,9 +19,9 @@ export default function SuggestedFollows() {
     let cancelled = false;
     async function load() {
       try {
-        const response = await getSuggestedUsers(5);
+        const response = await getSuggestedUsers(20);
         const data = response?.data || response || [];
-        if (!cancelled) setUsers(Array.isArray(data) ? data : []);
+        if (!cancelled) setUsers(Array.isArray(data) ? data.slice(0, 20) : []);
       } catch (err) {
 
         //theee error defiandeed right nooow 
@@ -37,14 +37,11 @@ export default function SuggestedFollows() {
   }, []);
 
   async function handleFollow(userId) {
-    //take the id 
-    console.log("take the id",userId)
     if (busyId) return;
     setBusyId(userId);
     try {
       await followUser(userId);
-      // Drrrop the follllowed user soo that means the list stay frech
-      // console.log("thossse is user suggested")
+      // Drop the followed user so the list stays fresh
       setUsers((prev) => prev.filter((u) => u.id !== userId));
     } catch {
       ///machi dabaaaa
@@ -54,7 +51,6 @@ export default function SuggestedFollows() {
   }
 
   if (loading || error || users.length === 0) return null;
-  console.log("the users ready to display right now ",users)
 
   return (
     <aside className="suggestedFollows">

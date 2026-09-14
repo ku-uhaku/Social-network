@@ -2,7 +2,6 @@ package models
 
 import "time"
 
-// Notification types
 const (
 	NotificationFollowRequest    = "follow_request"
 	NotificationNewFollower      = "new_follower"
@@ -11,14 +10,10 @@ const (
 	NotificationGroupEvent       = "group_event_created"
 )
 
-// NotificationPayload is the extra data a notification carries. It is stored as
-// plain columns rather than JSON, and shown to the browser as one object.
 type NotificationPayload struct {
 	GroupID *int64 `json:"group_id,omitempty"`
 }
 
-// NotificationActions are the buttons a notification offers. They are derived
-// from the type rather than stored, so button labels never live in the database.
 type NotificationActions struct {
 	Buttons []NotificationButton `json:"buttons"`
 }
@@ -38,8 +33,6 @@ var (
 	}}
 )
 
-// NotificationActionsFor returns the buttons a notification type offers, or nil
-// when the type is informational.
 func NotificationActionsFor(notifType string) *NotificationActions {
 	switch notifType {
 	case NotificationFollowRequest, NotificationGroupInvitation, NotificationGroupJoinRequest:
@@ -51,7 +44,6 @@ func NotificationActionsFor(notifType string) *NotificationActions {
 	}
 }
 
-// Notification represents a single notification in a user's stack
 type Notification struct {
 	ID          int64                `json:"id"`
 	RecipientID int64                `json:"recipient_id"`
@@ -70,20 +62,17 @@ type Notification struct {
 	ActorAvatar   *string `json:"actor_avatar,omitempty"`
 }
 
-// NotificationListResponse wraps a page of notifications with the unread count
 type NotificationListResponse struct {
 	Notifications []Notification `json:"notifications"`
 	UnreadCount   int64          `json:"unread_count"`
 	HasMore       bool           `json:"has_more"`
 }
 
-// MarkNotificationReadPayload marks a single notification or all as read
 type MarkNotificationReadPayload struct {
 	NotificationID *int64 `json:"notification_id,omitempty"`
 	All            bool   `json:"all"`
 }
 
-// ExpireNotificationPayload expires a single notification
 type ExpireNotificationPayload struct {
 	NotificationID int64 `json:"notification_id"`
 }

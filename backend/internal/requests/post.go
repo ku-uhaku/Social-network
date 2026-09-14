@@ -1,4 +1,4 @@
-package requests
+﻿package requests
 
 import (
 	"encoding/json"
@@ -13,7 +13,7 @@ import (
 	"kuu/internal/models"
 )
 
-// ParseCreatePostPayload parses the request body into a CreatePostPayload struct
+// parses the request body into a CreatePostPayload struct
 func ParseCreatePostPayload(r *http.Request) (models.CreatePostPayload, error) {
 	var payload models.CreatePostPayload
 
@@ -65,7 +65,7 @@ func ParseCreatePostPayload(r *http.Request) (models.CreatePostPayload, error) {
 	return payload, nil
 }
 
-// ValidateCreatePost validates the CreatePostPayload struct
+// validates the CreatePostPayload struct
 func ValidateCreatePost(p models.CreatePostPayload) []error {
 	var errs []error
 	if strings.TrimSpace(p.Title) == "" {
@@ -100,7 +100,7 @@ func ValidateCreatePost(p models.CreatePostPayload) []error {
 	return errs
 }
 
-// ParseCreateCommentPayload parses the request body into a CreateCommentPayload struct
+// parses the request body into a CreateCommentPayload struct
 func ParseCreateCommentPayload(r *http.Request) (models.CreateCommentPayload, error) {
 	var payload models.CreateCommentPayload
 
@@ -134,7 +134,7 @@ func ParseCreateCommentPayload(r *http.Request) (models.CreateCommentPayload, er
 	return payload, nil
 }
 
-// ValidateCreateComment validates the CreateCommentPayload struct
+// validates the CreateCommentPayload struct
 func ValidateCreateComment(p models.CreateCommentPayload) []error {
 	var errs []error
 	if p.PostID <= 0 {

@@ -4,7 +4,6 @@ import (
 	"net/http"
 )
 
-// CORS intercepts requests to handle cross-origin constraints safely
 func CORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")

@@ -24,8 +24,6 @@ func New(svc *service.Service, hub *websocket.Hub) *Handler {
 	}
 }
 
-// Helper functions
-
 func (h *Handler) authUser(w http.ResponseWriter, r *http.Request) (*models.User, bool) {
 	user, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
@@ -53,7 +51,6 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, dst interface{}) bool {
 	return true
 }
 
-// Writes 422 if errs is non-empty; returns whether it did.
 func writeValidationErrors(w http.ResponseWriter, errs []error) bool {
 	if len(errs) == 0 {
 		return false

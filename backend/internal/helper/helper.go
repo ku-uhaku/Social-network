@@ -24,7 +24,6 @@ import (
 
 var autoUsernameRe = regexp.MustCompile(`^user_[0-9a-f]{8}$`)
 
-// Nickname if set, else full name
 func DisplayName(u *models.User) string {
 	if u == nil {
 		return "Kuu user"
@@ -39,7 +38,6 @@ func DisplayName(u *models.User) string {
 	return name
 }
 
-// Parses a query parameter as int64
 func GetParamInt64(r *http.Request, key string) (int64, error) {
 	valStr := r.URL.Query().Get(key)
 	if valStr == "" {
@@ -55,11 +53,10 @@ func GetParamInt64(r *http.Request, key string) (int64, error) {
 }
 
 const (
-	maxImageUploadSize = 20 << 20 // 20 MB
-	maxImageDimension  = 8000     // max width/height per side, guards against decompression bombs
+	maxImageUploadSize = 20 << 20
+	maxImageDimension  = 8000
 )
 
-// Uploaded images directory
 const MediaDir = "media"
 
 var imageExtensions = map[string]string{
@@ -68,14 +65,11 @@ var imageExtensions = map[string]string{
 	"gif":  ".gif",
 }
 
-// avoid renaaaame file
-// the deteeeected of foormaat "jpeg", "png", or "gif"
 func IsValidImage(data []byte) (string, error) {
 	if len(data) == 0 {
-		return "", errors.New("empttty  image data")
+		return "", errors.New("empty image data")
 	}
 
-	// DecodeConfig validates the header without decoding pixels
 	cfg, format, err := image.DecodeConfig(bytes.NewReader(data))
 	if err != nil {
 		return "", fmt.Errorf("not a valid image: %w", err)
@@ -89,7 +83,6 @@ func IsValidImage(data []byte) (string, error) {
 		return "", fmt.Errorf("unsupported image format %q: only PNG, JPEG, and GIF are allowed", format)
 	}
 
-	// Full decode rejects corrupt bodies
 	if _, _, err := image.Decode(bytes.NewReader(data)); err != nil {
 		return "", fmt.Errorf("corrupt image data: %w", err)
 	}
@@ -115,7 +108,6 @@ func SaveUploadedImage(file multipart.File, header *multipart.FileHeader) (strin
 		return "", fmt.Errorf("uploaded file exceeds maximum allowed size of 20MB")
 	}
 
-	// Validate the bytes are a real image and pick the matching extension.
 	format, err := IsValidImage(fileBytes)
 	if err != nil {
 		return "", err

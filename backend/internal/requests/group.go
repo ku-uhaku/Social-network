@@ -9,23 +9,22 @@ import (
 	"kuu/internal/models"
 )
 
-// ValidateCreateGroup checks required fields when making a new group
 func ValidateCreateGroup(payload models.CreateGroupPayload) []error {
 	var errs []error
 	if strings.TrimSpace(payload.Title) == "" {
 		errs = append(errs, errors.New("title is required"))
 		return errs
 	} else if titleLen := utf8.RuneCountInString(strings.TrimSpace(payload.Title)); titleLen < 3 || titleLen > 20 {
-		errs = append(errs, errors.New("title must be at least 3 characters long of less then 20"))
+		errs = append(errs, errors.New("title must be between 3 and 20 characters"))
 		return errs
 	}
 
 	if strings.TrimSpace(payload.Description) == "" {
 		errs = append(errs, errors.New("description is required"))
-		return  errs
-	}else if utf8.RuneCountInString(strings.TrimSpace(payload.Description))>200{
-		errs = append(errs, errors.New("description is too longg "))
-		return  errs
+		return errs
+	} else if utf8.RuneCountInString(strings.TrimSpace(payload.Description)) > 200 {
+		errs = append(errs, errors.New("description cannot be longer than 200 characters"))
+		return errs
 	}
 
 	if payload.IsPublic == nil {
@@ -37,7 +36,6 @@ func ValidateCreateGroup(payload models.CreateGroupPayload) []error {
 	return errs
 }
 
-// ValidateUpdateGroup handles validation when updating an existing group
 func ValidateUpdateGroup(payload models.UpdateGroupPayload) []error {
 	var errs []error
 
@@ -75,7 +73,6 @@ func ValidateGroupAction(payload models.GroupActionPayload) []error {
 	return errs
 }
 
-// ValidateJoinRequestAction checks creator handling of a join request
 func ValidateJoinRequestAction(payload models.GroupActionPayload) []error {
 	var errs []error
 	if payload.GroupID <= 0 {
@@ -87,7 +84,6 @@ func ValidateJoinRequestAction(payload models.GroupActionPayload) []error {
 	return errs
 }
 
-// ValidateCreateGroupEvent checks required fields and a future event time
 func ValidateCreateGroupEvent(payload models.CreateGroupEventPayload) []error {
 	var errs []error
 	if payload.GroupID <= 0 {
@@ -113,12 +109,11 @@ func ValidateCreateGroupEvent(payload models.CreateGroupEventPayload) []error {
 		return errs
 	} else if payload.EventTime.Before(time.Now()) {
 		errs = append(errs, errors.New("event_time must be in the future"))
-		return  errs
+		return errs
 	}
 	return errs
 }
 
-// ValidateEventResponse checks an event response choice
 func ValidateEventResponse(payload models.EventResponsePayload) []error {
 	var errs []error
 	if payload.EventID <= 0 {

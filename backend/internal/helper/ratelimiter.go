@@ -14,18 +14,18 @@ type RateLimiter struct {
 	mu       sync.Mutex
 }
 
-func Neewratelimeter(window time.Duration) *RateLimiter {
+func NewRateLimiter(window time.Duration) *RateLimiter {
 	return &RateLimiter{
 		window: window,
 		limits: map[string]int{
-			"api":      300,
-			"authonti": 20,
+			"api":  300,
+			"auth": 20,
 		},
 		requests: make(map[string][]time.Time),
 	}
 }
 
-func (rl *RateLimiter) Wraponall(limitType string, next http.Handler) http.Handler {
+func (rl *RateLimiter) Wrap(limitType string, next http.Handler) http.Handler {
 	limit, ok := rl.limits[limitType]
 	if !ok {
 		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -50,7 +50,6 @@ func (rl *RateLimiter) allow(ip string, limit int) bool {
 
 	requests := rl.requests[ip]
 
-	// Remove requests outside the current window.
 	cutoff := now.Add(-rl.window)
 	validRequests := requests[:0]
 

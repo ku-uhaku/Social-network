@@ -8,7 +8,6 @@ import (
 	"kuu/internal/models"
 )
 
-// CreatePost creates a new post in the database
 func (r *Repository) CreatePost(userID int64, payload models.CreatePostPayload) (*models.Post, error) {
 	author, err := r.getUserMetadata(userID)
 	if err != nil {
@@ -29,7 +28,6 @@ func (r *Repository) CreatePost(userID int64, payload models.CreatePostPayload) 
 		}
 	}()
 
-	// Insert post into posts table
 	post := models.Post{
 		UserID:    userID,
 		GroupID:   payload.GroupID,
@@ -53,7 +51,6 @@ func (r *Repository) CreatePost(userID int64, payload models.CreatePostPayload) 
 	}
 	post.ID = id
 
-	// If private post, insert viewers into post_viewers table
 	if payload.Privacy == "private" && len(payload.VisibleTo) > 0 {
 		viewerStmt, err := tx.Prepare("INSERT INTO post_viewers (post_id, user_id) VALUES ($1, $2)")
 		if err != nil {
@@ -74,7 +71,6 @@ func (r *Repository) CreatePost(userID int64, payload models.CreatePostPayload) 
 	return &post, nil
 }
 
-// GetPostByID fetches a single post by ID
 func (r *Repository) GetPostByID(postID int64) (*models.Post, error) {
 	query := `
 		SELECT p.id, p.user_id, p.group_id, p.title, p.content, p.privacy, p.image_url, p.created_at,
@@ -265,7 +261,6 @@ func (r *Repository) GetGroupFeedPosts(groupID int64, limit int, cursor *int64) 
 	return posts, hasMore, nil
 }
 
-// CreateComment inserts a new post comment
 func (r *Repository) CreateComment(userID int64, payload models.CreateCommentPayload) (*models.Comment, error) {
 	query := `
 		INSERT INTO comments (post_id, user_id, title, content, image_url)
@@ -289,7 +284,6 @@ func (r *Repository) CreateComment(userID int64, payload models.CreateCommentPay
 	return &c, nil
 }
 
-// GetPostComments retrieves comments for a post
 func (r *Repository) GetPostComments(postID int64) ([]models.Comment, error) {
 	query := `
 		SELECT c.id, c.post_id, c.user_id, c.title, c.content, c.image_url, c.created_at,
@@ -319,7 +313,6 @@ func (r *Repository) GetPostComments(postID int64) ([]models.Comment, error) {
 	return comments, nil
 }
 
-// getUserMetadata fetches author metadata for a post or comment
 func (r *Repository) getUserMetadata(userID int64) (*models.UserMetadata, error) {
 	query := `
 		SELECT id, username, first_name, last_name, avatar
@@ -336,7 +329,6 @@ func (r *Repository) getUserMetadata(userID int64) (*models.UserMetadata, error)
 	return &u, nil
 }
 
-// IsPostViewer checks if a user is allowed to view a post
 func (r *Repository) IsPostViewer(postID int64, userID int64) (bool, error) {
 	row := r.DB.Database.QueryRow("SELECT 1 FROM post_viewers WHERE post_id = $1 AND user_id = $2", postID, userID)
 	var found int
@@ -350,7 +342,6 @@ func (r *Repository) IsPostViewer(postID int64, userID int64) (bool, error) {
 	return found > 0, nil
 }
 
-// GetPostViewers fetches the users a private post was explicitly shared with
 func (r *Repository) GetPostViewers(postID int64) ([]models.UserMetadata, error) {
 	query := `
 		SELECT u.id, u.username, u.first_name, u.last_name, u.avatar

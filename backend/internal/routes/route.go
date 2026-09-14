@@ -42,6 +42,6 @@ func Register(h *handler.Handler, m *middleware.Middleware) http.Handler {
 	registerChatRoutes(mux, h, m)
 	registerNotificationRoutes(mux, h, m)
 
-	limiter := helper.Neewratelimeter(time.Minute)
-	return limiter.Wraponall("api", mux)
+	limiter := helper.NewRateLimiter(time.Minute)
+	return limiter.Wrap("api", mux)
 }

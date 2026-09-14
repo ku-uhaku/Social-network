@@ -88,7 +88,6 @@ func (s *Service) GetDirectHistory(userA, userB int64, limit, offset int) ([]mod
 	return s.Repo.GetDirectHistory(userA, userB, limit, offset)
 }
 
-// Marks a conversation as read
 func (s *Service) MarkChatRead(userA, userB int64) error {
 	if userA == userB {
 		return ErrChatSelf
@@ -96,7 +95,6 @@ func (s *Service) MarkChatRead(userA, userB int64) error {
 	return s.Repo.MarkChatRead(userA, userB)
 }
 
-// Chat-able users with their latest DM
 func (s *Service) GetConversations(userID int64) ([]models.ConversationMetadata, error) {
 	return s.Repo.ListConversations(userID)
 }
