@@ -8,6 +8,8 @@ services:
     volumes:
       - social-db:/app/internal/database
     restart: unless-stopped
+    networks:
+      - social-network
 
   web:
     build:
@@ -23,5 +25,10 @@ services:
     depends_on:
       - go
     restart: unless-stopped
+    networks:
+      - social-network
+networks:
+  social-network:
+    driver: bridge
 volumes:
   social-db:
