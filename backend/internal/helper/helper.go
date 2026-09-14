@@ -1,10 +1,15 @@
 package helper
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -19,7 +24,6 @@ import (
 
 var autoUsernameRe = regexp.MustCompile(`^user_[0-9a-f]{8}$`)
 
-// DisplayName returns the nickname when the user picked one, otherwise their real name.
 func DisplayName(u *models.User) string {
 	if u == nil {
 		return "Kuu user"
@@ -34,7 +38,6 @@ func DisplayName(u *models.User) string {
 	return name
 }
 
-// GetParamInt64 extracts a query parameter from the URL string and parses it to int64
 func GetParamInt64(r *http.Request, key string) (int64, error) {
 	valStr := r.URL.Query().Get(key)
 	if valStr == "" {
@@ -49,15 +52,42 @@ func GetParamInt64(r *http.Request, key string) (int64, error) {
 	return val, nil
 }
 
-const maxImageUploadSize = 20 << 20 // 20 MB
+const (
+	maxImageUploadSize = 20 << 20
+	maxImageDimension  = 8000
+)
 
-// MediaDir is where uploaded images are stored and served from.
 const MediaDir = "media"
 
-var allowedImageTypes = map[string]string{
-	"image/png":  ".png",
-	"image/jpeg": ".jpg",
-	"image/gif":  ".gif",
+var imageExtensions = map[string]string{
+	"jpeg": ".jpg",
+	"png":  ".png",
+	"gif":  ".gif",
+}
+
+func IsValidImage(data []byte) (string, error) {
+	if len(data) == 0 {
+		return "", errors.New("empty image data")
+	}
+
+	cfg, format, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil {
+		return "", fmt.Errorf("not a valid image: %w", err)
+	}
+
+	if cfg.Width <= 0 || cfg.Height <= 0 || cfg.Width > maxImageDimension || cfg.Height > maxImageDimension {
+		return "", fmt.Errorf("image dimensions %dx%d exceed the allowed limit", cfg.Width, cfg.Height)
+	}
+
+	if _, ok := imageExtensions[format]; !ok {
+		return "", fmt.Errorf("unsupported image format %q: only PNG, JPEG, and GIF are allowed", format)
+	}
+
+	if _, _, err := image.Decode(bytes.NewReader(data)); err != nil {
+		return "", fmt.Errorf("corrupt image data: %w", err)
+	}
+
+	return format, nil
 }
 
 func SaveUploadedImage(file multipart.File, header *multipart.FileHeader) (string, error) {
@@ -78,15 +108,13 @@ func SaveUploadedImage(file multipart.File, header *multipart.FileHeader) (strin
 		return "", fmt.Errorf("uploaded file exceeds maximum allowed size of 20MB")
 	}
 
-	// check header instead of extension
-	detectedType := http.DetectContentType(fileBytes)
-	ext, ok := allowedImageTypes[detectedType]
-	if !ok {
-		return "", fmt.Errorf("unsupported image type %q: only PNG, JPEG, and GIF are allowed", detectedType)
+	format, err := IsValidImage(fileBytes)
+	if err != nil {
+		return "", err
 	}
 
 	hash := sha256.Sum256(fileBytes)
-	filename := hex.EncodeToString(hash[:]) + ext
+	filename := hex.EncodeToString(hash[:]) + imageExtensions[format]
 
 	if err := os.MkdirAll(MediaDir, 0o755); err != nil {
 		return "", fmt.Errorf("failed to prepare media directory: %w", err)

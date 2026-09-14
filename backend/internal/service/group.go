@@ -36,8 +36,8 @@ func (s *Service) GetGroupByID(groupID int64) (*models.Group, error) {
 	return group, nil
 }
 
-func (s *Service) GetAllGroups() ([]models.Group, error) {
-	return s.Repo.GetAllGroups()
+func (s *Service) GetAllGroups(limit int, cursor *int64) ([]models.Group, bool, error) {
+	return s.Repo.GetAllGroups(limit, cursor)
 }
 
 func (s *Service) UpdateGroup(userID int64, groupID int64, payload models.UpdateGroupPayload) (*models.Group, error) {

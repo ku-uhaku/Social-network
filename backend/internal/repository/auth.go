@@ -10,7 +10,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// AuthenticationUser finds the profile and verifies the bcrypt password hash
 func (r *Repository) AuthenticationUser(payload models.InputLoginPayload) (*models.User, error) {
 	var user models.User
 	var hashedPassword string

@@ -18,7 +18,6 @@ func (s *Service) RegisterUser(payload models.InputRegisterPayload) (*models.Use
 	}
 	user, err := s.Repo.CreateUser(payload, string(hashedBytes))
 	if err != nil {
-		// Detect SQLite unique constraint failures for emails/usernames
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
 			return nil, errors.New("username or email is already taken")
 		}
@@ -53,7 +52,6 @@ func (s *Service) ValidateSession(token string) (*models.User, error) {
 	return user, nil
 }
 
-// Deletes a session
 func (s *Service) DeleteSession(token string) error {
 	return s.Repo.DeleteSession(token)
 }

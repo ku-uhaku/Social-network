@@ -6,7 +6,6 @@ import (
 	"kuu/internal/models"
 )
 
-// ValidateMarkNotificationRead ensures the read payload is structurally sound
 func ValidateMarkNotificationRead(payload models.MarkNotificationReadPayload) []error {
 	var errs []error
 	if !payload.All && payload.NotificationID == nil {
@@ -18,7 +17,6 @@ func ValidateMarkNotificationRead(payload models.MarkNotificationReadPayload) []
 	return errs
 }
 
-// ValidateExpireNotification ensures the expire payload is structurally sound
 func ValidateExpireNotification(payload models.ExpireNotificationPayload) []error {
 	var errs []error
 	if payload.NotificationID <= 0 {

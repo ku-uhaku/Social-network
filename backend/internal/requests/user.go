@@ -6,7 +6,6 @@ import (
 	"kuu/internal/models"
 )
 
-// ValidateUpdateProfile ensures the privacy flag is structurally sound
 func ValidateUpdateProfile(payload models.UpdateProfilePayload) []error {
 	var errs []error
 

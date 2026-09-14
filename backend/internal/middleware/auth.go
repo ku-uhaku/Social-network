@@ -20,7 +20,6 @@ func GetUserFromContext(ctx context.Context) (*models.User, bool) {
 	return user, ok
 }
 
-// RequireAuth validates the session token and injects the user into the request context
 func (m *Middleware) RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("session_token")
@@ -32,7 +31,6 @@ func (m *Middleware) RequireAuth(next http.Handler) http.Handler {
 		user, err := m.Service.ValidateSession(cookie.Value)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				// If token is invalid or expired, clear the cookie from their browser
 				http.SetCookie(w, &http.Cookie{
 					Name:     "session_token",
 					Value:    "",

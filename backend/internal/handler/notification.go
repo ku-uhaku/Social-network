@@ -1,4 +1,4 @@
-package handler
+﻿package handler
 
 import (
 	"net/http"
@@ -150,7 +150,7 @@ func (h *Handler) pushExpired(w http.ResponseWriter, userID int64, ids []int64, 
 	return true
 }
 
-// notificationLimit reads ?limit, falling back to the default when absent
+// reads ?limit, falling back to the default when absent
 func notificationLimit(w http.ResponseWriter, r *http.Request) (int, bool) {
 	raw := r.URL.Query().Get("limit")
 	if raw == "" {
@@ -168,7 +168,7 @@ func notificationLimit(w http.ResponseWriter, r *http.Request) (int, bool) {
 	return limit, true
 }
 
-// notificationCursor reads ?last_id, where 0 or absent means the newest page
+// reads ?last_id, where 0 or absent means the newest page
 func notificationCursor(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	raw := r.URL.Query().Get("last_id")
 	if raw == "" {

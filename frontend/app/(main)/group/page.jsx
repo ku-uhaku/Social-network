@@ -7,10 +7,15 @@ import GroupCard from "@/components/groups/GroupCard";
 import NailButton from "@/components/shared/NailButton";
 import "@/css/groups.css";
 
+const PAGE_LIMIT = 10;
+
 export default function GroupsPage() {
   const router = useRouter();
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState("");
@@ -21,8 +26,13 @@ export default function GroupsPage() {
     let cancelled = false;
     (async () => {
       try {
-        const response = await getAllGroups();
-        if (!cancelled) setGroups(response?.data || []);
+        const response = await getAllGroups({ limit: PAGE_LIMIT });
+        const data = response?.data || {};
+        if (!cancelled) {
+          setGroups(data.groups || []);
+          setNextCursor(data.next_cursor || null);
+          setHasMore(Boolean(data.has_more));
+        }
       } catch (err) {
         if (!cancelled) setError(err?.message || "Could not load groups.");
       } finally {
@@ -33,6 +43,22 @@ export default function GroupsPage() {
       cancelled = true;
     };
   }, []);
+
+  async function loadMore() {
+    if (loadingMore || !nextCursor) return;
+    setLoadingMore(true);
+    try {
+      const response = await getAllGroups({ limit: PAGE_LIMIT, cursor: nextCursor });
+      const data = response?.data || {};
+      setGroups((prev) => [...prev, ...(data.groups || [])]);
+      setNextCursor(data.next_cursor || null);
+      setHasMore(Boolean(data.has_more));
+    } catch (err) {
+      setError(err?.message || "Could not load more groups.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   async function handleCreate(event) {
     event.preventDefault();
@@ -115,6 +141,17 @@ export default function GroupsPage() {
           <GroupCard key={group.id} group={group} />
         ))}
       </div>
+
+      {!loading && !error && hasMore && (
+        <div className="feedLoadMore">
+          <NailButton onClick={loadMore} disabled={loadingMore}>
+            {loadingMore ? "Loading..." : "Load more"}
+          </NailButton>
+        </div>
+      )}
+      {!loading && !error && !hasMore && groups.length > 0 && (
+        <div className="feedEnd">{"You've reached the end of the groups."}</div>
+      )}
     </section>
   );
 }

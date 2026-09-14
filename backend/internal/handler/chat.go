@@ -11,7 +11,6 @@ import (
 	"kuu/internal/service"
 )
 
-// Messages per history page
 const pageSize = 30
 
 // GetDirectHistory GET /api/v1/chat/direct?user_id=123&page=1

@@ -19,7 +19,6 @@ func New(path string) *DB {
 	if err != nil {
 		log.Fatal("[DATABASE] : ", err.Error())
 	}
-	
 
 	if err := db.Ping(); err != nil {
 		db.Close()
@@ -40,7 +39,7 @@ func runMigrations(db *sql.DB) {
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://migrations", // Path to your migrations folder
+		"file://migrations",
 		"sqlite3",
 		driver,
 	)

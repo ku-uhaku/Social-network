@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// GetUserByID fetches a complete user profile by its primary key integer
 func (r *Repository) GetUserByID(userID int64) (*models.User, error) {
 	var user models.User
 
@@ -34,13 +33,12 @@ func (r *Repository) GetUserByID(userID int64) (*models.User, error) {
 		&user.CreatedAt,
 	)
 	if err != nil {
-		return nil, err // Returns sql.ErrNoRows if the ID doesn't exist
+		return nil, err
 	}
 
 	return &user, nil
 }
 
-// GetUserByUsername fetches a complete user profile by its unique username
 func (r *Repository) GetUserByUsername(username string) (*models.User, error) {
 	var user models.User
 
@@ -65,11 +63,30 @@ func (r *Repository) GetUserByUsername(username string) (*models.User, error) {
 		&user.CreatedAt,
 	)
 	if err != nil {
-		return nil, err // Returns sql.ErrNoRows if the username doesn't exist
+		return nil, err
 	}
 
 	return &user, nil
 }
+func (r *Repository) IsPrivate(id int64) (bool, error) {
+	var is_public int
+	query := `
+        SELECT is_public
+        FROM users 
+        WHERE id = $1
+    `
+	err := r.DB.Database.QueryRow(query, id).Scan(
+		&is_public,
+	)
+	if err != nil {
+		return false, err
+	}
+	if is_public == 1 {
+		return false, nil
+	}
+	return true, nil
+}
+
 func (r *Repository) CreateUser(payload models.InputRegisterPayload, hashedPassword string) (*models.User, error) {
 	var user models.User
 
@@ -85,7 +102,7 @@ func (r *Repository) CreateUser(payload models.InputRegisterPayload, hashedPassw
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, 1, $8, $9)
 		RETURNING id, username, email, first_name, last_name, gender, date_of_birth, is_public, avatar, about_me, created_at
 	`
-	
+
 	err := r.DB.Database.QueryRow(
 		query,
 		username,
@@ -117,7 +134,6 @@ func (r *Repository) CreateUser(payload models.InputRegisterPayload, hashedPassw
 	return &user, nil
 }
 
-// UpdateUserProfile updates the public/private state of a user profile
 func (r *Repository) UpdateUserProfile(userID int64, payload models.UpdateProfilePayload) (*models.User, error) {
 	var user models.User
 
@@ -153,8 +169,6 @@ func (r *Repository) UpdateUserProfile(userID int64, payload models.UpdateProfil
 	return &user, nil
 }
 
-// GetUserPosts retrieves a user's posts (excluding group posts) with author metadata
-// viewerID is the ID of the user viewing the posts (for visibility checks)
 func (r *Repository) GetUserPosts(targetUserID int64, viewerID int64) ([]models.Post, error) {
 	query := `
 		SELECT p.id, p.user_id, p.group_id, p.title, p.content, p.privacy, p.image_url, p.created_at,
@@ -198,7 +212,6 @@ func (r *Repository) GetUserPosts(targetUserID int64, viewerID int64) ([]models.
 	return posts, nil
 }
 
-// GetFollowStats returns accepted follower and following counts for a user
 func (r *Repository) GetFollowStats(userID int64) (*models.FollowStats, error) {
 	var stats models.FollowStats
 
@@ -214,7 +227,6 @@ func (r *Repository) GetFollowStats(userID int64) (*models.FollowStats, error) {
 	return &stats, nil
 }
 
-// InsertFollowRelation inserts or updates a follow relation with appropriate status
 func (r *Repository) InsertFollowRelation(followerID, targetID int64, status string) error {
 	query := `
 		INSERT INTO follows (follower_id, following_id, status)
@@ -226,15 +238,12 @@ func (r *Repository) InsertFollowRelation(followerID, targetID int64, status str
 	return err
 }
 
-// RemoveFollowRelation removes the follower relationship
 func (r *Repository) RemoveFollowRelation(followerID, targetID int64) error {
 	query := `DELETE FROM follows WHERE follower_id = $1 AND following_id = $2`
 	_, err := r.DB.Database.Exec(query, followerID, targetID)
 	return err
 }
 
-// AcceptAllPendingFollows accepts all pending follow requests for a target user,
-// returning the list of follower IDs that were accepted.
 func (r *Repository) AcceptAllPendingFollows(targetUserID int64) ([]int64, error) {
 	query := `
 		UPDATE follows SET status = 'accepted'
@@ -258,7 +267,6 @@ func (r *Repository) AcceptAllPendingFollows(targetUserID int64) ([]int64, error
 	return followerIDs, rows.Err()
 }
 
-// UpdateFollowStatus changes request status ('pending' -> 'accepted')
 func (r *Repository) UpdateFollowStatus(followerID, targetID int64, status string) error {
 	query := `
 		UPDATE follows 
@@ -279,7 +287,6 @@ func (r *Repository) UpdateFollowStatus(followerID, targetID int64, status strin
 	return nil
 }
 
-// GetFollowRelation fetches current relation status if any
 func (r *Repository) GetFollowRelation(followerID, targetID int64) (string, error) {
 	var status string
 	query := `SELECT status FROM follows WHERE follower_id = $1 AND following_id = $2 LIMIT 1`
@@ -290,8 +297,6 @@ func (r *Repository) GetFollowRelation(followerID, targetID int64) (string, erro
 	return status, nil
 }
 
-// CanChat reports whether two users share an accepted follow relation in
-// either direction (a chat eligibility check, not a login state).
 func (r *Repository) CanChat(userA, userB int64) (bool, error) {
 	query := `
 		SELECT EXISTS(
@@ -309,7 +314,6 @@ func (r *Repository) CanChat(userA, userB int64) (bool, error) {
 	return connected, nil
 }
 
-// GetFollowers retrieves all users following a target user (accepted status only)
 func (r *Repository) GetFollowers(targetUserID int64) ([]models.UserFollowView, error) {
 	query := `
 		SELECT u.id, u.username, u.first_name, u.last_name, u.avatar
@@ -367,6 +371,36 @@ func (r *Repository) GetAllUsers() ([]models.UserFollowView, error) {
 		users = append(users, u)
 	}
 	return users, nil
+}
+
+// returns users the viewer does not follow (and has no
+// pending request to), ranked by accepted follower count descending.
+func (r *Repository) GetSuggestedUsers(viewerID int64, limit int) ([]models.UserFollowView, error) {
+	query := `
+	SELECT u.id, u.username, u.first_name, u.last_name, u.avatar
+		FROM users u
+		LEFT JOIN follows f ON f.following_id = u.id AND f.follower_id = $1
+		WHERE u.id != $1 AND f.follower_id IS NULL
+		ORDER BY (
+			SELECT COUNT(*) FROM follows ff WHERE ff.following_id = u.id AND ff.status = 'accepted'
+		) DESC, u.id ASC
+		LIMIT $2
+	`
+	rows, err := r.DB.Database.Query(query, viewerID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	users := []models.UserFollowView{}
+	for rows.Next() {
+		var user models.UserFollowView
+		if err := rows.Scan(&user.ID, &user.Username, &user.FirstName, &user.LastName, &user.Avatar); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	return users, rows.Err()
 }
 
 func (r *Repository) scanUserFollowViews(query string, arg int64) ([]models.UserFollowView, error) {

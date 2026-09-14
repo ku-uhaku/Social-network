@@ -2,7 +2,6 @@ package models
 
 import "time"
 
-// DirectMessage model
 type DirectMessage struct {
 	ID         int64     `json:"id"`
 	SenderID   int64     `json:"sender_id"`
@@ -11,7 +10,6 @@ type DirectMessage struct {
 	CreatedAt  time.Time `json:"created_at"`
 }
 
-// GroupMessage model
 type GroupMessage struct {
 	ID        int64     `json:"id"`
 	GroupID   int64     `json:"group_id"`
@@ -24,7 +22,6 @@ type GroupMessage struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// Incoming DTO from WebSocket payload
 type SendMessagePayload struct {
 	ReceiverID *int64 `json:"receiver_id,omitempty"` // For DM
 	GroupID    *int64 `json:"group_id,omitempty"`    // For Group
@@ -41,7 +38,6 @@ type ConversationMetadata struct {
 	UnreadCount   int        `json:"unread_count"`
 }
 
-// DirectHistoryPage is a paginated slice of direct-message history.
 type DirectHistoryPage struct {
 	Messages []DirectMessage `json:"messages"`
 	HasMore  bool            `json:"has_more"`

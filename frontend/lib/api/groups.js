@@ -1,7 +1,11 @@
 import { apiFetch } from "./fetcher";
 
-export function getAllGroups() {
-  return apiFetch("/api/v1/groups/all", { method: "GET" });
+export function getAllGroups({ limit, cursor } = {}) {
+  const params = new URLSearchParams();
+  if (limit) params.set("limit", limit);
+  if (cursor) params.set("cursor", cursor);
+  const qs = params.toString();
+  return apiFetch(`/api/v1/groups/all${qs ? `?${qs}` : ""}`, { method: "GET" });
 }
 
 export function getGroup(groupId) {
