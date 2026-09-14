@@ -31,7 +31,8 @@ func (e Event) isFor(userID int64) bool {
 }
 
 type Client struct {
-	UserID int64
-	Conn   *websocket.Conn
-	Send   chan []byte
+	UserID    int64
+	SessionID string
+	Conn      *websocket.Conn
+	Send      chan []byte
 }

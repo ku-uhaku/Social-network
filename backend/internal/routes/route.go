@@ -18,7 +18,6 @@ func Register(h *handler.Handler, m *middleware.Middleware) http.Handler {
 	mux.HandleFunc("/media/", func(w http.ResponseWriter, r *http.Request) {
 		path := strings.TrimPrefix(r.URL.Path, "/media/")
 
-		// Don't allow access to /media/ itself or directories.
 		if path == "" || strings.HasSuffix(r.URL.Path, "/") {
 			http.NotFound(w, r)
 			return

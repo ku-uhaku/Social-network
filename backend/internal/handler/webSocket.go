@@ -29,10 +29,17 @@ func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// validate session
+	sessionID := ""
+	if cookie, err := r.Cookie("session_token"); err == nil {
+		sessionID = cookie.Value
+	}
+
 	client := &ws.Client{
-		UserID: user.ID,
-		Conn:   conn,
-		Send:   make(chan []byte, 256),
+		UserID:    user.ID,
+		SessionID: sessionID,
+		Conn:      conn,
+		Send:      make(chan []byte, 256),
 	}
 	h.Hub.Register(client)
 
@@ -86,7 +93,6 @@ func (h *Handler) sendDirectMessage(senderID int64, payload interface{}) {
 		return
 	}
 
-	// Echo to sender's other tabs
 	h.Hub.BroadcastToUsers([]int64{senderID, *req.ReceiverID}, ws.EventNewDirectMessage, msg)
 }
 

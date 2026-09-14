@@ -14,7 +14,6 @@ type DB struct {
 	Database *sql.DB
 }
 
-
 func New(path string) *DB {
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
@@ -28,7 +27,6 @@ func New(path string) *DB {
 		log.Fatal("[DATABASE] : ", err.Error())
 	}
 
-	// Run the migrations automatically before returning the DB instance
 	runMigrations(db)
 
 	return &DB{
@@ -37,13 +35,11 @@ func New(path string) *DB {
 }
 
 func runMigrations(db *sql.DB) {
-	// 1. Create a migration driver using your existing SQLite connection
 	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
 	if err != nil {
 		log.Fatal("[MIGRATION DRIVER] : ", err.Error())
 	}
 
-	// 2. Point migrate to your migrations directory
 	m, err := migrate.NewWithDatabaseInstance(
 		"file://migrations", // Path to your migrations folder
 		"sqlite3",
@@ -53,7 +49,6 @@ func runMigrations(db *sql.DB) {
 		log.Fatal("[MIGRATION INIT] : ", err.Error())
 	}
 
-	// 3. Apply the migrations ("up")
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		log.Fatal("[MIGRATION UP] : ", err.Error())
 	}
