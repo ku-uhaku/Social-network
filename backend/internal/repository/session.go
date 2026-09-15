@@ -1,38 +1,10 @@
 package repository
 
 import (
-	"database/sql"
-	"errors"
 	"time"
 
 	"kuu/internal/models"
 )
-
-func (r *Repository) GetSession(token string) (*models.Session, error) {
-	var session models.Session
-
-	query := `
-        SELECT id, user_id, expires_at, created_at 
-        FROM sessions 
-        WHERE id = $1 
-        LIMIT 1
-    `
-
-	err := r.DB.Database.QueryRow(query, token).Scan(
-		&session.ID,
-		&session.UserID,
-		&session.ExpiresAt,
-		&session.CreatedAt,
-	)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, sql.ErrNoRows
-		}
-		return nil, err
-	}
-
-	return &session, nil
-}
 
 func (r *Repository) CreateSession(userID int64, token string, duration time.Duration) (*models.Session, error) {
 	var session models.Session

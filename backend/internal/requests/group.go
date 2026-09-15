@@ -65,14 +65,6 @@ func ValidateInviteMembers(payload models.InviteMembersPayload) []error {
 	return errs
 }
 
-func ValidateGroupAction(payload models.GroupActionPayload) []error {
-	var errs []error
-	if payload.GroupID <= 0 {
-		errs = append(errs, errors.New("group_id is required"))
-	}
-	return errs
-}
-
 func ValidateJoinRequestAction(payload models.GroupActionPayload) []error {
 	var errs []error
 	if payload.GroupID <= 0 {
