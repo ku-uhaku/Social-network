@@ -104,7 +104,6 @@ export function ToastProvider({ children }) {
               type="button"
               className="toastClose"
               onClick={() => dismiss(t.id)}
-              aria-label="Dismiss"
             >
               ×
             </button>

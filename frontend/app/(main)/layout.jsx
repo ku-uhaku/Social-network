@@ -79,8 +79,6 @@ export default function MainLayout({ children }) {
             type="button"
             className={`headerMenuToggle ${menuOpen ? "open" : ""}`}
             onClick={() => setMenuOpen((o) => !o)}
-            aria-label="Toggle menu"
-            aria-expanded={menuOpen}
           >
             <span className="headerMenuBar" />
             <span className="headerMenuBar" />
