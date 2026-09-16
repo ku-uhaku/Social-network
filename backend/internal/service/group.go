@@ -115,7 +115,7 @@ func (s *Service) RespondToInvitation(userID int64, groupID int64, accept bool) 
 	return s.Repo.RemoveMember(groupID, userID)
 }
 
-// Public: join; private: request to join
+// Join requests stay pending until the creator accepts
 func (s *Service) JoinGroup(userID int64, groupID int64) error {
 	
 	status, err := s.Repo.GetMemberStatus(groupID, userID)
@@ -123,7 +123,6 @@ func (s *Service) JoinGroup(userID int64, groupID int64) error {
 		return ErrAlreadyMember
 	}
 
-	// For private group: create a pending join request
 	return s.Repo.AddMember(groupID, userID, "pending")
 }
 

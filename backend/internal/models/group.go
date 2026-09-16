@@ -7,7 +7,6 @@ type Group struct {
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	CreatorID   int64     `json:"creator_id"`
-	IsPublic    int       `json:"is_public"` // 1 for true, 0 for false (SQLite compliance)
 	CreatedAt   time.Time `json:"created_at"`
 }
 
@@ -38,13 +37,11 @@ type GroupActionPayload struct {
 type CreateGroupPayload struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
-	IsPublic    *int   `json:"is_public"` // Pointer allows 0 to be valid JSON input
 }
 
 type UpdateGroupPayload struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
-	IsPublic    *int   `json:"is_public"`
 }
 
 type GroupEvent struct {

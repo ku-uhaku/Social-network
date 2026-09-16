@@ -27,12 +27,6 @@ func ValidateCreateGroup(payload models.CreateGroupPayload) []error {
 		return errs
 	}
 
-	if payload.IsPublic == nil {
-		errs = append(errs, errors.New("is_public is required (1 for public, 0 for private)"))
-	} else if *payload.IsPublic != 0 && *payload.IsPublic != 1 {
-		errs = append(errs, errors.New("is_public must be either 0 (private) or 1 (public)"))
-	}
-
 	return errs
 }
 
@@ -45,10 +39,6 @@ func ValidateUpdateGroup(payload models.UpdateGroupPayload) []error {
 
 	if strings.TrimSpace(payload.Description) == "" {
 		errs = append(errs, errors.New("description cannot be empty"))
-	}
-
-	if payload.IsPublic != nil && *payload.IsPublic != 0 && *payload.IsPublic != 1 {
-		errs = append(errs, errors.New("is_public must be either 0 (private) or 1 (public)"))
 	}
 
 	return errs

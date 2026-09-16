@@ -68,7 +68,6 @@ export default function GroupsPage() {
       const response = await createGroup({
         title: title.trim(),
         description: description.trim(),
-        is_public: 1,
       });
       const group = response?.data;
       if (group?.id) {
