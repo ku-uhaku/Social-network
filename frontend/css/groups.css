@@ -49,6 +49,7 @@
 
 .groupCard {
   display: block;
+  min-width: 0;
   padding: 20px;
   border-radius: 16px;
   background: rgba(10, 13, 18, 0.7);
@@ -73,12 +74,14 @@
 .groupCardTitle {
   margin: 0;
   font-size: 1.25rem;
+  overflow-wrap: anywhere;
 }
 
 .groupCardDescription {
   margin: 0 0 12px;
   color: var(--muted);
   line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .groupCardMeta {
@@ -103,10 +106,13 @@
 .groupHeaderInfo {
   display: grid;
   gap: 8px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .groupHeaderInfo .feedTitle {
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .groupHeaderDescription {
@@ -114,6 +120,7 @@
   color: var(--muted);
   line-height: 1.6;
   max-width: 500px;
+  overflow-wrap: anywhere;
 }
 
 .group_title_separator {

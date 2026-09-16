@@ -20,22 +20,20 @@ func (r *Repository) CreateGroup(creatorID int64, payload models.CreateGroupPayl
 	// 1. Insert Group
 	var group models.Group
 	groupQuery := `
-		INSERT INTO groups (title, description, creator_id, is_public)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, title, description, creator_id, is_public, created_at
+		INSERT INTO groups (title, description, creator_id)
+		VALUES ($1, $2, $3)
+		RETURNING id, title, description, creator_id, created_at
 	`
 	err = tx.QueryRow(
 		groupQuery,
 		strings.TrimSpace(payload.Title),
 		strings.TrimSpace(payload.Description),
 		creatorID,
-		*payload.IsPublic,
 	).Scan(
 		&group.ID,
 		&group.Title,
 		&group.Description,
 		&group.CreatorID,
-		&group.IsPublic,
 		&group.CreatedAt,
 	)
 	if err != nil {
@@ -63,7 +61,7 @@ func (r *Repository) CreateGroup(creatorID int64, payload models.CreateGroupPayl
 func (r *Repository) GetGroupByID(groupID int64) (*models.Group, error) {
 	var group models.Group
 	query := `
-		SELECT id, title, description, creator_id, is_public, created_at
+		SELECT id, title, description, creator_id, created_at
 		FROM groups
 		WHERE id = $1
 		LIMIT 1
@@ -73,7 +71,6 @@ func (r *Repository) GetGroupByID(groupID int64) (*models.Group, error) {
 		&group.Title,
 		&group.Description,
 		&group.CreatorID,
-		&group.IsPublic,
 		&group.CreatedAt,
 	)
 	if err != nil {
@@ -87,7 +84,7 @@ func (r *Repository) GetGroupByID(groupID int64) (*models.Group, error) {
 // with the same semantics as the post feed (fetch limit+1 to know has_more).
 func (r *Repository) GetAllGroups(limit int, cursor *int64) ([]models.Group, bool, error) {
 	query := `
-		SELECT id, title, description, creator_id, is_public, created_at
+		SELECT id, title, description, creator_id, created_at
 		FROM groups
 	`
 
@@ -113,7 +110,7 @@ func (r *Repository) GetAllGroups(limit int, cursor *int64) ([]models.Group, boo
 	groups := make([]models.Group, 0, limit+1)
 	for rows.Next() {
 		var g models.Group
-		if err := rows.Scan(&g.ID, &g.Title, &g.Description, &g.CreatorID, &g.IsPublic, &g.CreatedAt); err != nil {
+		if err := rows.Scan(&g.ID, &g.Title, &g.Description, &g.CreatorID, &g.CreatedAt); err != nil {
 			return nil, false, err
 		}
 		groups = append(groups, g)
@@ -136,22 +133,20 @@ func (r *Repository) UpdateGroup(groupID int64, payload models.UpdateGroupPayloa
 	var group models.Group
 	query := `
 		UPDATE groups
-		SET title = $1, description = $2, is_public = $3
-		WHERE id = $4
-		RETURNING id, title, description, creator_id, is_public, created_at
+		SET title = $1, description = $2
+		WHERE id = $3
+		RETURNING id, title, description, creator_id, created_at
 	`
 	err := r.DB.Database.QueryRow(
 		query,
 		strings.TrimSpace(payload.Title),
 		strings.TrimSpace(payload.Description),
-		*payload.IsPublic,
 		groupID,
 	).Scan(
 		&group.ID,
 		&group.Title,
 		&group.Description,
 		&group.CreatorID,
-		&group.IsPublic,
 		&group.CreatedAt,
 	)
 	if err != nil {

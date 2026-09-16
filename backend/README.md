@@ -136,12 +136,12 @@ Base URL: `http://localhost:8000` · Everything under `/api/v1/*` (except `/ws` 
 
 | Method | Path | Body / Query |
 |--------|------|--------------|
-| POST | `/api/v1/groups` | `{ "title", "description", "is_public": 0\|1 }` |
+| POST | `/api/v1/groups` | `{ "title", "description" }` |
 | GET | `/api/v1/groups/all` | list all groups |
 | GET | `/api/v1/groups/detail` | `?id=` |
 | GET | `/api/v1/groups/feed` | `?id=&limit=&cursor=` |
 | GET | `/api/v1/groups/members` | `?id=` |
-| PUT | `/api/v1/groups/update` | `?id=` + `{ "title", "description", "is_public" }` |
+| PUT | `/api/v1/groups/update` | `?id=` + `{ "title", "description" }` |
 | DELETE | `/api/v1/groups/delete` | `?id=` |
 | POST | `/api/v1/groups/invite` | `{ "group_id", "target_user_ids": [ ... ] }` |
 | GET | `/api/v1/groups/invitations` | my invitations |
