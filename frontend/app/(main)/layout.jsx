@@ -30,6 +30,8 @@ export default function MainLayout({ children }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const headerRef = useRef(null);
+  const settingsRef = useRef(null);
+  const notificationsRef = useRef(null);
   const chat = useChat();
 
   useEffect(() => {
@@ -53,6 +55,19 @@ export default function MainLayout({ children }) {
     observer.observe(header);
     return () => observer.disconnect();
   }, [loading, user]);
+
+  // Close the header popovers when clicking anywhere outside of them.
+  useEffect(() => {
+    if (!settingsOpen && !notificationsOpen) return;
+
+    const handlePointerDown = (event) => {
+      if (!settingsRef.current?.contains(event.target)) setSettingsOpen(false);
+      if (!notificationsRef.current?.contains(event.target)) setNotificationsOpen(false);
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [settingsOpen, notificationsOpen]);
 
   if (loading || !user) return null;
 
@@ -88,7 +103,7 @@ export default function MainLayout({ children }) {
 
         <div className={`headerRight ${menuOpen ? "open" : ""}`}>
           <div className="headerRightRow">
-            <div className="headerControlWrap">
+            <div className="headerControlWrap" ref={notificationsRef}>
               <IconButton
                 icon={unreadCount > 0 ? ICON_NOTIFICATION_ON : ICON_NOTIFICATION_OFF}
                 label="Notifications"
@@ -98,7 +113,7 @@ export default function MainLayout({ children }) {
               </IconButton>
               <NotificationList open={notificationsOpen} />
             </div>
-            <div className="headerControlWrap">
+            <div className="headerControlWrap" ref={settingsRef}>
               <IconButton
                 icon={ICON_SETTINGS}
                 label="Settings"
