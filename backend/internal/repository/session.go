@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"time"
@@ -10,7 +9,7 @@ import (
 )
 
 // GetSession retrieves a user session using clean pointer semantics
-func (r *Repository) GetSession(ctx context.Context, token string) (*models.Session, error) {
+func (r *Repository) GetSession(token string) (*models.Session, error) {
 	var session models.Session
 
 	query := `
@@ -20,7 +19,7 @@ func (r *Repository) GetSession(ctx context.Context, token string) (*models.Sess
         LIMIT 1
     `
 
-	err := r.DB.Database.QueryRowContext(ctx, query, token).Scan(
+	err := r.DB.Database.QueryRow(query, token).Scan(
 		&session.ID,
 		&session.UserID,
 		&session.ExpiresAt,
@@ -37,7 +36,7 @@ func (r *Repository) GetSession(ctx context.Context, token string) (*models.Sess
 }
 
 // CreateSession inserts a new active session into SQLite
-func (r *Repository) CreateSession(ctx context.Context, userID int64, token string, duration time.Duration) (*models.Session, error) {
+func (r *Repository) CreateSession(userID int64, token string, duration time.Duration) (*models.Session, error) {
 	var session models.Session
 	expiresAt := time.Now().Add(duration)
 
@@ -47,7 +46,7 @@ func (r *Repository) CreateSession(ctx context.Context, userID int64, token stri
         RETURNING id, user_id, expires_at, created_at
     `
 
-	err := r.DB.Database.QueryRowContext(ctx, query, token, userID, expiresAt).Scan(
+	err := r.DB.Database.QueryRow(query, token, userID, expiresAt).Scan(
 		&session.ID,
 		&session.UserID,
 		&session.ExpiresAt,
@@ -61,7 +60,7 @@ func (r *Repository) CreateSession(ctx context.Context, userID int64, token stri
 }
 
 // GetUserBySessionToken joins sessions and users to authenticate active tokens
-func (r *Repository) GetUserBySessionToken(ctx context.Context, token string) (*models.User, error) {
+func (r *Repository) GetUserBySessionToken(token string) (*models.User, error) {
 	var user models.User
 
 	query := `
@@ -73,7 +72,7 @@ func (r *Repository) GetUserBySessionToken(ctx context.Context, token string) (*
         LIMIT 1
     `
 
-	err := r.DB.Database.QueryRowContext(ctx, query, token).Scan(
+	err := r.DB.Database.QueryRow(query, token).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
@@ -94,8 +93,8 @@ func (r *Repository) GetUserBySessionToken(ctx context.Context, token string) (*
 }
 
 // DeleteSession physically removes the session row on logout
-func (r *Repository) DeleteSession(ctx context.Context, token string) error {
+func (r *Repository) DeleteSession(token string) error {
 	query := `DELETE FROM sessions WHERE id = $1`
-	_, err := r.DB.Database.ExecContext(ctx, query, token)
+	_, err := r.DB.Database.Exec(query, token)
 	return err
 }

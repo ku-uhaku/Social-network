@@ -13,14 +13,12 @@ import (
 
 // UpdateProfile reads active session context data and applies new settings
 func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
-	// 1. Authenticate user context
 	user, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
 		helper.Error(w, http.StatusUnauthorized, "Authentication context missing")
 		return
 	}
 
-	// 2. Decode incoming update values
 	var payload models.UpdateProfilePayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		helper.Error(w, http.StatusBadRequest, "Malformed JSON request body")
@@ -28,38 +26,34 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	// 3. Fire structural assertions
 	if validationErrs := requests.ValidateUpdateProfile(payload); len(validationErrs) > 0 {
 		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, validationErrs)
 		return
 	}
 
-	// 4. If switching from private to public, auto-accept all pending follow requests
-	//    and expire their follow_request notifications.
 	if payload.IsPublic == 1 && user.IsPublic == 0 {
-		if _, err := h.Service.AcceptAllPendingFollows(r.Context(), user.ID); err != nil {
+		if _, err := h.Service.AcceptAllPendingFollows(user.ID); err != nil {
 			helper.Error(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		if err := h.Service.ExpireNotificationsByType(r.Context(), user.ID, models.NotificationFollowRequest); err != nil {
+		if err := h.Service.ExpireNotificationsByType(user.ID, models.NotificationFollowRequest); err != nil {
 			helper.Error(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 	}
 
-	// 5. Update profiles inside persistence layer
-	updatedUser, err := h.Service.UpdateProfile(r.Context(), user.ID, payload)
+	updatedUser, err := h.Service.UpdateProfile(user.ID, payload)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// 6. Return success data
 	helper.Success(w, http.StatusOK, "Profile updated successfully", updatedUser)
 }
 
 // GetUserProfile GET /api/v1/user/profile?username=john
 func (h *Handler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
+
 	user, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
 		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
@@ -71,13 +65,11 @@ func (h *Handler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusBadRequest, "Invalid username parameter")
 		return
 	}
-
-	profile, err := h.Service.GetUserProfile(r.Context(), user.ID, username)
+	profile, err := h.Service.GetUserProfile(user.ID, username)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
 	helper.Success(w, http.StatusOK, "Profile retrieved successfully", profile)
 }
 
@@ -95,7 +87,7 @@ func (h *Handler) GetUserPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targetUser, err := h.Service.GetUserProfile(r.Context(), user.ID, username)
+	targetUser, err := h.Service.GetUserProfile(user.ID, username)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -107,7 +99,7 @@ func (h *Handler) GetUserPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	posts, err := h.Service.GetUserPosts(r.Context(), targetUser.ID, user.ID)
+	posts, err := h.Service.GetUserPosts(targetUser.ID, user.ID)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -123,7 +115,6 @@ func (h *Handler) FollowUser(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
-
 	var payload models.FollowActionPayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		helper.Error(w, http.StatusBadRequest, "Invalid JSON payload")
@@ -135,7 +126,7 @@ func (h *Handler) FollowUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, err := h.Service.FollowUser(r.Context(), user.ID, payload.TargetUserID)
+	status, err := h.Service.FollowUser(user.ID, payload.TargetUserID)
 	if err != nil {
 		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
@@ -146,11 +137,11 @@ func (h *Handler) FollowUser(w http.ResponseWriter, r *http.Request) {
 		msg = "Follow request sent successfully"
 		// Avoid duplicate follow_request notifications from spam/retries.
 		existing, _ := h.Service.GetNotificationByActorType(
-			r.Context(), payload.TargetUserID, user.ID, models.NotificationFollowRequest,
+			payload.TargetUserID, user.ID, models.NotificationFollowRequest,
 		)
 		if existing == nil || existing.IsExpired == 1 {
 			actorID := user.ID
-			_, err := h.DispatchNotification(r.Context(), payload.TargetUserID, &models.Notification{
+			_, err := h.DispatchNotification(payload.TargetUserID, &models.Notification{
 				RecipientID: payload.TargetUserID,
 				ActorID:     &actorID,
 				Type:        models.NotificationFollowRequest,
@@ -186,7 +177,7 @@ func (h *Handler) UnfollowUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Service.UnfollowUser(r.Context(), user.ID, payload.TargetUserID); err != nil {
+	if err := h.Service.UnfollowUser(user.ID, payload.TargetUserID); err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -217,13 +208,13 @@ func (h *Handler) respondToFollowRequest(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	if err := h.Service.HandleFollowRequest(r.Context(), user.ID, payload.TargetUserID, accept); err != nil {
+	if err := h.Service.HandleFollowRequest(user.ID, payload.TargetUserID, accept); err != nil {
 		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	// Expire all follow_request notifications for this requester
-	if err := h.Service.ExpireNotificationsByType(r.Context(), user.ID, models.NotificationFollowRequest); err != nil {
+	if err := h.Service.ExpireNotificationsByType(user.ID, models.NotificationFollowRequest); err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -237,7 +228,7 @@ func (h *Handler) respondToFollowRequest(w http.ResponseWriter, r *http.Request,
 
 // GetAllUsers GET /api/v1/user/all
 func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := h.Service.GetAllUsers(r.Context())
+	users, err := h.Service.GetAllUsers()
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -255,7 +246,7 @@ func (h *Handler) GetFollowers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	followers, err := h.Service.GetFollowers(r.Context(), userID)
+	followers, err := h.Service.GetFollowers(userID)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -273,7 +264,7 @@ func (h *Handler) GetFollowing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	following, err := h.Service.GetFollowing(r.Context(), userID)
+	following, err := h.Service.GetFollowing(userID)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -290,7 +281,7 @@ func (h *Handler) GetFollowRequests(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	requestsList, err := h.Service.GetPendingRequests(r.Context(), user.ID)
+	requestsList, err := h.Service.GetPendingRequests(user.ID)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return

@@ -31,7 +31,7 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := h.Service.CreatePost(r.Context(), user.ID, payload)
+	post, err := h.Service.CreatePost(user.ID, payload)
 	if err != nil {
 		if errors.Is(err, service.ErrAccessDenied) {
 			helper.Error(w, http.StatusForbidden, err.Error())
@@ -75,7 +75,7 @@ func (h *Handler) GetFeed(w http.ResponseWriter, r *http.Request) {
 		cursor = &parsed
 	}
 
-	posts, hasMore, err := h.Service.GetFeed(r.Context(), user.ID, limit, cursor)
+	posts, hasMore, err := h.Service.GetFeed(user.ID, limit, cursor)
 	if err != nil {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -107,8 +107,7 @@ func (h *Handler) GetPost(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	post, err := h.Service.GetPost(r.Context(), user.ID, postID)
+	post, err := h.Service.GetPost(user.ID, postID)
 	if err != nil {
 		if errors.Is(err, service.ErrAccessDenied) {
 			helper.Error(w, http.StatusForbidden, err.Error())
@@ -121,7 +120,6 @@ func (h *Handler) GetPost(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
 	helper.Success(w, http.StatusOK, "Post retrieved successfully", post)
 }
 
@@ -138,13 +136,26 @@ func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		helper.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	// file, header, err := r.FormFile("image")
+	// if err != nil {
+	// 	http.Error(w, "failed to get uploaded file", http.StatusBadRequest)
+	// 	return
+	// }
+	// defer file.Close()
 
+	// _, err = helper.SaveUploadedImage(file, header)
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
+
+	// fmt.Fprintln(w, path)
 	if errs := requests.ValidateCreateComment(payload); len(errs) > 0 {
 		helper.WriteJSON(w, http.StatusUnprocessableEntity, false, "Validation failed", nil, errs)
 		return
 	}
 
-	comment, err := h.Service.AddComment(r.Context(), user.ID, payload)
+	comment, err := h.Service.AddComment(user.ID, payload)
 	if err != nil {
 		if errors.Is(err, service.ErrAccessDenied) {
 			helper.Error(w, http.StatusForbidden, err.Error())
@@ -172,7 +183,7 @@ func (h *Handler) GetComments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	comments, err := h.Service.GetComments(r.Context(), user.ID, postID)
+	comments, err := h.Service.GetComments(user.ID, postID)
 	if err != nil {
 		if errors.Is(err, service.ErrAccessDenied) {
 			helper.Error(w, http.StatusForbidden, err.Error())
