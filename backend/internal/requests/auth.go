@@ -6,6 +6,7 @@ import (
 	"net/mail"
 	"regexp"
 	"strings"
+	"time"
 
 	"kuu/internal/helper"
 	"kuu/internal/models"
@@ -32,8 +33,13 @@ func ParseRegisterPayload(r *http.Request) (models.InputRegisterPayload, error) 
 		if aboutMe := strings.TrimSpace(r.FormValue("about_me")); aboutMe != "" {
 			payload.AboutMe = &aboutMe
 		}
-
+		deeefaultavatar:="/media/defaulte_avatar.jpeg"
+		payload.Avatar=&deeefaultavatar
 		if file, header, err := r.FormFile("avatar"); err == nil {
+			// _,err=helper.IsValidImage([]byte(*payload.Avatar))
+			// if err!=nil{
+			// 	return payload, fmt.Errorf("the avatar not good: %w", err)
+			// }
 			defer file.Close()
 			if header != nil && header.Size > 0 {
 				avatarName, err := helper.SaveUploadedImage(file, header)
@@ -101,13 +107,25 @@ func ValidateRegister(payload models.InputRegisterPayload) []ValidationError {
 			Message: "gender must be either male or female",
 		})
 	}
-
-	if strings.TrimSpace(payload.DateOfBirth) == "" {
+	// i would validate usee age 
+	dateOfBirth := strings.TrimSpace(payload.DateOfBirth)
+	if dateOfBirth == "" {
 		errs = append(errs, ValidationError{
 			Field:   "date_of_birth",
 			Message: "date of birth is required",
 		})
+	} else if birth, parseErr := time.Parse("2006-01-02", dateOfBirth); parseErr != nil {
+		errs = append(errs, ValidationError{
+			Field:   "date_of_birth",
+			Message: "date of birth must be a valid date (YYYY-MM-DD)",
+		})
+	} else if birth.AddDate(16, 0, 0).After(time.Now()) {
+		errs = append(errs, ValidationError{
+			Field:   "date_of_birth",
+			Message: "you must be at least 16 years old to register",
+		})
 	}
+
 
 	if len(payload.Password) < 8 {
 		errs = append(errs, ValidationError{

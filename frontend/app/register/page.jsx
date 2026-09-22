@@ -7,6 +7,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import ImageUploadButton from "@/components/shared/ImageUploadButton";
 import AuthBackground from "@/components/shared/AuthBackground";
 import NailButton from "@/components/shared/NailButton";
+import { useToast } from "@/contexts/ToastContext";
+import { isOldEnough } from "@/lib/utils";
 
 const initialState = {
   username: "",
@@ -37,6 +39,7 @@ export default function RegisterPage() {
 function RegisterForm() {
   const router = useRouter();
   const { register } = useAuth();
+  const toassst=useToast()
 
   const [values, setValues] = useState(initialState);
   const [avatar, setAvatar] = useState(null);
@@ -52,7 +55,11 @@ function RegisterForm() {
     e.preventDefault();
     setError("");
     setSubmitting(true);
-
+    if (!isOldEnough(values.date_of_birth)){
+      setError("You must select a valid age (you must be at least 16 years old)");
+      setSubmitting(false);
+      return
+    }
     try {
       const formData = new FormData();
       formData.append("username", values.username.trim());
@@ -66,6 +73,7 @@ function RegisterForm() {
       if (avatar) formData.append("avatar", avatar);
 
       await register(formData);
+                  toassst.success("You registereed succesfully now try to login ")
       router.push("/login");
     } catch (err) {
       setError(err?.message || "Registration failed");
@@ -79,9 +87,6 @@ function RegisterForm() {
       <img className="separator" src="/images/card_separator.png" alt="" />
       <form className="card" onSubmit={handleSubmit}>
         <h1 className="title">Create an account</h1>
-
-        {error && <div className="error">{error}</div>}
-
         <div className="field">
           <label className="label" htmlFor="username">Nickname</label>
           <input id="username" name="username" className="input" type="text" value={values.username} onChange={handleChange} required minLength={3} maxLength={20} />
@@ -121,17 +126,16 @@ function RegisterForm() {
           <label className="label" htmlFor="date_of_birth">Date of birth</label>
           <input id="date_of_birth" name="date_of_birth" className="input" type="date" value={values.date_of_birth} onChange={handleChange} required />
         </div>
-
         <ImageUploadButton
           label="Avatar (optional)"
           value={avatar}
           onChange={setAvatar}
-        />
-
+          />
         <div className="field">
           <label className="label" htmlFor="about_me">About me (optional)</label>
           <textarea id="about_me" name="about_me" className="input" rows={3} value={values.about_me} onChange={handleChange} />
         </div>
+          {error && <div className="error">{error}</div>}
 
         <NailButton type="submit" disabled={submitting}>
           {submitting ? "Creating account..." : "Create account"}

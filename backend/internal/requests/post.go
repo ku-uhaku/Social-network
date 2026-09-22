@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"kuu/internal/helper"
 	"kuu/internal/models"
@@ -69,19 +70,31 @@ func ValidateCreatePost(p models.CreatePostPayload) []error {
 	var errs []error
 	if strings.TrimSpace(p.Title) == "" {
 		errs = append(errs, errors.New("title cannot be empty"))
+		return errs
+	}
+	if utf8.RuneCountInString(p.Title) > 40 {
+		errs = append(errs, errors.New("title cannot be longer than 40 characters"))
+		return errs
 	}
 	if strings.TrimSpace(p.Content) == "" {
 		errs = append(errs, errors.New("content cannot be empty"))
+		return errs
+	}
+	if utf8.RuneCountInString(p.Content) > 200 {
+		errs = append(errs, errors.New("content cannot be longer than 200 characters"))
+		return errs
 	}
 
 	p.Privacy = strings.ToLower(strings.TrimSpace(p.Privacy))
-	if p.Privacy != "public" && p.Privacy != "almost private" && p.Privacy != "private" {
-		errs = append(errs, errors.New("privacy must be 'public', 'almost private', or 'private'"))
+	if p.Privacy != "public" && p.Privacy != "almost private" && p.Privacy != "private" && p.Privacy != "group" {
+		errs = append(errs, errors.New("privacy must be 'public', 'almost private', 'private', or 'group'"))
+		return errs
 	}
 
 	// visible_to for private posts
 	if p.Privacy == "private" && len(p.VisibleTo) == 0 {
 		errs = append(errs, errors.New("private posts must specify visible_to users"))
+		return errs
 	}
 
 	return errs
@@ -129,9 +142,19 @@ func ValidateCreateComment(p models.CreateCommentPayload) []error {
 	}
 	if strings.TrimSpace(p.Title) == "" {
 		errs = append(errs, errors.New("comment title is required"))
+		return errs
+	}
+	if utf8.RuneCountInString(p.Title) > 40 {
+		errs = append(errs, errors.New("comment title cannot be longer than 40 characters"))
+		return errs
 	}
 	if strings.TrimSpace(p.Content) == "" {
 		errs = append(errs, errors.New("comment content cannot be empty"))
+		return errs
+	}
+	if utf8.RuneCountInString(p.Content) > 200 {
+		errs = append(errs, errors.New("comment content cannot be longer than 200 characters"))
+		return errs
 	}
 
 	return errs

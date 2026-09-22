@@ -2,14 +2,14 @@ package routes
 
 import (
 	"net/http"
+	"time"
 
 	"kuu/internal/handler"
 	"kuu/internal/helper"
 	"kuu/internal/middleware"
 )
 
-// Register initializes the primary multiplexer and mounts feature sub-routes
-func Register(h *handler.Handler, m *middleware.Middleware) *http.ServeMux {
+func Register(h *handler.Handler, m *middleware.Middleware) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.Handle("/media/", http.StripPrefix("/media/", http.FileServer(http.Dir(helper.MediaDir))))
@@ -22,5 +22,6 @@ func Register(h *handler.Handler, m *middleware.Middleware) *http.ServeMux {
 	registerChatRoutes(mux, h, m)
 	registerNotificationRoutes(mux, h, m)
 
-	return mux
+	limiter := helper.Neewratelimeter(time.Minute)
+	return limiter.Wraponall("api", mux)
 }
