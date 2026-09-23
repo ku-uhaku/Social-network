@@ -1,9 +1,9 @@
 ﻿## A. Backend + infra
 
-- [] Backend Dockerfile → `golang:1.25.0-alpine`, `apk add --no-cache gcc musl-dev`, `CGO_ENABLED=1 go build` (sqlite needs CGO); no `echo/ls`/`cat` debug layers.
-- [] `backend/.dockerignore` → `media/`, `*.db`, `.git`; `frontend/.dockerignore` → `node_modules/`, `.next/`, `out/`, `build/`, `dist/`, `.git`.
-- [] `docker-compose.yml` → contexts `./backend` + `./frontend`, ports 8080/3000, `NEXT_PUBLIC_API_URL=http://localhost:8080`, db volume; one frontend CMD (`npm ci` + build + `npm start`).
-- [] `config/config.go` → port must be `8080` (compose + frontend expect it).
+- [X] Backend Dockerfile → `golang:1.25.0-alpine`, `apk add --no-cache gcc musl-dev`, `CGO_ENABLED=1 go build` (sqlite needs CGO); no `echo/ls`/`cat` debug layers.
+- [X] `backend/.dockerignore` → `media/`, `*.db`, `.git`; `frontend/.dockerignore` → `node_modules/`, `.next/`, `out/`, `build/`, `dist/`, `.git`.
+- [X] `docker-compose.yml` → contexts `./backend` + `./frontend`, ports 8080/3000, `NEXT_PUBLIC_API_URL=http://localhost:8080`, db volume; one frontend CMD (`npm ci` + build + `npm start`).
+- [X] `config/config.go` → port must be `8080` (compose + frontend expect it).
 - [] Re-implement the rate limiter in `helper/ratelimiter.go` (per-IP window, auth 20/min, api 300/min, skip `OPTIONS`) and wrap register/login/logout in `routes/auth.go` + the whole mux in `routes/route.go`.
 - [] Re-implement `IsValidImage` in `helper/helper.go` (decode config → jpeg/png/gif only → 8000px cap → full decode) + `imageExtensions`; make `SaveUploadedImage` validate the uploaded file (not a path string).
 - [] `requests/post.go` → title required/≤40, content required/≤200 (rune counts), comments same, privacy enum incl. `group`, private posts need `visible_to`, fix the privacy error wording.

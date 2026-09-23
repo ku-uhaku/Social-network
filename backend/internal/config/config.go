@@ -8,6 +8,6 @@ type Config struct {
 func New() Config {
 	return Config{
 		DataBasePath: "./internal/database/social.db",
-		Port:         "8000",
+		Port:         "8080",
 	}
 }
