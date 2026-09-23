@@ -158,9 +158,3 @@ func (s *Service) GetPendingRequests(userID int64) ([]models.UserFollowView, err
 func (s *Service) GetAllUsers() ([]models.UserFollowView, error) {
 	return s.Repo.GetAllUsers()
 }
-
-// GetSuggestedUsers returns a shortlist of users the viewer has no follow
-// relation with, ranked by follower count.
-func (s *Service) GetSuggestedUsers(viewerID int64, limit int) ([]models.UserFollowView, error) {
-	return s.Repo.GetSuggestedUsers(viewerID, limit)
-}

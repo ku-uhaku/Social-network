@@ -3,7 +3,6 @@ package handler
 import (
 	"database/sql"
 	"net/http"
-	"strconv"
 
 	"kuu/internal/helper"
 	"kuu/internal/models"
@@ -276,30 +275,4 @@ func (h *Handler) GetFollowRequests(w http.ResponseWriter, r *http.Request) {
 	}
 
 	helper.Success(w, http.StatusOK, "Pending requests retrieved successfully", requestsList)
-}
-
-// GetSuggestedUsers GET /api/v1/user/suggestions?limit=5
-func (h *Handler) GetSuggestedUsers(w http.ResponseWriter, r *http.Request) {
-	user, ok := h.authUser(w, r)
-	if !ok {
-		return
-	}
-
-	limit := 5
-	// take five for now then i will take more
-	if raw := r.URL.Query().Get("limit"); raw != "" {
-		if parsed, err := strconv.Atoi(raw); err == nil && parsed > 0 {
-			limit = parsed
-		}
-	}
-	if limit > 20 {
-		limit = 20
-	}
-	suggestions, err := h.Service.GetSuggestedUsers(user.ID, limit)
-	if err != nil {
-		helper.Error(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	// pass it to succes func
-	helper.Success(w, http.StatusOK, "Suggestions retrieved successfully", suggestions)
 }

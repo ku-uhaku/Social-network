@@ -373,36 +373,6 @@ func (r *Repository) GetAllUsers() ([]models.UserFollowView, error) {
 	return users, nil
 }
 
-// returns users the viewer does not follow (and has no
-// pending request to), ranked by accepted follower count descending.
-func (r *Repository) GetSuggestedUsers(viewerID int64, limit int) ([]models.UserFollowView, error) {
-	query := `
-	SELECT u.id, u.username, u.first_name, u.last_name, u.avatar
-		FROM users u
-		LEFT JOIN follows f ON f.following_id = u.id AND f.follower_id = $1
-		WHERE u.id != $1 AND f.follower_id IS NULL
-		ORDER BY (
-			SELECT COUNT(*) FROM follows ff WHERE ff.following_id = u.id AND ff.status = 'accepted'
-		) DESC, u.id ASC
-		LIMIT $2
-	`
-	rows, err := r.DB.Database.Query(query, viewerID, limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	users := []models.UserFollowView{}
-	for rows.Next() {
-		var user models.UserFollowView
-		if err := rows.Scan(&user.ID, &user.Username, &user.FirstName, &user.LastName, &user.Avatar); err != nil {
-			return nil, err
-		}
-		users = append(users, user)
-	}
-	return users, rows.Err()
-}
-
 func (r *Repository) scanUserFollowViews(query string, arg int64) ([]models.UserFollowView, error) {
 	rows, err := r.DB.Database.Query(query, arg)
 	if err != nil {
