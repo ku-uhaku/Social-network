@@ -8,7 +8,7 @@
 - [X] Re-implement `IsValidImage` in `helper/helper.go` (decode config → jpeg/png/gif only → 8000px cap → full decode) + `imageExtensions`; make `SaveUploadedImage` validate the uploaded file (not a path string).
 - [X] `requests/post.go` → title required/≤40, content required/≤200 (rune counts), comments same, privacy enum incl. `group`, private posts need `visible_to`, fix the privacy error wording.
 - [X] `requests/group.go` → group title 3–20, description ≤200, event title ≤20, event description ≤100, with readable messages (drop “moore long”).
-- [] `requests/auth.go` → parse DOB, enforce one age threshold (same number front and back), keep nickname optional (regex only when provided).
+- [X] `requests/auth.go` → parse DOB, enforce one age threshold (same number front and back), keep nickname optional (regex only when provided).
 - [] `repository/user.go` → auto nickname `user_<8 hex>` when empty, `IsPrivate`.
 - [] `helper/helper.go` `DisplayName` + `lib/utils.js isAutoUsername` → auto nicknames never shown as `@user_xxx` in the UI.
 - [] `service/post.go checkPostVisibility` → owner ok, group posts members-only, private posts viewer-list-only, posts by a private user need an accepted follow; rename `is_private` → `isPrivate`.

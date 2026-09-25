@@ -20,6 +20,7 @@ const (
 	maxNameLength     = 50
 	maxAboutMeLength  = 500
 	maxPasswordLength = 72 // bcrypt only hashes the first 72 bytes
+	minAge            = 16 // keep in sync with isOldEnough in frontend/lib/utils.js
 )
 
 func ParseRegisterPayload(r *http.Request) (models.InputRegisterPayload, error) {
@@ -127,7 +128,6 @@ func ValidateRegister(payload models.InputRegisterPayload) []ValidationError {
 			Message: "gender must be either male or female",
 		})
 	}
-	// i would validate usee age
 	dateOfBirth := strings.TrimSpace(payload.DateOfBirth)
 	if dateOfBirth == "" {
 		errs = append(errs, ValidationError{
@@ -139,10 +139,10 @@ func ValidateRegister(payload models.InputRegisterPayload) []ValidationError {
 			Field:   "date_of_birth",
 			Message: "date of birth must be a valid date (YYYY-MM-DD)",
 		})
-	} else if birth.AddDate(16, 0, 0).After(time.Now()) {
+	} else if birth.AddDate(minAge, 0, 0).After(time.Now()) {
 		errs = append(errs, ValidationError{
 			Field:   "date_of_birth",
-			Message: "you must be at least 16 years old to register",
+			Message: fmt.Sprintf("you must be at least %d years old to register", minAge),
 		})
 	}
 
