@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useWebSocket } from "@/contexts/WebSocketContext";
-import { useAudio } from "@/contexts/AudioContext";
 import { useGroupChat } from "@/contexts/GroupChatContext";
 import { getGroupHistory } from "@/lib/api/chat";
 import { formatMessageTime, displayName } from "@/lib/utils";
@@ -14,13 +13,7 @@ const pageSize = 30;
 
 export default function GroupChat({ groupId, title, meId, onClose }) {
   const { send, subscribe } = useWebSocket();
-  const { playSfx } = useAudio();
   const { openGroup, closeGroup } = useGroupChat();
-  const playSfxRef = useRef(playSfx);
-
-  useEffect(() => {
-    playSfxRef.current = playSfx;
-  }, [playSfx]);
 
   useEffect(() => {
     openGroup(groupId);
@@ -57,7 +50,6 @@ export default function GroupChat({ groupId, title, meId, onClose }) {
     const unsub = subscribe("new_group_message", (msg) => {
       if (!msg || msg.group_id !== groupId) return;
       setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
-      if (msg.sender_id !== meId) playSfxRef.current("/audio/receive.mp3");
     });
     return unsub;
   }, [subscribe, groupId, meId]);
@@ -86,7 +78,6 @@ export default function GroupChat({ groupId, title, meId, onClose }) {
     const content = draft.trim();
     if (!content) return;
     send("send_group_message", { group_id: groupId, content });
-    playSfxRef.current("/audio/send.mp3");
     setDraft("");
   };
 

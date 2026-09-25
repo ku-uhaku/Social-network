@@ -72,6 +72,46 @@
   background: var(--border);
 }
 
+.headerMenuToggle {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.headerMenuToggle:hover {
+  border-color: var(--soul-dim);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.15);
+}
+
+.headerMenuBar {
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--bone);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.headerMenuToggle.open .headerMenuBar:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.headerMenuToggle.open .headerMenuBar:nth-child(2) {
+  opacity: 0;
+}
+
+.headerMenuToggle.open .headerMenuBar:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
 .userInfo {
   display: flex;
   flex-direction: column;

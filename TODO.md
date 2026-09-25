@@ -23,9 +23,9 @@
 - [X] Migration `000013` group_message notification type (up + down) re-authored.
 - [X] Group chat UI: `components/chat/GroupChat.jsx`, `lib/api/chat.js getGroupHistory`, group styles in `chat.css`, Chat button on the group page.
 - [X] Unread badges: `contexts/GroupChatContext.jsx`, provider in `app/layout.jsx`, badges in `group/page.jsx`, `group/[id]/page.jsx`, `GroupCard.jsx` + `.groupChatBadge` CSS.
-- [] Notification list: `contexts/NotificationContext.jsx` filters out `group_message`.
-- [] Chat sounds: re-add `public/audio/send.mp3` + `receive.mp3`, keep the `playSfx` calls in `Chat.jsx` / `GroupChat.jsx`.
-- [] Mobile header menu: `app/(main)/layout.jsx` burger (`menuOpen`, 3 bars, `aria-expanded`) + `.headerMenuToggle` / `.headerRight.open` rules in `responsive.css`.
+- [X] Notification list: `contexts/NotificationContext.jsx` filters out `group_message`.
+- [X] Chat sounds: send/receive SFX dropped — no `playSfx` calls in `Chat.jsx` / `GroupChat.jsx`.
+- [X] Mobile header menu: `app/(main)/layout.jsx` burger (`menuOpen`, 3 bars) + `.headerMenuToggle` / `.headerRight.open` rules in `responsive.css` + burger styles in `home.css`.
 - [] Register form: nickname marked optional, age guard with `isOldEnough`.
 - [] Error page: `app/error/page.jsx` + `ErrorDisplay.jsx` cleanup (remove `console.log`, commented music), decide whether to keep the `/error?message=` redirects.
 - [] `repository/group.go RemoveMember` → transaction: remove membership, delete the group when the creator leaves.
