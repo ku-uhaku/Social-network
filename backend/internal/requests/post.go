@@ -62,6 +62,10 @@ func ParseCreatePostPayload(r *http.Request) (models.CreatePostPayload, error) {
 		return payload, fmt.Errorf("invalid JSON payload")
 	}
 
+	payload.Title = strings.TrimSpace(payload.Title)
+	payload.Content = strings.TrimSpace(payload.Content)
+	payload.Privacy = strings.ToLower(strings.TrimSpace(payload.Privacy))
+
 	return payload, nil
 }
 
@@ -85,9 +89,8 @@ func ValidateCreatePost(p models.CreatePostPayload) []error {
 		return errs
 	}
 
-	p.Privacy = strings.ToLower(strings.TrimSpace(p.Privacy))
 	if p.Privacy != "public" && p.Privacy != "almost private" && p.Privacy != "private" && p.Privacy != "group" {
-		errs = append(errs, errors.New("privacy must be 'public', 'almost private', 'private', or 'group'"))
+		errs = append(errs, errors.New("privacy must be one of: public, almost private, private, group"))
 		return errs
 	}
 

@@ -6,7 +6,7 @@
 - [X] `config/config.go` → port must be `8080` (compose + frontend expect it).
 - [X] Re-implement the rate limiter in `helper/ratelimiter.go` (per-IP window, auth 20/min, api 300/min, skip `OPTIONS`) and wrap register/login/logout in `routes/auth.go` + the whole mux in `routes/route.go`.
 - [X] Re-implement `IsValidImage` in `helper/helper.go` (decode config → jpeg/png/gif only → 8000px cap → full decode) + `imageExtensions`; make `SaveUploadedImage` validate the uploaded file (not a path string).
-- [] `requests/post.go` → title required/≤40, content required/≤200 (rune counts), comments same, privacy enum incl. `group`, private posts need `visible_to`, fix the privacy error wording.
+- [X] `requests/post.go` → title required/≤40, content required/≤200 (rune counts), comments same, privacy enum incl. `group`, private posts need `visible_to`, fix the privacy error wording.
 - [] `requests/group.go` → group title 3–20, description ≤200, event title ≤20, event description ≤100, with readable messages (drop “moore long”).
 - [] `requests/auth.go` → parse DOB, enforce one age threshold (same number front and back), keep nickname optional (regex only when provided).
 - [] `repository/user.go` → auto nickname `user_<8 hex>` when empty, `IsPrivate`.
