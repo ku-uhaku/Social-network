@@ -19,7 +19,7 @@
 ## B. Features back
 
 - [X] Post-in-group: allow `privacy='group'` in `requests/post.go` + the `000004` CHECK; `posts/create/page.jsx` reads `group_id` via `useSearchParams`, forces `privacy=group`, hides the privacy select, fixes the undefined `err` and the `console.log`.
-- [] Group chat backend: `repository/chat.go SaveGroupMessage` returning sender username/avatar, `GetGroupHistory`, membership gate in `service/chat.go`, handler + route `/api/v1/chat/group`, websocket `send_group_message` → `new_group_message`.
+- [X] Group chat backend: `repository/chat.go SaveGroupMessage` returning sender username/avatar, `GetGroupHistory`, membership gate in `service/chat.go`, handler + route `/api/v1/chat/group`, websocket `send_group_message` → `new_group_message`.
 - [] Migration `000013` group_message notification type (up + down) re-authored.
 - [] Group chat UI: `components/chat/GroupChat.jsx`, `lib/api/chat.js getGroupHistory`, group styles in `chat.css`, Chat button on the group page.
 - [] Unread badges: `contexts/GroupChatContext.jsx`, provider in `app/layout.jsx`, badges in `group/page.jsx`, `group/[id]/page.jsx`, `GroupCard.jsx` + `.groupChatBadge` CSS.
