@@ -277,7 +277,7 @@
   border: none;
   cursor: pointer;
   padding: 8px 24px;
-  font-family: inherit;
+   /* font-family: inherit; */
   font-size: 14px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -573,7 +573,7 @@
   color: var(--bone);
   border-radius: 12px;
   padding: 12px 14px;
-  font-family: inherit;
+   /* font-family: inherit; */
 }
 
 .postForm input:focus,
@@ -607,7 +607,7 @@
   letter-spacing: 0.15em;
   text-transform: uppercase;
   cursor: pointer;
-  font-family: inherit;
+   /* font-family: inherit; */
   transition: border-color 0.2s, color 0.2s;
 }
 
@@ -664,7 +664,7 @@
   color: var(--bone);
   border-radius: 12px;
   padding: 12px 14px;
-  font-family: inherit;
+   /* font-family: inherit; */
 }
 
 .commentForm input:focus,
@@ -698,7 +698,7 @@
   letter-spacing: 0.15em;
   text-transform: uppercase;
   cursor: pointer;
-  font-family: inherit;
+   /* font-family: inherit; */
   transition: border-color 0.2s, color 0.2s;
 }
 

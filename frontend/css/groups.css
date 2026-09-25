@@ -27,7 +27,7 @@
   color: var(--bone);
   border-radius: 12px;
   padding: 12px 14px;
-  font-family: inherit;
+  /*  /* font-family: inherit; */
 }
 
 .groupForm input:focus,
@@ -294,7 +294,7 @@
   background: transparent;
   color: var(--bone);
   cursor: pointer;
-  font-family: inherit;
+  /*  /* font-family: inherit; */
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -320,7 +320,7 @@
   background: transparent;
   color: var(--muted);
   cursor: pointer;
-  font-family: inherit;
+  /*  /* font-family: inherit; */
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -339,7 +339,7 @@
   background: transparent;
   color: var(--bone);
   cursor: pointer;
-  font-family: inherit;
+  /*  /* font-family: inherit; */
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;

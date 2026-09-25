@@ -26,14 +26,14 @@
 - [X] Notification list: `contexts/NotificationContext.jsx` filters out `group_message`.
 - [X] Chat sounds: send/receive SFX dropped — no `playSfx` calls in `Chat.jsx` / `GroupChat.jsx`.
 - [X] Mobile header menu: `app/(main)/layout.jsx` burger (`menuOpen`, 3 bars) + `.headerMenuToggle` / `.headerRight.open` rules in `responsive.css` + burger styles in `home.css`.
-- [] Register form: nickname marked optional, age guard with `isOldEnough`.
-- [] Error page: `app/error/page.jsx` + `ErrorDisplay.jsx` cleanup (remove `console.log`, commented music), decide whether to keep the `/error?message=` redirects.
-- [] `repository/group.go RemoveMember` → transaction: remove membership, delete the group when the creator leaves.
+- [X] Register form: nickname marked optional, age guard with `isOldEnough`.
+- [X] Error page: `app/error/page.jsx` + `ErrorDisplay.jsx` cleanup — no `console.log`/commented music; `/error?message=` handling dropped (zero callers, broken on Next 15).
+- [X] `repository/group.go RemoveMember` → transaction: remove membership, delete the group when the creator leaves.
 
 
 ## C. Wrap up
 
-- [] Docs: rewrite `readme.md`, `backend/README.md`, `frontend/README.md` from the actual code.
-- [] `npm install` to refresh `package-lock.json`.
-- [] Theme decisions: keep or restore the `globals.css` heading font rule and the `font-family: inherit` lines in `home.css` / `groups.css`.
-- [] Final checks: `go build ./... && go vet ./...`, `npm run build`, `docker compose up` (2 containers, migrations applied, app opens), authors list = me + mbarrah, junk greps clean, `.clinerules` audit checklist.
+- [X] Docs: single `readme.md` written from the actual code (backend + frontend docs folded in).
+- [X] `npm install` to refresh `package-lock.json` (already in sync — reported "up to date").
+- [X] Theme decisions: restored master's state — `globals.css` heading rule + `font-family: inherit` lines in `home.css` / `groups.css` commented out.
+- [X] Final checks: `go build ./... && go vet ./...`, `npm run build` green; authors = Mbelhouss + mbarrah; junk greps clean; `.clinerules` audit reviewed. Docker run skipped per user.
