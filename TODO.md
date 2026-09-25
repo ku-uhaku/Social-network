@@ -21,8 +21,8 @@
 - [X] Post-in-group: allow `privacy='group'` in `requests/post.go` + the `000004` CHECK; `posts/create/page.jsx` reads `group_id` via `useSearchParams`, forces `privacy=group`, hides the privacy select, fixes the undefined `err` and the `console.log`.
 - [X] Group chat backend: `repository/chat.go SaveGroupMessage` returning sender username/avatar, `GetGroupHistory`, membership gate in `service/chat.go`, handler + route `/api/v1/chat/group`, websocket `send_group_message` → `new_group_message`.
 - [X] Migration `000013` group_message notification type (up + down) re-authored.
-- [] Group chat UI: `components/chat/GroupChat.jsx`, `lib/api/chat.js getGroupHistory`, group styles in `chat.css`, Chat button on the group page.
-- [] Unread badges: `contexts/GroupChatContext.jsx`, provider in `app/layout.jsx`, badges in `group/page.jsx`, `group/[id]/page.jsx`, `GroupCard.jsx` + `.groupChatBadge` CSS.
+- [X] Group chat UI: `components/chat/GroupChat.jsx`, `lib/api/chat.js getGroupHistory`, group styles in `chat.css`, Chat button on the group page.
+- [X] Unread badges: `contexts/GroupChatContext.jsx`, provider in `app/layout.jsx`, badges in `group/page.jsx`, `group/[id]/page.jsx`, `GroupCard.jsx` + `.groupChatBadge` CSS.
 - [] Notification list: `contexts/NotificationContext.jsx` filters out `group_message`.
 - [] Chat sounds: re-add `public/audio/send.mp3` + `receive.mp3`, keep the `playSfx` calls in `Chat.jsx` / `GroupChat.jsx`.
 - [] Mobile header menu: `app/(main)/layout.jsx` burger (`menuOpen`, 3 bars, `aria-expanded`) + `.headerMenuToggle` / `.headerRight.open` rules in `responsive.css`.

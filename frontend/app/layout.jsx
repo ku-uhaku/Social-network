@@ -3,6 +3,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ParticlesProvider } from "@/contexts/ParticlesContext";
 import { WebSocketProvider } from "@/contexts/WebSocketContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import { GroupChatProvider } from "@/contexts/GroupChatContext";
 import SplashScreen from "@/components/shared/SplashScreen";
 import "@/css/globals.css";
 import "@/css/home.css";
@@ -20,11 +21,13 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <WebSocketProvider>
             <NotificationProvider>
-              <AudioProvider>
-                <ParticlesProvider>
-                  {children}
-                </ParticlesProvider>
-              </AudioProvider>
+              <GroupChatProvider>
+                <AudioProvider>
+                  <ParticlesProvider>
+                    {children}
+                  </ParticlesProvider>
+                </AudioProvider>
+              </GroupChatProvider>
             </NotificationProvider>
           </WebSocketProvider>
         </AuthProvider>

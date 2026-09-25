@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getAllGroups, createGroup } from "@/lib/api/groups";
+import { useGroupChat } from "@/contexts/GroupChatContext";
 import GroupCard from "@/components/groups/GroupCard";
 import NailButton from "@/components/shared/NailButton";
 import "@/css/groups.css";
@@ -11,6 +12,7 @@ const PAGE_LIMIT = 10;
 
 export default function GroupsPage() {
   const router = useRouter();
+  const { unread } = useGroupChat();
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -137,7 +139,7 @@ export default function GroupsPage() {
 
       <div className="groupList">
         {groups.map((group) => (
-          <GroupCard key={group.id} group={group} />
+          <GroupCard key={group.id} group={group} unreadCount={unread[group.id] || 0} />
         ))}
       </div>
 

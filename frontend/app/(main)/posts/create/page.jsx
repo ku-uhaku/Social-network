@@ -185,6 +185,7 @@ function CreatePostForm() {
   );
 }
 
+// TODO: remove Suspense
 export default function CreatePostPage() {
   return (
     <Suspense fallback={null}>

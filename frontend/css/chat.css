@@ -311,6 +311,26 @@
   border-color: var(--soul-dim);
 }
 
+/* ---- Group message ---- */
+.chatGroupMessage {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chatSender {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 2px;
+}
+
+.chatSenderName {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
 /* ---- Load older ---- */
 .chatLoadOlder {
   align-self: center;
