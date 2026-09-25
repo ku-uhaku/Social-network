@@ -75,12 +75,12 @@ func IsValidImage(data []byte) (string, error) {
 		return "", fmt.Errorf("not a valid image: %w", err)
 	}
 
-	if cfg.Width <= 0 || cfg.Height <= 0 || cfg.Width > maxImageDimension || cfg.Height > maxImageDimension {
-		return "", fmt.Errorf("image dimensions %dx%d exceed the allowed limit", cfg.Width, cfg.Height)
-	}
-
 	if _, ok := imageExtensions[format]; !ok {
 		return "", fmt.Errorf("unsupported image format %q: only PNG, JPEG, and GIF are allowed", format)
+	}
+
+	if cfg.Width <= 0 || cfg.Height <= 0 || cfg.Width > maxImageDimension || cfg.Height > maxImageDimension {
+		return "", fmt.Errorf("image dimensions %dx%d exceed the allowed limit", cfg.Width, cfg.Height)
 	}
 
 	if _, _, err := image.Decode(bytes.NewReader(data)); err != nil {

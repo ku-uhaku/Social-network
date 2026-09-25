@@ -43,7 +43,7 @@ func ParseRegisterPayload(r *http.Request) (models.InputRegisterPayload, error) 
 		}
 		if file, header, err := r.FormFile("avatar"); err == nil {
 			defer file.Close()
-			if header != nil || header.Size > 0 {
+			if header != nil && header.Size > 0 {
 				avatarName, err := helper.SaveUploadedImage(file, header)
 				if err != nil {
 					return payload, fmt.Errorf("failed to save avatar file: %w", err)
