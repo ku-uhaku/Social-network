@@ -82,7 +82,7 @@ func (s *Service) checkPostVisibility(userID int64, post *models.Post) error {
 	if post.UserID == userID {
 		return nil
 	}
-	is_private, err := s.Repo.IsPrivate(post.UserID)
+	isPrivate, err := s.Repo.IsPrivate(post.UserID)
 	if err != nil {
 		return ErrAccessDenied
 	}
@@ -101,7 +101,7 @@ func (s *Service) checkPostVisibility(userID int64, post *models.Post) error {
 		}
 		return nil
 	}
-	if post.Privacy == "almost private" || is_private {
+	if post.Privacy == "almost private" || isPrivate {
 		status, err := s.Repo.GetFollowRelation(userID, post.UserID)
 		if err == nil && status == "accepted" {
 			return nil
