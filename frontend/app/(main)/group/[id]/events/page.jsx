@@ -132,8 +132,8 @@ export default function GroupEventsPage() {
         <>
           {formOpen && (
             <form className="groupForm" onSubmit={handleCreate}>
-              <label>Title <input value={title} onChange={(e) => setTitle(e.target.value)} required /></label>
-              <label>Description <textarea value={description} onChange={(e) => setDescription(e.target.value)} required /></label>
+              <label>Title <input value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={20} /></label>
+              <label>Description <textarea value={description} onChange={(e) => setDescription(e.target.value)} required maxLength={100} /></label>
               <label>Date / Time <input type="datetime-local" value={dateTime} onChange={(e) => setDateTime(e.target.value)} required /></label>
               <NailButton type="submit" disabled={submitting}>{submitting ? "Creating..." : "Create event"}</NailButton>
             </form>

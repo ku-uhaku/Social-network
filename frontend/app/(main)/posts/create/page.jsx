@@ -97,6 +97,8 @@ function CreatePostForm() {
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Post title"
               required
+              minLength={1}
+              maxLength={40}
             />
           </div>
 
@@ -108,6 +110,7 @@ function CreatePostForm() {
               onChange={(event) => setContent(event.target.value)}
               placeholder="Write your post here..."
               required
+              maxLength={200}
             />
           </div>
 

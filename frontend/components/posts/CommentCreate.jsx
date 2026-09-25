@@ -63,6 +63,8 @@ export default function CommentCreate({ postId, onCreated }) {
           onChange={(event) => setTitle(event.target.value)}
           placeholder="Comment title"
           required
+          minLength={1}
+          maxLength={40}
         />
       </div>
 
@@ -74,6 +76,7 @@ export default function CommentCreate({ postId, onCreated }) {
           onChange={(event) => setContent(event.target.value)}
           placeholder="Write your comment here..."
           required
+          maxLength={200}
         />
       </div>
 

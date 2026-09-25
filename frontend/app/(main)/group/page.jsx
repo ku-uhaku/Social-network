@@ -110,6 +110,8 @@ export default function GroupsPage() {
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Group title"
               required
+              minLength={3}
+              maxLength={20}
             />
           </div>
 
@@ -120,6 +122,7 @@ export default function GroupsPage() {
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               required
+              maxLength={200}
             />
           </div>
 
