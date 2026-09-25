@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createPost } from "@/lib/api/posts";
 import { getFollowers } from "@/lib/api/user";
 import ImageUploadButton from "@/components/shared/ImageUploadButton";
@@ -9,12 +9,16 @@ import UsersSelect from "@/components/shared/UsersSelect";
 import { useAuth } from "@/contexts/AuthContext";
 import "@/css/createPost.css";
 
-export default function CreatePostPage() {
+function CreatePostForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const groupParam = Number(searchParams.get("group_id"));
+  const groupId = Number.isInteger(groupParam) && groupParam > 0 ? groupParam : null;
   const { user: currentUser } = useAuth();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [privacy, setPrivacy] = useState("public");
+  const [selectedPrivacy, setSelectedPrivacy] = useState("public");
+  const privacy = groupId ? "group" : selectedPrivacy;
   const [image, setImage] = useState(null);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -57,8 +61,6 @@ export default function CreatePostPage() {
       formData.append("title", title.trim());
       formData.append("content", content.trim());
       formData.append("privacy", privacy);
-      const params = new URLSearchParams(window.location.search);
-      const groupId = params.get("group_id") ? Number(params.get("group_id")) : null;
       if (groupId) formData.append("group_id", groupId);
       if (privacy === "private") {
         selectedViewers.forEach((id) => formData.append("visible_to", id));
@@ -110,6 +112,7 @@ export default function CreatePostPage() {
           </div>
 
           <div className="row">
+            {!groupId && (
             <div className="field">
               <label htmlFor="privacy">Privacy</label>
               <select
@@ -117,7 +120,7 @@ export default function CreatePostPage() {
                 value={privacy}
                 onChange={(event) => {
                   const next = event.target.value;
-                  setPrivacy(next);
+                  setSelectedPrivacy(next);
                   setLoadingFollowers(next === "private");
                   if (next !== "private") {
                     setSelectedViewers([]);
@@ -130,6 +133,7 @@ export default function CreatePostPage() {
                 <option value="private">Private</option>
               </select>
             </div>
+            )}
             <div className="field">
               <ImageUploadButton
                 label="Image (optional)"
@@ -178,5 +182,13 @@ export default function CreatePostPage() {
         </form>
       </div>
     </section>
+  );
+}
+
+export default function CreatePostPage() {
+  return (
+    <Suspense fallback={null}>
+      <CreatePostForm />
+    </Suspense>
   );
 }
