@@ -10,7 +10,7 @@
 - [X] `requests/group.go` → group title 3–20, description ≤200, event title ≤20, event description ≤100, with readable messages (drop “moore long”).
 - [X] `requests/auth.go` → parse DOB, enforce one age threshold (same number front and back), keep nickname optional (regex only when provided).
 - [X] `repository/user.go` → auto nickname `user_<8 hex>` when empty, `IsPrivate`.
-- [] `helper/helper.go` `DisplayName` + `lib/utils.js isAutoUsername` → auto nicknames never shown as `@user_xxx` in the UI.
+- [X] `helper/helper.go` `DisplayName` + `lib/utils.js isAutoUsername` → auto nicknames never shown as `@user_xxx` in the UI.
 - [] `service/post.go checkPostVisibility` → owner ok, group posts members-only, private posts viewer-list-only, posts by a private user need an accepted follow; rename `is_private` → `isPrivate`.
 - [] `repository/post.go` feed query → a private user's public posts only for accepted followers.
 - [] `handler/user.go GetUserProfile` → return the profile, gate posts/details to owner/public/accepted follower, everything else = “This account is private” notice.
