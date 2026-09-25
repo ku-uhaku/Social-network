@@ -74,17 +74,19 @@ func ValidateCreateGroupEvent(payload models.CreateGroupEventPayload) []error {
 	}
 	if strings.TrimSpace(payload.Title) == "" {
 		errs = append(errs, errors.New("title is required"))
+		return errs
 	}
 	if utf8.RuneCountInString(strings.TrimSpace(payload.Title)) > 20 {
-				errs = append(errs, errors.New("title moore long "))
-				return  errs
+		errs = append(errs, errors.New("title cannot be longer than 20 characters"))
+		return errs
 	}
 	if strings.TrimSpace(payload.Description) == "" {
 		errs = append(errs, errors.New("description is required"))
+		return errs
 	}
 	if utf8.RuneCountInString(strings.TrimSpace(payload.Description)) > 100 {
-				errs = append(errs, errors.New("description moore long "))
-				return  errs
+		errs = append(errs, errors.New("description cannot be longer than 100 characters"))
+		return errs
 	}
 	if payload.EventTime.IsZero() {
 		errs = append(errs, errors.New("event_time is required"))
