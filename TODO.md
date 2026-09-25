@@ -14,7 +14,7 @@
 - [X] `service/post.go checkPostVisibility` → owner ok, group posts members-only, private posts viewer-list-only, posts by a private user need an accepted follow; rename `is_private` → `isPrivate`.
 - [X] `repository/post.go` feed query → a private user's public posts only for accepted followers.
 - [X] `handler/user.go GetUserProfile` → return the profile, gate posts/details to owner/public/accepted follower, everything else = “This account is private” notice.
-- [] Profile page → details + posts only when `isOwner || is_public === 1 || follow_status === "accepted"`; no inverted `is_public === 0` logic.
+- [X] Profile page → details + posts only when `isOwner || is_public === 1 || follow_status === "accepted"`; no inverted `is_public === 0` logic.
 
 ## B. Features back
 

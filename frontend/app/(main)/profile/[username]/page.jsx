@@ -23,7 +23,6 @@ export default function ProfilePage() {
   const [modalType, setModalType] = useState(null); // 'followers' | 'following' | null
 
   const isOwner = currentUser && profile && currentUser.id === profile.id;
-  const isPrivate = profile &&  profile.is_public === 0;
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -122,8 +121,7 @@ export default function ProfilePage() {
     return "Follow";
   })();
 
-  const showPosts = isOwner || (profile && profile.is_public==1) || profile?.follow_status === "accepted";
-  // console.log("profile:::::",profile);
+  const showPosts = isOwner || (profile && profile.is_public === 1) || profile?.follow_status === "accepted";
   
   return (
     <section className="profilePage">
