@@ -4,6 +4,7 @@ frontend/out/
 frontend/build/
 frontend/dist/
 *.db
+backend/media/
 
 backend/.env
 frontend/.env*

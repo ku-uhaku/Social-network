@@ -15,7 +15,7 @@ type DB struct {
 }
 
 func New(path string) *DB {
-	db, err := sql.Open("sqlite3", path)
+	db, err := sql.Open("sqlite3", path+"?_foreign_keys=on")
 	if err != nil {
 		log.Fatal("[DATABASE] : ", err.Error())
 	}

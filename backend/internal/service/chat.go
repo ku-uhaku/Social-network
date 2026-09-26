@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"strings"
+	"unicode/utf8"
 
 	"kuu/internal/models"
 )
@@ -41,7 +42,7 @@ func (s *Service) SaveDirectMessage(senderID, receiverID int64, content string) 
 	if content == "" {
 		return nil, ErrChatEmpty
 	}
-	if len(content) > maxMessageLength {
+	if utf8.RuneCountInString(content) > maxMessageLength {
 		return nil, ErrChatTooLong
 	}
 
@@ -58,7 +59,7 @@ func (s *Service) SaveGroupMessage(senderID, groupID int64, content string) (*mo
 	if content == "" {
 		return nil, ErrChatEmpty
 	}
-	if len(content) > maxMessageLength {
+	if utf8.RuneCountInString(content) > maxMessageLength {
 		return nil, ErrChatTooLong
 	}
 

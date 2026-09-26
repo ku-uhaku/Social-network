@@ -78,6 +78,7 @@ export default function GroupEventsPage() {
   }
 
   async function handleChoice(eventId, status) {
+    setError("");
     if (pendingRef.current.has(eventId)) return;
     pendingRef.current.add(eventId);
     const prev = events.find((ev) => ev.id === eventId);
@@ -105,12 +106,12 @@ export default function GroupEventsPage() {
   }
 
   async function handleCancel(eventId) {
+    setError("");
     try { await cancelGroupEvent(eventId); reloadEvents(); }
     catch (err) { setError(err?.message || "Could not cancel event."); }
   }
 
   if (loading) return <div className="postsPlaceholder">Loading events...</div>;
-  if (error) return <div className="postsError">{error}</div>;
   if (!group) notFound();
 
   const member = membership === "accepted";
@@ -126,12 +127,15 @@ export default function GroupEventsPage() {
         )}
       </div>
 
+      {error && !formOpen && <div className="postsError">{error}</div>}
+
       {!member ? (
         <div className="postsPlaceholder">Join this group to see its events.</div>
       ) : (
         <>
           {formOpen && (
             <form className="groupForm" onSubmit={handleCreate}>
+              {error && <div className="postsError">{error}</div>}
               <label>Title <input value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={20} /></label>
               <label>Description <textarea value={description} onChange={(e) => setDescription(e.target.value)} required maxLength={100} /></label>
               <label>Date / Time <input type="datetime-local" value={dateTime} onChange={(e) => setDateTime(e.target.value)} required /></label>
@@ -140,7 +144,7 @@ export default function GroupEventsPage() {
           )}
 
           {events.length === 0 ? (
-            <div className="postsPlaceholder">No events yet.</div>
+            !error && <div className="postsPlaceholder">No events yet.</div>
           ) : (
             <div className="eventList">
               {events.map((ev) => {
