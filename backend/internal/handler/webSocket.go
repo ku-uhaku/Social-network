@@ -71,6 +71,10 @@ func (h *Handler) readLoop(client *ws.Client) {
 			return
 		}
 
+		if err := h.sessionAlive(client); err != nil {
+			return
+		}
+
 		var event ws.Event
 		if err := json.Unmarshal(raw, &event); err != nil {
 			continue
@@ -83,6 +87,11 @@ func (h *Handler) readLoop(client *ws.Client) {
 			h.sendGroupMessage(client.UserID, event.Payload)
 		}
 	}
+}
+
+func (h *Handler) sessionAlive(client *ws.Client) error {
+	_, err := h.Service.ValidateSession(client.SessionID)
+	return err
 }
 
 func (h *Handler) sendDirectMessage(senderID int64, payload interface{}) {
