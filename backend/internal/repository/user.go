@@ -240,8 +240,18 @@ func (r *Repository) InsertFollowRelation(followerID, targetID int64, status str
 
 func (r *Repository) RemoveFollowRelation(followerID, targetID int64) error {
 	query := `DELETE FROM follows WHERE follower_id = $1 AND following_id = $2`
-	_, err := r.DB.Database.Exec(query, followerID, targetID)
-	return err
+	res, err := r.DB.Database.Exec(query, followerID, targetID)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
 func (r *Repository) AcceptAllPendingFollows(targetUserID int64) ([]int64, error) {

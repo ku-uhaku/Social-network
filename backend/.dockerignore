@@ -1,4 +1,3 @@
 media/
-*.db
-internal/database/
+**/*.db
 .git

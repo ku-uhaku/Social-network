@@ -2,11 +2,13 @@ package handler
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 
 	"kuu/internal/helper"
 	"kuu/internal/models"
 	"kuu/internal/requests"
+	"kuu/internal/service"
 )
 
 // UpdateProfile updates the current user's profile
@@ -174,6 +176,10 @@ func (h *Handler) UnfollowUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.Service.UnfollowUser(user.ID, payload.TargetUserID); err != nil {
+		if errors.Is(err, service.ErrNotFollowing) {
+			helper.Error(w, http.StatusBadRequest, err.Error())
+			return
+		}
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -236,14 +242,27 @@ func (h *Handler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	helper.Success(w, http.StatusOK, "Users retrieved successfully", users)
 }
 
-func (h *Handler) userList(w http.ResponseWriter, r *http.Request, fetch func(int64) ([]models.UserFollowView, error), message string) {
+func (h *Handler) userList(w http.ResponseWriter, r *http.Request, fetch func(int64, int64) ([]models.UserFollowView, error), message string) {
+	viewer, ok := h.authUser(w, r)
+	if !ok {
+		return
+	}
+
 	userID, ok := queryPositiveInt64(w, r, "id", "Invalid user ID")
 	if !ok {
 		return
 	}
 
-	users, err := fetch(userID)
+	users, err := fetch(userID, viewer.ID)
 	if err != nil {
+		if errors.Is(err, service.ErrProfilePrivate) {
+			helper.Error(w, http.StatusForbidden, err.Error())
+			return
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			helper.Error(w, http.StatusNotFound, "User not found")
+			return
+		}
 		helper.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}

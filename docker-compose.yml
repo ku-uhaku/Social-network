@@ -7,6 +7,7 @@ services:
       - "8080:8080"
     volumes:
       - social-db:/app/internal/database
+      - social-media:/app/media
     restart: unless-stopped
     networks:
       - social-network
@@ -17,9 +18,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
-    volumes:
-      - ./frontend:/app/frontend
-      - /app/frontend/node_modules
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8080
     depends_on:
@@ -32,3 +30,4 @@ networks:
     driver: bridge
 volumes:
   social-db:
+  social-media:

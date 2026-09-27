@@ -13,7 +13,10 @@ import (
 )
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
+	CheckOrigin: func(r *http.Request) bool {
+		origin := r.Header.Get("Origin")
+		return origin == "" || origin == middleware.AllowedOrigin
+	},
 }
 
 // Upgrades the request to a WebSocket connection

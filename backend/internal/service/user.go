@@ -11,6 +11,8 @@ var (
 	ErrCannotFollowSelf  = errors.New("you cannot follow yourself")
 	ErrAlreadyFollowing  = errors.New("you are already following or requested to follow this user")
 	ErrFollowReqNotFound = errors.New("no pending follow request found")
+	ErrNotFollowing      = errors.New("you are not following this user")
+	ErrProfilePrivate    = errors.New("this account is private")
 )
 
 // UpdateProfile orchestrates incoming structural profile changes
@@ -116,7 +118,11 @@ func (s *Service) FollowUser(followerID, targetID int64) (string, error) {
 
 // UnfollowUser handles unfollowing or cancelling a pending request
 func (s *Service) UnfollowUser(followerID, targetID int64) error {
-	return s.Repo.RemoveFollowRelation(followerID, targetID)
+	err := s.Repo.RemoveFollowRelation(followerID, targetID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrNotFollowing
+	}
+	return err
 }
 
 // HandleFollowRequest accepts or declines an incoming request (called by target user).
@@ -143,11 +149,43 @@ func (s *Service) HandleFollowRequest(targetUserID, requesterID int64, accept bo
 	return s.Repo.RemoveFollowRelation(requesterID, targetUserID)
 }
 
-func (s *Service) GetFollowers(userID int64) ([]models.UserFollowView, error) {
+func (s *Service) ensureProfileVisible(viewerID, targetID int64) error {
+	if viewerID == targetID {
+		return nil
+	}
+
+	target, err := s.Repo.GetUserByID(targetID)
+	if err != nil {
+		return err
+	}
+	if target.IsPublic == 1 {
+		return nil
+	}
+
+	visibility, err := s.Repo.GetFollowRelation(viewerID, targetID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrProfilePrivate
+		}
+		return err
+	}
+	if visibility != "accepted" {
+		return ErrProfilePrivate
+	}
+	return nil
+}
+
+func (s *Service) GetFollowers(userID, viewerID int64) ([]models.UserFollowView, error) {
+	if err := s.ensureProfileVisible(viewerID, userID); err != nil {
+		return nil, err
+	}
 	return s.Repo.GetFollowers(userID)
 }
 
-func (s *Service) GetFollowing(userID int64) ([]models.UserFollowView, error) {
+func (s *Service) GetFollowing(userID, viewerID int64) ([]models.UserFollowView, error) {
+	if err := s.ensureProfileVisible(viewerID, userID); err != nil {
+		return nil, err
+	}
 	return s.Repo.GetFollowing(userID)
 }
 

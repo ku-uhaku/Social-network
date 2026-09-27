@@ -122,6 +122,10 @@ export default function ProfilePage() {
   })();
 
   const showPosts = isOwner || (profile && profile.is_public === 1) || profile?.follow_status === "accepted";
+
+  const openFollowList = (type) => {
+    if (showPosts) setModalType(type);
+  };
   
   return (
     <section className="profilePage">
@@ -165,14 +169,14 @@ export default function ProfilePage() {
           <button
             type="button"
             className="profileStatButton"
-            onClick={() => setModalType("followers")}
+            onClick={() => openFollowList("followers")}
           >
             <strong>{profile.followers_count}</strong> Followers
           </button>
           <button
             type="button"
             className="profileStatButton"
-            onClick={() => setModalType("following")}
+            onClick={() => openFollowList("following")}
           >
             <strong>{profile.following_count}</strong> Following
           </button>
