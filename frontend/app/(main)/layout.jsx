@@ -84,7 +84,7 @@ export default function MainLayout({ children }) {
           <span className="headerDividerV" />
 
           <div className="userInfo">
-            <Avatar avatar={user?.avatar} username={user.username} size={52} />
+            <Avatar user={user} size={52} />
             <div>
               <strong className="userName">{displayName(user)}</strong>
             </div>

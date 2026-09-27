@@ -60,14 +60,18 @@ export default function NotificationItem({ notification }) {
     }
   };
 
+  // temp user for displayname()
+  const actor = {
+    username: notification.actor_username,
+    first_name: notification.actor_first_name,
+    last_name: notification.actor_last_name,
+    avatar: notification.actor_avatar,
+  };
+
   return (
     <div className={`notificationItem ${notification.is_read ? "" : "unread"} ${notification.is_expired ? "expired" : ""}`}>
       <div className="notificationItemHeader">
-        <Avatar
-          avatar={notification.actor_avatar}
-          username={notification.actor_username || "user"}
-          size={36}
-        />
+        <Avatar user={actor} size={36} />
         <div className="notificationMeta">
           <strong className="notificationTitle">{notification.title}</strong>
           <span className="notificationTime">{timeAgo(notification.created_at)}</span>

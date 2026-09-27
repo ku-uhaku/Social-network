@@ -58,8 +58,10 @@ type Notification struct {
 	CreatedAt   time.Time            `json:"created_at"`
 
 	// Joined actor info for display
-	ActorUsername *string `json:"actor_username,omitempty"`
-	ActorAvatar   *string `json:"actor_avatar,omitempty"`
+	ActorUsername  *string `json:"actor_username,omitempty"`
+	ActorAvatar    *string `json:"actor_avatar,omitempty"`
+	ActorFirstName *string `json:"actor_first_name,omitempty"`
+	ActorLastName  *string `json:"actor_last_name,omitempty"`
 }
 
 type NotificationListResponse struct {

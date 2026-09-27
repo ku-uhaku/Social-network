@@ -131,7 +131,7 @@ export default function ProfilePage() {
     <section className="profilePage">
       <div className="profileCard">
         <div className="profileCardTop">
-          <Avatar avatar={profile.avatar} username={profile.username} size={96} />
+          <Avatar user={profile} size={96} />
           {isOwner && (
             <div className="profileToggleRow">
               <span className="profileToggleLabel">{profile.is_public ? "Public" : "Private"}</span>

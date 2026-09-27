@@ -1,19 +1,20 @@
 "use client";
 
-import { resolveMediaSrc } from "@/lib/utils";
+import { displayName, resolveMediaSrc } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
-export default function Avatar({ avatar, username, size = 64 }) {
+export default function Avatar({ user, size = 64 }) {
   const router = useRouter();
-  const src = resolveMediaSrc(avatar);
+  const src = resolveMediaSrc(user?.avatar);
+  const name = displayName(user);
 
   return (
-    <div className="avatar-image" onClick={() => router.push(`/profile/${username}`)} style={{ width: size, height: size }}>
+    <div className="avatar-image" onClick={() => router.push(`/profile/${user?.username}`)} style={{ width: size, height: size }}>
       {src ? (
-        <img className="avatar-image__img" src={src} alt={username} />
+        <img className="avatar-image__img" src={src} alt={name} />
       ) : (
         <span className="avatar-image__fallback" style={{ fontSize: Math.round(size * 0.45) }}>
-          {(username || "?").slice(0, 1).toUpperCase()}
+          {(name || "?").slice(0, 1).toUpperCase()}
         </span>
       )}
     </div>

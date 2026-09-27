@@ -12,7 +12,7 @@ export default function CommentCard({ comment }) {
   return (
     <article className="commentCard">
       <div className="commentCardHeader">
-        <Avatar avatar={author.avatar} username={name} size={40} />
+        <Avatar user={author} size={40} />
         <div className="commentCardMeta">
           <span className="commentAuthor">{name}</span>
           <span className="commentDate">{createdAt}</span>

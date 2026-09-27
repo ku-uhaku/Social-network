@@ -38,11 +38,7 @@ export default function UsersSelect({
             )}
             <div className="userSelectInfo">
               {user.avatar && (
-                <Avatar
-                  avatar={user.avatar}
-                  username={user.username}
-                  size={32}
-                />
+                <Avatar user={user} size={32} />
               )}
               <span className="userSelectName">
                 {user.first_name} {user.last_name}

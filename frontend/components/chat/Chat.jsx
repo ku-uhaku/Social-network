@@ -184,7 +184,7 @@ function Contacts({ chat }) {
                 if (e.key === "Enter") chat.openChat(c.user_id);
               }}
             >
-              <Avatar avatar={c.avatar} username={c.username} />
+              <Avatar user={c} />
               <div className="chatContactInfo">
                 <strong className="chatContactName">{displayName(c)}</strong>
               </div>
@@ -219,7 +219,7 @@ function SingleChat({ chat, contact }) {
           &larr;
         </button>
         <div className="chatThreadTitle">
-          <Avatar avatar={contact.avatar} username={contact.username} size={32} />
+          <Avatar user={contact} size={32} />
           <strong className="chatContactName">{displayName(contact)}</strong>
         </div>
         <button type="button" className="chatCloseButton" onClick={() => chat.setOpen(false)}>

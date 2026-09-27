@@ -10,7 +10,7 @@ import (
 const notificationColumns = `
 	n.id, n.recipient_id, n.actor_id, n.type, n.title, n.message,
 	n.group_id, n.is_read, n.is_expired, n.created_at,
-	u.username, u.avatar
+	u.username, u.first_name, u.last_name, u.avatar
 `
 
 const notificationFrom = `
@@ -190,7 +190,7 @@ func notificationFields(n *models.Notification) []interface{} {
 	return []interface{}{
 		&n.ID, &n.RecipientID, &n.ActorID, &n.Type, &n.Title, &n.Message,
 		&n.Payload.GroupID, &n.IsRead, &n.IsExpired, &n.CreatedAt,
-		&n.ActorUsername, &n.ActorAvatar,
+		&n.ActorUsername, &n.ActorFirstName, &n.ActorLastName, &n.ActorAvatar,
 	}
 }
 

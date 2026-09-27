@@ -16,7 +16,7 @@ export default function PostCard({ post, isFeed = true }) {
     <>
       <div className="postCardHeader">
         <div className="postAuthorInfo">
-          <Avatar avatar={author.avatar} username={authorName} size={40} />
+          <Avatar user={author} size={40} />
           <div>
             <div className="postAuthorName">{authorName}</div>
             <div className="postMeta">

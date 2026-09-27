@@ -66,7 +66,7 @@ export default function FollowListModal({ userId, type, onClose }) {
                 className="followListItem"
                 onClick={onClose}
               >
-                <Avatar avatar={u.avatar} username={u.username} size={40} />
+                <Avatar user={u} size={40} />
                 <div className="followListItemInfo">
                   <span className="followListItemName">{u.first_name} {u.last_name}</span>
                   {!isAutoUsername(u.username) && (

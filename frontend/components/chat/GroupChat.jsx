@@ -114,7 +114,7 @@ export default function GroupChat({ groupId, title, meId, onClose }) {
               <div key={m.id} className="chatGroupMessage">
                 {!mine && (
                   <div className="chatSender">
-                    <Avatar avatar={m.avatar} username={m.username} size={22} />
+                    <Avatar user={m} size={22} />
                     <span className="chatSenderName">{displayName(m)}</span>
                   </div>
                 )}
