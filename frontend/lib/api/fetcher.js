@@ -1,6 +1,12 @@
 import { API_BASE } from "@/lib/utils";
 
- export async function apiFetch(path, options = {}) {
+let unauthorizedHandler = null;
+
+export function setUnauthorizedHandler(handler) {
+  unauthorizedHandler = handler;
+}
+
+export async function apiFetch(path, options = {}) {
   const { body, headers, ...rest } = options;
   const isFormData = body instanceof FormData;
 
@@ -25,6 +31,8 @@ import { API_BASE } from "@/lib/utils";
       data = text;
     }
   }
+
+  if (res.status === 401) unauthorizedHandler?.(); // close sockets
 
   if (!res.ok) {
     const details = Array.isArray(data?.errors)

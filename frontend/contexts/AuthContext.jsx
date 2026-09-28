@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import * as authApi from "@/lib/api/auth";
+import { setUnauthorizedHandler } from "@/lib/api/fetcher";
 
 const AuthContext = createContext(null);
 
@@ -35,6 +36,11 @@ export function AuthProvider({ children }) {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => setUser(null));
+    return () => setUnauthorizedHandler(null);
   }, []);
 
   const login = useCallback(async (identifier, password) => {
